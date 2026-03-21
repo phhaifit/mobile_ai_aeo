@@ -1,12 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'overview_store.dart';
 
-// **************************************************************************
-// StoreGenerator
-// **************************************************************************
-
-// ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$OverviewStore on _OverviewStore, Store {
   late final _$brandVisibilityScoreAtom =
@@ -147,6 +141,20 @@ mixin _$OverviewStore on _OverviewStore, Store {
   @override
   Future<void> fetchMockData() {
     return _$fetchMockDataAsyncAction.run(() => super.fetchMockData());
+  }
+
+  late final _$_OverviewStoreActionController =
+      ActionController(name: '_OverviewStore', context: context);
+
+  @override
+  dynamic dispose() {
+    final _$actionInfo = _$_OverviewStoreActionController.startAction(
+        name: '_OverviewStore.dispose');
+    try {
+      return super.dispose();
+    } finally {
+      _$_OverviewStoreActionController.endAction(_$actionInfo);
+    }
   }
 
   @override
