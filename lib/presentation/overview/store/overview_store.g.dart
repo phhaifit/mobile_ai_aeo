@@ -149,6 +149,20 @@ mixin _$OverviewStore on _OverviewStore, Store {
     return _$fetchMockDataAsyncAction.run(() => super.fetchMockData());
   }
 
+  late final _$_OverviewStoreActionController =
+      ActionController(name: '_OverviewStore', context: context);
+
+  @override
+  dynamic dispose() {
+    final _$actionInfo = _$_OverviewStoreActionController.startAction(
+        name: '_OverviewStore.dispose');
+    try {
+      return super.dispose();
+    } finally {
+      _$_OverviewStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
   @override
   String toString() {
     return '''
