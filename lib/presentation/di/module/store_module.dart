@@ -13,6 +13,7 @@ import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
 import 'package:boilerplate/presentation/register/store/register_store.dart';
+import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -66,6 +67,8 @@ class StoreModule {
 
     getIt.registerSingleton<ForgotPasswordStore>(
       ForgotPasswordStore(
+    getIt.registerSingleton<OverviewStore>(
+      OverviewStore(
         getIt<ErrorStore>(),
       ),
     );
