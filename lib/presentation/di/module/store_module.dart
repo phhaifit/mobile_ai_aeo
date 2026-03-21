@@ -7,10 +7,12 @@ import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
+import 'package:boilerplate/presentation/forgot_password/store/forgot_password_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
+import 'package:boilerplate/presentation/register/store/register_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -51,6 +53,19 @@ class StoreModule {
     getIt.registerSingleton<LanguageStore>(
       LanguageStore(
         getIt<SettingRepository>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<RegisterStore>(
+      RegisterStore(
+        getIt<FormErrorStore>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<ForgotPasswordStore>(
+      ForgotPasswordStore(
         getIt<ErrorStore>(),
       ),
     );

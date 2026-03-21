@@ -23,8 +23,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   //text controllers:-----------------------------------------------------------
-  TextEditingController _userEmailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _userEmailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   //stores:---------------------------------------------------------------------
   final ThemeStore _themeStore = getIt<ThemeStore>();
@@ -37,6 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
   //state variables:------------------------------------------------------------
   bool _isPasswordVisible = false;
 
+  // Định nghĩa màu cam chuẩn doanh nghiệp (hơi trầm và sang hơn cam chói)
+  final Color _primaryOrange = Colors.orange.shade600;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       primary: true,
       appBar: EmptyAppBar(),
-      body: _buildBody(),
+      // Sử dụng Observer bọc ngoài Scaffold body để nền thay đổi mượt theo Theme
+      body: Observer(
+        builder: (_) => _buildBody(),
+      ),
     );
   }
 
@@ -62,11 +68,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: <Widget>[
                   Expanded(
                     flex: 1,
-                    child: SizedBox.shrink(),
+                    child:
+                        _buildWelcomeBanner(), // Thêm banner chào mừng cho màn hình ngang
                   ),
                   Expanded(
                     flex: 1,
-                    child: _buildRightSide(),
+                    child: Center(child: _buildRightSide()),
                   ),
                 ],
               )
@@ -90,87 +97,104 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // --- NỀN GIAO DIỆN HIỆN ĐẠI ---
   Widget _buildBackground() {
+    bool isDark = _themeStore.darkMode;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.orange.shade800,
-            Colors.orange.shade500,
-            Colors.black87,
-          ],
-          stops: [0.0, 0.4, 1.0],
-        ),
+        color: isDark ? const Color(0xFF121212) : const Color(0xFFF4F6F8),
+        // Thêm họa tiết nền mờ ảo (tùy chọn, ở đây dùng gradient siêu nhẹ để không bị phẳng)
+        gradient: isDark
+            ? LinearGradient(
+                colors: [Color(0xFF1A1A24), Color(0xFF121212)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              )
+            : LinearGradient(
+                colors: [Color(0xFFFFFFFF), Color(0xFFF4F6F8)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
       ),
     );
   }
 
+  // --- BANNER CHO MÀN HÌNH NGANG (TABLET/WEB) ---
+  Widget _buildWelcomeBanner() {
+    return Container(
+      padding: const EdgeInsets.all(40.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.verified_user_rounded, size: 60, color: _primaryOrange),
+          const SizedBox(height: 24),
+          Text(
+            "Authorized\nEconomic Operator",
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+              color: _themeStore.darkMode
+                  ? Colors.white
+                  : Colors.blueGrey.shade900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Streamlining global trade with enhanced security and efficiency for certified businesses.",
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.5,
+              color: _themeStore.darkMode
+                  ? Colors.grey.shade400
+                  : Colors.blueGrey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- FORM ĐĂNG NHẬP CHÍNH ---
   Widget _buildRightSide() {
+    bool isDark = _themeStore.darkMode;
+
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-        child: Card(
-          elevation: 12.0,
-          shape: RoundedRectangleBorder(
+        child: Container(
+          constraints: const BoxConstraints(
+              maxWidth: 450), // Giới hạn độ rộng form cho gọn gàng
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
             borderRadius: BorderRadius.circular(24.0),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black38
+                    : Colors.blueGrey.shade100.withOpacity(0.5),
+                blurRadius: 30.0,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          color: _themeStore.darkMode ? Colors.grey[900] : Colors.white,
           child: Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(
+                40.0), // Padding rộng rãi tạo cảm giác thoáng
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Center(
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.security_rounded,
-                      size: 48.0,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16.0),
-                Text(
-                  "AEO PORTAL",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28.0,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                    color: Colors.orange,
-                  ),
-                ),
-                SizedBox(height: 8.0),
-                Text(
-                  "Empowering Secure & Efficient Trade",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    fontStyle: FontStyle.italic,
-                    color: _themeStore.darkMode
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 36.0),
+                _buildHeader(isDark),
+                const SizedBox(height: 40.0),
                 _buildUserIdField(),
-                SizedBox(height: 12.0),
+                const SizedBox(height: 20.0),
                 _buildPasswordField(),
-                SizedBox(height: 4.0),
-
-                // GỌI HÀM MỚI Ở ĐÂY
+                const SizedBox(height: 16.0),
                 _buildActionButtons(),
-
-                SizedBox(height: 24.0),
+                const SizedBox(height: 32.0),
                 _buildSignInButton()
               ],
             ),
@@ -180,14 +204,55 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildHeader(bool isDark) {
+    return Column(
+      children: [
+        // Logo Badge
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: _primaryOrange.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Icon(
+            Icons.shield_outlined, // Icon khiên thể hiện AEO Security
+            size: 42.0,
+            color: _primaryOrange,
+          ),
+        ),
+        const SizedBox(height: 20.0),
+        Text(
+          "JARVIS AEO",
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            color: isDark ? Colors.white : Colors.blueGrey.shade900,
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        Text(
+          "Secure Trade Compliance",
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.grey.shade400 : Colors.blueGrey.shade400,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildUserIdField() {
     return Observer(
       builder: (context) {
         return TextFieldWidget(
           hint: AppLocalizations.of(context).translate('login_et_user_email'),
           inputType: TextInputType.emailAddress,
-          icon: Icons.person_outline,
-          iconColor: Colors.orange,
+          icon: Icons.business_center_outlined, // Icon phù hợp với doanh nghiệp
+          iconColor: _themeStore.darkMode
+              ? Colors.grey.shade400
+              : Colors.blueGrey.shade400,
           textController: _userEmailController,
           inputAction: TextInputAction.next,
           autoFocus: false,
@@ -213,9 +278,11 @@ class _LoginScreenState extends State<LoginScreen> {
               hint: AppLocalizations.of(context)
                   .translate('login_et_user_password'),
               isObscure: !_isPasswordVisible,
-              padding: EdgeInsets.only(top: 16.0),
+              padding: const EdgeInsets.only(top: 16.0),
               icon: Icons.lock_outline,
-              iconColor: Colors.orange,
+              iconColor: _themeStore.darkMode
+                  ? Colors.grey.shade400
+                  : Colors.blueGrey.shade400,
               textController: _passwordController,
               focusNode: _passwordFocusNode,
               errorText: _formStore.formErrorStore.password,
@@ -225,11 +292,17 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             Positioned(
               top: 16.0,
-              right: 0.0,
+              right: 4.0,
               child: IconButton(
+                splashRadius: 20.0,
                 icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.orange,
+                  _isPasswordVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: _themeStore.darkMode
+                      ? Colors.grey.shade500
+                      : Colors.blueGrey.shade300,
+                  size: 20.0,
                 ),
                 onPressed: () {
                   setState(() {
@@ -244,45 +317,46 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- HÀM MỚI: CHỨA CẢ 2 NÚT REGISTER VÀ FORGOT PASSWORD ---
   Widget _buildActionButtons() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween, // Dàn 2 nút sang 2 mép
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Nút Register
         TextButton(
           style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: Size(50, 30),
-            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: Text(
-            AppLocalizations.of(context).translate('login_btn_register'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
+            "Create Account",
+            style: TextStyle(
+              color: _primaryOrange,
+              fontWeight: FontWeight.w600,
+              fontSize: 14.0,
+            ),
           ),
           onPressed: () {
             Navigator.of(context).pushNamed(Routes.register);
           },
         ),
-        // Nút Forgot Password
         TextButton(
           style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: Size(50, 30),
-            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: Text(
             AppLocalizations.of(context).translate('login_btn_forgot_password'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
+            style: TextStyle(
+              color: _themeStore.darkMode
+                  ? Colors.grey.shade400
+                  : Colors.blueGrey.shade600,
+              fontWeight: FontWeight.w500,
+              fontSize: 14.0,
+            ),
           ),
           onPressed: () {
-            // TODO: Thêm logic điều hướng sang trang Quên mật khẩu
+            Navigator.of(context).pushNamed(Routes.forgotPassword);
           },
         ),
       ],
@@ -290,18 +364,73 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildSignInButton() {
-    return RoundedButtonWidget(
-      buttonText: AppLocalizations.of(context).translate('login_btn_sign_in'),
-      buttonColor: Colors.orange,
-      textColor: Colors.white,
-      onPressed: () async {
-        if (_formStore.canLogin) {
-          DeviceUtils.hideKeyboard(context);
-          _userStore.login(_userEmailController.text, _passwordController.text);
-        } else {
-          _showErrorMessage('Please fill in all fields');
-        }
-      },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RoundedButtonWidget(
+          buttonText:
+              AppLocalizations.of(context).translate('login_btn_sign_in'),
+          buttonColor: _primaryOrange,
+          textColor: Colors.white,
+          onPressed: () async {
+            if (_formStore.canLogin) {
+              DeviceUtils.hideKeyboard(context);
+              _userStore.login(
+                  _userEmailController.text, _passwordController.text);
+            } else {
+              _showErrorMessage('Please enter valid corporate credentials');
+            }
+          },
+        ),
+        const SizedBox(height: 16.0),
+        _buildGoogleSignInButton(),
+      ],
+    );
+  }
+
+  Widget _buildGoogleSignInButton() {
+    bool isDark = _themeStore.darkMode;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          _showErrorMessage('Google Sign-In - Mock Implementation');
+          // Mock Google Sign-In
+          Future.delayed(const Duration(seconds: 1), () {
+            _userStore.login('user@google.com', 'mock_password');
+          });
+        },
+        borderRadius: BorderRadius.circular(12.0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.g_mobiledata,
+                size: 24.0,
+                color: Colors.red.shade400,
+              ),
+              const SizedBox(width: 12.0),
+              Text(
+                'Continue with Google',
+                style: TextStyle(
+                  fontSize: 15.0,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -310,7 +439,7 @@ class _LoginScreenState extends State<LoginScreen> {
       prefs.setBool(Preferences.is_logged_in, true);
     });
 
-    Future.delayed(Duration(milliseconds: 0), () {
+    Future.delayed(const Duration(milliseconds: 0), () {
       Navigator.of(context).pushNamedAndRemoveUntil(
           Routes.home, (Route<dynamic> route) => false);
     });
@@ -321,18 +450,17 @@ class _LoginScreenState extends State<LoginScreen> {
   // General Methods:-----------------------------------------------------------
   _showErrorMessage(String message) {
     if (message.isNotEmpty) {
-      Future.delayed(Duration(milliseconds: 0), () {
+      Future.delayed(const Duration(milliseconds: 0), () {
         if (message.isNotEmpty) {
           FlushbarHelper.createError(
             message: message,
             title: AppLocalizations.of(context).translate('home_tv_error'),
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           )..show(context);
         }
       });
     }
-
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 
   // dispose:-------------------------------------------------------------------

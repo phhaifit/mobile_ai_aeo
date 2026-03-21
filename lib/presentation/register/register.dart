@@ -1,19 +1,16 @@
 import 'package:another_flushbar/flushbar_helper.dart';
-import 'package:boilerplate/core/stores/form/form_store.dart';
+import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/core/widgets/progress_indicator_widget.dart';
 import 'package:boilerplate/core/widgets/rounded_button_widget.dart';
 import 'package:boilerplate/core/widgets/textfield_widget.dart';
-import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
-import 'package:boilerplate/presentation/login/store/login_store.dart';
+import 'package:boilerplate/presentation/register/store/register_store.dart';
 import 'package:boilerplate/utils/device/device_utils.dart';
 import 'package:boilerplate/utils/locale/app_localization.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../di/service_locator.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -23,28 +20,30 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   //text controllers:-----------------------------------------------------------
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
-  TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _fullnameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   //stores:---------------------------------------------------------------------
   final ThemeStore _themeStore = getIt<ThemeStore>();
-  final FormStore _formStore = getIt<FormStore>();
-  final UserStore _userStore = getIt<UserStore>();
+  final RegisterStore _registerStore = getIt<RegisterStore>();
+  final ErrorStore _errorStore = getIt<ErrorStore>();
 
   //focus nodes:----------------------------------------------------------------
+  late FocusNode _emailFocusNode;
   late FocusNode _passwordFocusNode;
-  late FocusNode _confirmPasswordFocusNode;
 
   //state variables:------------------------------------------------------------
   bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+
+  final Color _primaryOrange = Colors.orange.shade600;
+  final Color _accentColor = Colors.orange.shade400;
 
   @override
   void initState() {
     super.initState();
+    _emailFocusNode = FocusNode();
     _passwordFocusNode = FocusNode();
-    _confirmPasswordFocusNode = FocusNode();
   }
 
   @override
@@ -52,7 +51,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       primary: true,
       appBar: EmptyAppBar(),
-      body: _buildBody(),
+      body: Observer(
+        builder: (_) => _buildBody(),
+      ),
     );
   }
 
@@ -60,36 +61,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildBody() {
     return Stack(
       children: <Widget>[
-        // Background với LinearGradient giống Login
         _buildBackground(),
-        // Main Content
         MediaQuery.of(context).orientation == Orientation.landscape
             ? Row(
                 children: <Widget>[
                   Expanded(
                     flex: 1,
-                    child: SizedBox.shrink(),
+                    child: _buildWelcomeBanner(),
                   ),
                   Expanded(
                     flex: 1,
-                    child: _buildRightSide(),
+                    child: Center(child: _buildRightSide()),
                   ),
                 ],
               )
             : Center(child: _buildRightSide()),
-        // Observer cho success/error
         Observer(
           builder: (context) {
-            return _userStore.success
+            return _registerStore.success
                 ? navigate(context)
-                : _showErrorMessage(_formStore.errorStore.errorMessage);
+                : _showErrorMessage(_errorStore.errorMessage);
           },
         ),
-        // Observer cho loading indicator
         Observer(
           builder: (context) {
             return Visibility(
-              visible: _userStore.isLoading,
+              visible: _registerStore.isLoading,
               child: CustomProgressIndicatorWidget(),
             );
           },
@@ -99,108 +96,99 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildBackground() {
-    // Sử dụng Gradient màu cam/đen tạo cảm giác chuyên nghiệp, bảo mật cho hệ thống AEO
+    bool isDark = _themeStore.darkMode;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.orange.shade800,
-            Colors.orange.shade500,
-            Colors.black87,
-          ],
-          stops: [0.0, 0.4, 1.0],
-        ),
+        color: isDark ? const Color(0xFF121212) : const Color(0xFFF4F6F8),
+        gradient: isDark
+            ? LinearGradient(
+                colors: [Color(0xFF1A1A24), Color(0xFF121212)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              )
+            : LinearGradient(
+                colors: [Color(0xFFFFFFFF), Color(0xFFF4F6F8)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeBanner() {
+    return Container(
+      padding: const EdgeInsets.all(40.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.security_rounded, size: 60, color: _primaryOrange),
+          const SizedBox(height: 24),
+          Text(
+            "Create Account\nAEO PORTAL",
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+              color: _themeStore.darkMode
+                  ? Colors.white
+                  : Colors.blueGrey.shade900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Secure Trade Compliance Platform. Join thousands of certified businesses.",
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.5,
+              color: _themeStore.darkMode
+                  ? Colors.grey.shade400
+                  : Colors.blueGrey.shade600,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildRightSide() {
+    bool isDark = _themeStore.darkMode;
+
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-        child: Card(
-          elevation: 12.0,
-          shape: RoundedRectangleBorder(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
             borderRadius: BorderRadius.circular(24.0),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black38
+                    : Colors.blueGrey.shade100.withOpacity(0.5),
+                blurRadius: 30.0,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          color: _themeStore.darkMode ? Colors.grey[900] : Colors.white,
           child: Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(40.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // --- PHẦN BRANDING AEO ---
-                Center(
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.security_rounded,
-                      size: 48.0,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16.0),
-                Text(
-                  "AEO PORTAL",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28.0,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                    color: Colors.orange,
-                  ),
-                ),
-                SizedBox(height: 8.0),
-                Text(
-                  "Empowering Secure & Efficient Trade",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    fontStyle: FontStyle.italic,
-                    color: _themeStore.darkMode
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
-                  ),
-                ),
-                // --- KẾT THÚC PHẦN BRANDING ---
-
-                SizedBox(height: 36.0),
-                // Tiêu đề "Create Account"
-                Text(
-                  AppLocalizations.of(context).translate('register_title') ??
-                      'Create Account',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.w700,
-                    color:
-                        _themeStore.darkMode ? Colors.white : Colors.grey[800],
-                  ),
-                ),
-                SizedBox(height: 24.0),
-
-                // Form fields
+                _buildHeader(isDark),
+                const SizedBox(height: 32.0),
+                _buildFullnameField(),
+                const SizedBox(height: 16.0),
                 _buildEmailField(),
-                SizedBox(height: 12.0),
+                const SizedBox(height: 16.0),
                 _buildPasswordField(),
-                SizedBox(height: 12.0),
-                _buildConfirmPasswordField(),
-                SizedBox(height: 24.0),
-
-                // Submit button
+                const SizedBox(height: 24.0),
                 _buildRegisterButton(),
-                SizedBox(height: 16.0),
-
-                // Login link
+                const SizedBox(height: 16.0),
                 _buildLoginLink(),
               ],
             ),
@@ -210,112 +198,113 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildEmailField() {
-    return Observer(
-      builder: (context) {
-        return TextFieldWidget(
-          hint: AppLocalizations.of(context).translate('register_et_email') ??
-              'Email Address',
-          inputType: TextInputType.emailAddress,
-          icon: Icons.email_outlined,
-          iconColor: Colors.orange,
-          textController: _emailController,
-          inputAction: TextInputAction.next,
-          autoFocus: false,
-          onChanged: (value) {
-            _formStore.setUserId(_emailController.text);
-          },
-          onFieldSubmitted: (value) {
-            FocusScope.of(context).requestFocus(_passwordFocusNode);
-          },
-          errorText: _formStore.formErrorStore.userEmail,
-        );
+  Widget _buildHeader(bool isDark) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: _primaryOrange.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Icon(
+            Icons.shield_outlined,
+            size: 42.0,
+            color: _primaryOrange,
+          ),
+        ),
+        const SizedBox(height: 20.0),
+        Text(
+          "JARVIS AEO",
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            color: isDark ? Colors.white : Colors.blueGrey.shade900,
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        Text(
+          "Secure Trade Compliance",
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.grey.shade400 : Colors.blueGrey.shade400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFullnameField() {
+    return TextFieldWidget(
+      hint: 'Full Name',
+      inputType: TextInputType.name,
+      icon: Icons.person_outline,
+      iconColor: _accentColor,
+      textController: _fullnameController,
+      inputAction: TextInputAction.next,
+      autoFocus: true,
+      onChanged: (value) {},
+      onFieldSubmitted: (value) {
+        FocusScope.of(context).requestFocus(_emailFocusNode);
       },
+      errorText: '',
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFieldWidget(
+      hint: ' Email',
+      inputType: TextInputType.emailAddress,
+      icon: Icons.email_outlined,
+      iconColor: _accentColor,
+      textController: _emailController,
+      focusNode: _emailFocusNode,
+      inputAction: TextInputAction.next,
+      autoFocus: false,
+      onChanged: (value) {},
+      onFieldSubmitted: (value) {
+        FocusScope.of(context).requestFocus(_passwordFocusNode);
+      },
+      errorText: '',
     );
   }
 
   Widget _buildPasswordField() {
-    return Observer(
-      builder: (context) {
-        return Stack(
-          alignment: Alignment.centerRight,
-          children: [
-            TextFieldWidget(
-              hint: AppLocalizations.of(context)
-                      .translate('register_et_password') ??
-                  'Password',
-              isObscure: !_isPasswordVisible,
-              padding: EdgeInsets.only(top: 16.0),
-              icon: Icons.lock_outline,
-              iconColor: Colors.orange,
-              textController: _passwordController,
-              focusNode: _passwordFocusNode,
-              errorText: _formStore.formErrorStore.password,
-              inputAction: TextInputAction.next,
-              onChanged: (value) {
-                _formStore.setPassword(_passwordController.text);
-              },
-              onFieldSubmitted: (value) {
-                FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
-              },
-            ),
-            Positioned(
-              top: 16.0,
-              right: 0.0,
-              child: IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.orange,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _isPasswordVisible = !_isPasswordVisible;
-                  });
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildConfirmPasswordField() {
     return Stack(
       alignment: Alignment.centerRight,
       children: [
         TextFieldWidget(
-          hint: AppLocalizations.of(context)
-                  .translate('register_et_confirm_password') ??
-              'Confirm Password',
-          isObscure: !_isConfirmPasswordVisible,
-          padding: EdgeInsets.only(top: 16.0),
-          icon: Icons.lock_reset,
-          iconColor: Colors.orange,
-          textController: _confirmPasswordController,
-          focusNode: _confirmPasswordFocusNode,
+          hint: 'Password',
+          isObscure: !_isPasswordVisible,
+          padding: const EdgeInsets.only(top: 16.0),
+          icon: Icons.lock_outline,
+          iconColor: _accentColor,
+          textController: _passwordController,
+          focusNode: _passwordFocusNode,
+          errorText: '',
           inputAction: TextInputAction.done,
-          onChanged: (value) {
-            // Có thể thêm validation xác nhận mật khẩu ở đây
-          },
+          onChanged: (value) {},
           onFieldSubmitted: (value) {
             DeviceUtils.hideKeyboard(context);
           },
-          errorText: '',
         ),
         Positioned(
           top: 16.0,
-          right: 0.0,
+          right: 4.0,
           child: IconButton(
+            splashRadius: 20.0,
             icon: Icon(
-              _isConfirmPasswordVisible
-                  ? Icons.visibility
-                  : Icons.visibility_off,
-              color: Colors.orange,
+              _isPasswordVisible
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              color: _accentColor,
+              size: 20.0,
             ),
             onPressed: () {
               setState(() {
-                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                _isPasswordVisible = !_isPasswordVisible;
               });
             },
           ),
@@ -326,72 +315,82 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildRegisterButton() {
     return RoundedButtonWidget(
-      buttonText:
-          AppLocalizations.of(context).translate('register_btn_register') ??
-              'Register',
-      buttonColor: Colors.orange,
+      buttonText: 'Create Account',
+      buttonColor: _primaryOrange,
       textColor: Colors.white,
       onPressed: () async {
-        // Kiểm tra xác nhận mật khẩu
-        if (_passwordController.text != _confirmPasswordController.text) {
-          _showErrorMessage('Passwords do not match');
+        DeviceUtils.hideKeyboard(context);
+
+        if (_fullnameController.text.isEmpty) {
+          _errorStore.setErrorMessage('Please enter your full name');
+          _showErrorMessage('Please enter your full name');
           return;
         }
 
-        if (_formStore.canRegister) {
-          DeviceUtils.hideKeyboard(context);
-          // TODO: Gọi _userStore.register() với email, password
-          // _userStore.register(_emailController.text, _passwordController.text);
-        } else {
-          _showErrorMessage('Please fill in all fields');
+        if (_emailController.text.isEmpty) {
+          _errorStore.setErrorMessage('Please enter your email');
+          _showErrorMessage('Please enter your email');
+          return;
         }
+
+        if (_passwordController.text.isEmpty) {
+          _errorStore.setErrorMessage('Please enter your password');
+          _showErrorMessage('Please enter your password');
+          return;
+        }
+
+        if (_passwordController.text.length < 6) {
+          _errorStore.setErrorMessage('Password must be at least 6 characters');
+          _showErrorMessage('Password must be at least 6 characters');
+          return;
+        }
+
+        await _registerStore.register(
+          _emailController.text,
+          _passwordController.text,
+          _passwordController.text,
+        );
       },
     );
   }
 
   Widget _buildLoginLink() {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            AppLocalizations.of(context)
-                    .translate('register_already_account') ??
-                'Already have an account? ',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: _themeStore.darkMode
-                      ? Colors.grey[400]
-                      : Colors.grey[600],
-                ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Already have an account? ',
+          style: TextStyle(
+            fontSize: 13.0,
+            color: _themeStore.darkMode
+                ? Colors.grey.shade400
+                : Colors.grey.shade600,
           ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size(50, 30),
-            ),
-            child: Text(
-              AppLocalizations.of(context).translate('register_login_link') ??
-                  'Login',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+        ),
+        TextButton(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-        ],
-      ),
+          child: Text(
+            'Sign In',
+            style: TextStyle(
+              color: _primaryOrange,
+              fontWeight: FontWeight.w600,
+              fontSize: 14.0,
+            ),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
     );
   }
 
   Widget navigate(BuildContext context) {
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool(Preferences.is_logged_in, true);
-    });
-
-    Future.delayed(Duration(milliseconds: 0), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       Navigator.of(context).pushNamedAndRemoveUntil(
           Routes.home, (Route<dynamic> route) => false);
     });
@@ -399,32 +398,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Container();
   }
 
-  // General Methods:-----------------------------------------------------------
   _showErrorMessage(String message) {
     if (message.isNotEmpty) {
-      Future.delayed(Duration(milliseconds: 0), () {
+      Future.delayed(const Duration(milliseconds: 0), () {
         if (message.isNotEmpty) {
           FlushbarHelper.createError(
             message: message,
-            title: AppLocalizations.of(context).translate('home_tv_error') ??
-                'Error',
-            duration: Duration(seconds: 3),
+            title: 'Error',
+            duration: const Duration(seconds: 3),
           )..show(context);
         }
       });
     }
 
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 
-  // dispose:-------------------------------------------------------------------
   @override
   void dispose() {
+    _fullnameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
-    _confirmPasswordFocusNode.dispose();
+    _registerStore.dispose();
     super.dispose();
   }
 }
