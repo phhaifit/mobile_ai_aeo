@@ -16,31 +16,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../di/service_locator.dart';
 
-class LoginScreen extends StatefulWidget {
+class RegisterScreen extends StatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _RegisterScreenState createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   //text controllers:-----------------------------------------------------------
-  TextEditingController _userEmailController = TextEditingController();
+  TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
+  TextEditingController _confirmPasswordController = TextEditingController();
 
   //stores:---------------------------------------------------------------------
   final ThemeStore _themeStore = getIt<ThemeStore>();
   final FormStore _formStore = getIt<FormStore>();
   final UserStore _userStore = getIt<UserStore>();
 
-  //focus node:-----------------------------------------------------------------
+  //focus nodes:----------------------------------------------------------------
   late FocusNode _passwordFocusNode;
+  late FocusNode _confirmPasswordFocusNode;
 
   //state variables:------------------------------------------------------------
   bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
     super.initState();
     _passwordFocusNode = FocusNode();
+    _confirmPasswordFocusNode = FocusNode();
   }
 
   @override
@@ -56,7 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildBody() {
     return Stack(
       children: <Widget>[
+        // Background với LinearGradient giống Login
         _buildBackground(),
+        // Main Content
         MediaQuery.of(context).orientation == Orientation.landscape
             ? Row(
                 children: <Widget>[
@@ -71,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               )
             : Center(child: _buildRightSide()),
+        // Observer cho success/error
         Observer(
           builder: (context) {
             return _userStore.success
@@ -78,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 : _showErrorMessage(_formStore.errorStore.errorMessage);
           },
         ),
+        // Observer cho loading indicator
         Observer(
           builder: (context) {
             return Visibility(
@@ -91,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildBackground() {
+    // Sử dụng Gradient màu cam/đen tạo cảm giác chuyên nghiệp, bảo mật cho hệ thống AEO
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -124,6 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                // --- PHẦN BRANDING AEO ---
                 Center(
                   child: Container(
                     padding: EdgeInsets.all(16.0),
@@ -161,17 +171,37 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Colors.grey[600],
                   ),
                 ),
+                // --- KẾT THÚC PHẦN BRANDING ---
+
                 SizedBox(height: 36.0),
-                _buildUserIdField(),
+                // Tiêu đề "Create Account"
+                Text(
+                  AppLocalizations.of(context).translate('register_title') ??
+                      'Create Account',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.w700,
+                    color:
+                        _themeStore.darkMode ? Colors.white : Colors.grey[800],
+                  ),
+                ),
+                SizedBox(height: 24.0),
+
+                // Form fields
+                _buildEmailField(),
                 SizedBox(height: 12.0),
                 _buildPasswordField(),
-                SizedBox(height: 4.0),
-
-                // GỌI HÀM MỚI Ở ĐÂY
-                _buildActionButtons(),
-
+                SizedBox(height: 12.0),
+                _buildConfirmPasswordField(),
                 SizedBox(height: 24.0),
-                _buildSignInButton()
+
+                // Submit button
+                _buildRegisterButton(),
+                SizedBox(height: 16.0),
+
+                // Login link
+                _buildLoginLink(),
               ],
             ),
           ),
@@ -180,19 +210,20 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildUserIdField() {
+  Widget _buildEmailField() {
     return Observer(
       builder: (context) {
         return TextFieldWidget(
-          hint: AppLocalizations.of(context).translate('login_et_user_email'),
+          hint: AppLocalizations.of(context).translate('register_et_email') ??
+              'Email Address',
           inputType: TextInputType.emailAddress,
-          icon: Icons.person_outline,
+          icon: Icons.email_outlined,
           iconColor: Colors.orange,
-          textController: _userEmailController,
+          textController: _emailController,
           inputAction: TextInputAction.next,
           autoFocus: false,
           onChanged: (value) {
-            _formStore.setUserId(_userEmailController.text);
+            _formStore.setUserId(_emailController.text);
           },
           onFieldSubmitted: (value) {
             FocusScope.of(context).requestFocus(_passwordFocusNode);
@@ -211,7 +242,8 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             TextFieldWidget(
               hint: AppLocalizations.of(context)
-                  .translate('login_et_user_password'),
+                      .translate('register_et_password') ??
+                  'Password',
               isObscure: !_isPasswordVisible,
               padding: EdgeInsets.only(top: 16.0),
               icon: Icons.lock_outline,
@@ -219,8 +251,12 @@ class _LoginScreenState extends State<LoginScreen> {
               textController: _passwordController,
               focusNode: _passwordFocusNode,
               errorText: _formStore.formErrorStore.password,
+              inputAction: TextInputAction.next,
               onChanged: (value) {
                 _formStore.setPassword(_passwordController.text);
+              },
+              onFieldSubmitted: (value) {
+                FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
               },
             ),
             Positioned(
@@ -244,64 +280,109 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- HÀM MỚI: CHỨA CẢ 2 NÚT REGISTER VÀ FORGOT PASSWORD ---
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween, // Dàn 2 nút sang 2 mép
+  Widget _buildConfirmPasswordField() {
+    return Stack(
+      alignment: Alignment.centerRight,
       children: [
-        // Nút Register
-        TextButton(
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: Size(50, 30),
-            alignment: Alignment.centerLeft,
-          ),
-          child: Text(
-            AppLocalizations.of(context).translate('login_btn_register'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          onPressed: () {
-            Navigator.of(context).pushNamed(Routes.register);
+        TextFieldWidget(
+          hint: AppLocalizations.of(context)
+                  .translate('register_et_confirm_password') ??
+              'Confirm Password',
+          isObscure: !_isConfirmPasswordVisible,
+          padding: EdgeInsets.only(top: 16.0),
+          icon: Icons.lock_reset,
+          iconColor: Colors.orange,
+          textController: _confirmPasswordController,
+          focusNode: _confirmPasswordFocusNode,
+          inputAction: TextInputAction.done,
+          onChanged: (value) {
+            // Có thể thêm validation xác nhận mật khẩu ở đây
           },
+          onFieldSubmitted: (value) {
+            DeviceUtils.hideKeyboard(context);
+          },
+          errorText: '',
         ),
-        // Nút Forgot Password
-        TextButton(
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: Size(50, 30),
-            alignment: Alignment.centerRight,
+        Positioned(
+          top: 16.0,
+          right: 0.0,
+          child: IconButton(
+            icon: Icon(
+              _isConfirmPasswordVisible
+                  ? Icons.visibility
+                  : Icons.visibility_off,
+              color: Colors.orange,
+            ),
+            onPressed: () {
+              setState(() {
+                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+              });
+            },
           ),
-          child: Text(
-            AppLocalizations.of(context).translate('login_btn_forgot_password'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          onPressed: () {
-            // TODO: Thêm logic điều hướng sang trang Quên mật khẩu
-          },
         ),
       ],
     );
   }
 
-  Widget _buildSignInButton() {
+  Widget _buildRegisterButton() {
     return RoundedButtonWidget(
-      buttonText: AppLocalizations.of(context).translate('login_btn_sign_in'),
+      buttonText:
+          AppLocalizations.of(context).translate('register_btn_register') ??
+              'Register',
       buttonColor: Colors.orange,
       textColor: Colors.white,
       onPressed: () async {
-        if (_formStore.canLogin) {
+        // Kiểm tra xác nhận mật khẩu
+        if (_passwordController.text != _confirmPasswordController.text) {
+          _showErrorMessage('Passwords do not match');
+          return;
+        }
+
+        if (_formStore.canRegister) {
           DeviceUtils.hideKeyboard(context);
-          _userStore.login(_userEmailController.text, _passwordController.text);
+          // TODO: Gọi _userStore.register() với email, password
+          // _userStore.register(_emailController.text, _passwordController.text);
         } else {
           _showErrorMessage('Please fill in all fields');
         }
       },
+    );
+  }
+
+  Widget _buildLoginLink() {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            AppLocalizations.of(context)
+                    .translate('register_already_account') ??
+                'Already have an account? ',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: _themeStore.darkMode
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
+                ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size(50, 30),
+            ),
+            child: Text(
+              AppLocalizations.of(context).translate('register_login_link') ??
+                  'Login',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -325,7 +406,8 @@ class _LoginScreenState extends State<LoginScreen> {
         if (message.isNotEmpty) {
           FlushbarHelper.createError(
             message: message,
-            title: AppLocalizations.of(context).translate('home_tv_error'),
+            title: AppLocalizations.of(context).translate('home_tv_error') ??
+                'Error',
             duration: Duration(seconds: 3),
           )..show(context);
         }
@@ -338,9 +420,11 @@ class _LoginScreenState extends State<LoginScreen> {
   // dispose:-------------------------------------------------------------------
   @override
   void dispose() {
-    _userEmailController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 }

@@ -2,16 +2,26 @@
   "login_start": "Below are list of strings for login",
   "login_et_user_email": "Enter user email",
   "login_et_user_password": "Enter password",
+  "login_btn_register": "Register",
   "login_btn_forgot_password": "Forgot Password?",
   "login_btn_sign_in": "Sign In",
   "login_error_fill_fields": "Please fill in all fields",
   "login_end": "------------------------------------------------------------------------------------",
-
+  "register_start": "Below are list of strings for register",
+  "register_title": "Create Account",
+  "register_et_email": "Email Address",
+  "register_et_password": "Password",
+  "register_et_confirm_password": "Confirm Password",
+  "register_btn_register": "Register",
+  "register_already_account": "Already have an account? ",
+  "register_login_link": "Login",
+  "register_error_passwords_not_match": "Passwords do not match",
+  "register_error_fill_fields": "Please fill in all fields",
+  "register_end": "------------------------------------------------------------------------------------",
   "home_start": "Below are list of strings for home",
   "home_tv_posts": "Posts",
   "home_tv_error": "Error",
   "home_tv_no_post_found": "No posts found",
   "home_tv_choose_language": "Choose Language",
   "home_end": "-------------------------------------------------------------------------------------"
-
 }
