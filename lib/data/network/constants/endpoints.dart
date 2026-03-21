@@ -1,15 +1,19 @@
+/// API endpoint constants.
+/// Base URLs are injected from EnvironmentConfig via DI.
 class Endpoints {
   Endpoints._();
 
-  // base url
+  // base url (default fallback, overridden by EnvironmentConfig)
   static const String baseUrl = "http://jsonplaceholder.typicode.com";
 
-  // receiveTimeout
+  // timeouts
   static const int receiveTimeout = 15000;
-
-  // connectTimeout
   static const int connectionTimeout = 30000;
 
-  // booking endpoints
-  static const String getPosts = baseUrl + "/posts";
+  // AI service timeout (longer for AI processing)
+  static const int aiReceiveTimeout = 60000;
+
+  // post endpoints
+  static const String getPosts = "/posts";
+
 }

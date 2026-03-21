@@ -1,5 +1,6 @@
 import 'package:boilerplate/constants/app_theme.dart';
 import 'package:boilerplate/constants/strings.dart';
+import 'package:boilerplate/core/services/analytics_service.dart';
 import 'package:boilerplate/presentation/home/home.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
   final ThemeStore _themeStore = getIt<ThemeStore>();
   final LanguageStore _languageStore = getIt<LanguageStore>();
   final UserStore _userStore = getIt<UserStore>();
+  final AnalyticsService _analyticsService = getIt<AnalyticsService>();
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,10 @@ class MyApp extends StatelessWidget {
           theme: _themeStore.darkMode
               ? AppThemeData.darkThemeData
               : AppThemeData.lightThemeData,
+          navigatorObservers: [
+            if (_analyticsService.observer != null)
+              _analyticsService.observer!,
+          ],
           routes: Routes.routes,
           locale: Locale(_languageStore.locale),
           supportedLocales: _languageStore.supportedLanguages
