@@ -7,10 +7,20 @@ import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/summarize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
+import 'package:boilerplate/presentation/content_enhancement/store/content_enhancement_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
+import 'package:boilerplate/presentation/technical_seo/store/technical_seo_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -51,6 +61,26 @@ class StoreModule {
     getIt.registerSingleton<LanguageStore>(
       LanguageStore(
         getIt<SettingRepository>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<ContentEnhancementStore>(
+      ContentEnhancementStore(
+        getIt<EnhanceContentUseCase>(),
+        getIt<RewriteContentUseCase>(),
+        getIt<HumanizeContentUseCase>(),
+        getIt<SummarizeContentUseCase>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<TechnicalSeoStore>(
+      TechnicalSeoStore(
+        getIt<RunSeoAuditUseCase>(),
+        getIt<GetAuditStatusUseCase>(),
+        getIt<GetAuditHistoryUseCase>(),
+        getIt<GetCrawlerEventsUseCase>(),
         getIt<ErrorStore>(),
       ),
     );

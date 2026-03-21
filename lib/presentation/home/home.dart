@@ -37,6 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Widget> _buildActions(BuildContext context) {
     return <Widget>[
+      IconButton(
+        onPressed: () => Navigator.pushNamed(context, Routes.contentEnhancement),
+        icon: const Icon(Icons.auto_fix_high),
+        tooltip: 'Content Enhancement',
+      ),
+      IconButton(
+        onPressed: () => Navigator.pushNamed(context, Routes.technicalSeo),
+        icon: const Icon(Icons.manage_search),
+        tooltip: 'Technical SEO',
+      ),
       _buildLanguageButton(),
       _buildThemeButton(),
       _buildLogoutButton(),
