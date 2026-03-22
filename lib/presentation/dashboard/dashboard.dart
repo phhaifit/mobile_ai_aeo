@@ -45,6 +45,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).pushNamed(Routes.login);
                 },
               ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Topics & Keywords',
+                description: 'Dashboard table mock UI',
+                icon: Icons.table_rows,
+                color: Colors.blue,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.topicsKeywords);
+                },
+              ),
             ],
           ),
         ),

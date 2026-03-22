@@ -3,9 +3,8 @@ import 'package:boilerplate/presentation/home/home.dart';
 import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/register/register.dart';
 import 'package:boilerplate/presentation/dashboard/dashboard.dart';
-import 'package:boilerplate/presentation/home/home.dart';
-import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/overview/overview.dart';
+import 'package:boilerplate/presentation/topics_keywords/topics_keywords.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -19,6 +18,7 @@ class Routes {
   static const String forgotPassword = '/forgot-password';
   static const String home = '/post';
   static const String overview = '/overview';
+  static const String topicsKeywords = '/topics-keywords';
   static const String analytic = '/analytic';
 
   static final routes = <String, WidgetBuilder>{
@@ -28,6 +28,7 @@ class Routes {
     forgotPassword: (BuildContext context) => ForgotPasswordScreen(),
     home: (BuildContext context) => HomeScreen(),
     overview: (BuildContext context) => OverviewScreen(),
+    topicsKeywords: (BuildContext context) => TopicsKeywordsScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
 }
