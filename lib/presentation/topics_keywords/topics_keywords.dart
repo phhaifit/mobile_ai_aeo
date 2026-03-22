@@ -91,7 +91,7 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            final isSmall = constraints.maxWidth < 420;
+            final isSmall = constraints.maxWidth < 560;
             if (isSmall) {
               return Column(
                 children: [
@@ -117,7 +117,7 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            final isSmall = constraints.maxWidth < 420;
+            final isSmall = constraints.maxWidth < 560;
             if (isSmall) {
               return Column(
                 children: [
@@ -186,6 +186,7 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
   Widget _buildTopicDropdown() {
     return DropdownButtonFormField<String>(
       value: _store.selectedTopicFilter,
+      isExpanded: true,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white,

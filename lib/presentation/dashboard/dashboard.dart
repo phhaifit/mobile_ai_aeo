@@ -49,7 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildNavigationButton(
                 context,
                 title: 'Topics & Keywords',
-                description: 'Dashboard table mock UI',
+                description: 'Topics & Keywords',
                 icon: Icons.table_rows,
                 color: Colors.blue,
                 onPressed: () {
