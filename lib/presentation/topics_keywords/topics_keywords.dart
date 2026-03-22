@@ -37,256 +37,149 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
       body: AnimatedBuilder(
         animation: _store,
         builder: (context, _) {
-          final rows = _store.filteredItems;
-          return Column(
-            children: [
-              _buildTopBar(context),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        const tableMinWidth = 980.0;
-                        final tableWidth = constraints.maxWidth < tableMinWidth
-                            ? tableMinWidth
-                            : constraints.maxWidth;
-
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: tableWidth,
-                            child: Column(
-                              children: [
-                                _buildTableHeader(),
-                                const Divider(
-                                  height: 1,
-                                  color: Color(0xFFE5E7EB),
-                                ),
-                                Expanded(
-                                  child: ListView.separated(
-                                    itemCount: rows.length,
-                                    itemBuilder: (context, index) {
-                                      final item = rows[index];
-                                      return _buildDataRow(item);
-                                    },
-                                    separatorBuilder: (context, index) =>
-                                        const Divider(
-                                      height: 1,
-                                      color: Color(0xFFE5E7EB),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+          final items = _store.filteredItems;
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildTopFilters(context),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: items.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No topics found',
+                            style: TextStyle(color: Color(0xFF667085)),
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        )
+                      : ListView.separated(
+                          itemCount: items.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return _buildTopicCard(context, items[index]);
+                          },
+                        ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _store.searchController,
-            decoration: InputDecoration(
-              hintText: 'Search topics...',
-              prefixIcon: const Icon(Icons.search),
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-              ),
+  Widget _buildTopFilters(BuildContext context) {
+    return Column(
+      children: [
+        TextField(
+          controller: _store.searchController,
+          decoration: InputDecoration(
+            hintText: 'Search topics...',
+            prefixIcon: const Icon(Icons.search),
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _buildTopicDropdown()),
-              const SizedBox(width: 8),
-              Expanded(child: _buildDateRangeButton(context)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.end,
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 420;
+            if (isSmall) {
+              return Column(
+                children: [
+                  _buildTopicDropdown(),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildDateRangeButton(context),
+                  ),
+                ],
+              );
+            }
+
+            return Row(
               children: [
-                OutlinedButton.icon(
-                  onPressed: _store.selectedCount == 0
-                      ? null
-                      : () => _showDeleteConfirmationDialog(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFB42318),
-                    side: const BorderSide(color: Color(0xFFFDA29B)),
-                    backgroundColor: const Color(0xFFFFF1F1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 14,
-                    ),
-                  ),
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Delete Topics'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6A00),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 14,
-                    ),
-                  ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Topic'),
-                ),
+                Expanded(child: _buildTopicDropdown()),
+                const SizedBox(width: 8),
+                Expanded(child: _buildDateRangeButton(context)),
               ],
-            ),
-          ),
-        ],
-      ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 420;
+            if (isSmall) {
+              return Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildDeleteButton(context),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildAddTopicButton(),
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: _buildDeleteButton(context)),
+                const SizedBox(width: 8),
+                Expanded(child: _buildAddTopicButton()),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 
-  Future<void> _showDeleteConfirmationDialog(BuildContext context) async {
-    final selectedCount = _store.selectedCount;
+  Widget _buildDeleteButton(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: _store.selectedCount == 0
+          ? null
+          : () => _showDeleteSelectedDialog(context),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFFB42318),
+        side: const BorderSide(color: Color(0xFFFDA29B)),
+        backgroundColor: const Color(0xFFFFF1F1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      icon: const Icon(Icons.delete_outline),
+      label: const Text('Delete Topics'),
+    );
+  }
 
-    if (selectedCount == 0) {
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return Dialog(
-          elevation: 10,
-          shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            width: 360,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Delete Topics',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF101828),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                        icon: const Icon(Icons.close),
-                        splashRadius: 20,
-                        color: const Color(0xFF667085),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Text(
-                    'Are you sure you want to delete $selectedCount topic(s)? This action cannot be undone.',
-                    style: const TextStyle(
-                      color: Color(0xFF475467),
-                      fontSize: 14,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE4E7EC)),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF344054),
-                          side: const BorderSide(color: Color(0xFFD0D5DD)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text('Cancel'),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          _store.deleteSelectedTopics();
-                          Navigator.of(dialogContext).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE04F16),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text('Delete'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  Widget _buildAddTopicButton() {
+    return ElevatedButton.icon(
+      onPressed: () {},
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFFF6A00),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      icon: const Icon(Icons.add),
+      label: const Text('Add Topic'),
     );
   }
 
@@ -355,122 +248,288 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
     );
   }
 
-  Widget _buildTableHeader() {
-    return SizedBox(
-      height: 52,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 46,
-            child: Center(
-              child: Checkbox(
-                value: _store.isAllSelected,
-                onChanged: (value) {
-                  _store.toggleSelectAll(value ?? false);
-                },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+  Widget _buildTopicCard(BuildContext context, TopicKeywordItem item) {
+    return Dismissible(
+      key: ValueKey(item.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_outline, color: Colors.white),
+            SizedBox(width: 6),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
             ),
+          ],
+        ),
+      ),
+      confirmDismiss: (_) async {
+        return _showDeleteSingleDialog(context);
+      },
+      onDismissed: (_) {
+        _store.deleteTopicById(item.id);
+      },
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 1.5,
+        shadowColor: Colors.black12,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {},
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Checkbox(
+                      value: item.isSelected,
+                      onChanged: (value) {
+                        _store.toggleRowSelection(item.id, value ?? false);
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        item.topic,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF155EEF),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Color(0xFF155EEF),
+                      ),
+                      splashRadius: 20,
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    item.alias,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF667085),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: item.isMonitoring
+                            ? const Color(0xFFE9F8EE)
+                            : const Color(0xFFF4F4F5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Switch(
+                        value: item.isMonitoring,
+                        activeColor: Colors.white,
+                        activeTrackColor: const Color(0xFF16A34A),
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: const Color(0xFF98A2B3),
+                        onChanged: (value) {
+                          _store.toggleMonitoring(item.id, value);
+                        },
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${item.activePrompts} prompts',
+                      style: const TextStyle(
+                        color: Color(0xFF344054),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _formatDateTime(item.createdAt),
+                  style: const TextStyle(
+                    color: Color(0xFF98A2B3),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Expanded(flex: 3, child: _HeaderText('TOPIC')),
-          const Expanded(flex: 3, child: _HeaderText('ALIAS')),
-          const Expanded(flex: 5, child: _HeaderText('DESCRIPTION')),
-          const Expanded(flex: 3, child: _HeaderText('MONITORING STATUS')),
-          const Expanded(flex: 2, child: _HeaderText('ACTIVE PROMPTS')),
-          const Expanded(flex: 3, child: _HeaderText('CREATED AT')),
-          const SizedBox(
-              width: 56, child: Center(child: _HeaderText('ACTIONS'))),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildDataRow(TopicKeywordItem item) {
-    return SizedBox(
-      height: 70,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 46,
-            child: Checkbox(
-              value: item.isSelected,
-              onChanged: (value) {
-                _store.toggleRowSelection(item.id, value ?? false);
-              },
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4)),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(alignment: Alignment.centerLeft),
-              child: Text(
-                item.topic,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF155EEF),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              item.alias,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Expanded(
-            flex: 5,
-            child: Text(
-              item.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFF667085)),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Switch(
-                value: item.isMonitoring,
-                activeColor: Colors.white,
-                activeTrackColor: const Color(0xFF16A34A),
-                onChanged: (value) {
-                  _store.toggleMonitoring(item.id, value);
-                },
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              '${item.activePrompts}',
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(_formatDateTime(item.createdAt)),
-          ),
-          SizedBox(
-            width: 56,
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.edit_outlined, color: Color(0xFF155EEF)),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _showDeleteSelectedDialog(BuildContext context) async {
+    final selectedCount = _store.selectedCount;
+    if (selectedCount == 0) {
+      return;
+    }
+
+    final deleted = await _showDeleteDialog(
+      context: context,
+      message:
+          'Are you sure you want to delete $selectedCount topic(s)? This action cannot be undone.',
     );
+
+    if (deleted) {
+      _store.deleteSelectedTopics();
+    }
+  }
+
+  Future<bool> _showDeleteSingleDialog(BuildContext context) {
+    return _showDeleteDialog(
+      context: context,
+      message:
+          'Are you sure you want to delete 1 topic(s)? This action cannot be undone.',
+    );
+  }
+
+  Future<bool> _showDeleteDialog({
+    required BuildContext context,
+    required String message,
+  }) async {
+    var isDeleted = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          elevation: 10,
+          shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: 360,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Delete Topics',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF101828),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        icon: const Icon(Icons.close),
+                        splashRadius: 20,
+                        color: const Color(0xFF667085),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: Color(0xFF475467),
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFE4E7EC)),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF344054),
+                          side: const BorderSide(color: Color(0xFFD0D5DD)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          isDeleted = true;
+                          Navigator.of(dialogContext).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE04F16),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return isDeleted;
   }
 
   String _formatDate(DateTime date) {
@@ -488,25 +547,5 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
     final period = hour24 >= 12 ? 'PM' : 'AM';
     final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
     return '$month/$day/${date.year}, $hour12:$minute:$second $period';
-  }
-}
-
-class _HeaderText extends StatelessWidget {
-  final String value;
-
-  const _HeaderText(this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      value,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF667085),
-        fontSize: 12,
-      ),
-    );
   }
 }
