@@ -247,6 +247,11 @@ class _AgentConfigurationScreenState extends State<AgentConfigurationScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _websiteUrlController,
+            onChanged: (value) {
+              setState(() {
+                // Trigger rebuild to update Continue button state
+              });
+            },
             decoration: InputDecoration(
               hintText: 'https://example.com',
               prefixIcon: const Icon(Icons.link_outlined),
@@ -367,19 +372,23 @@ class _AgentConfigurationScreenState extends State<AgentConfigurationScreen> {
         ),
         const SizedBox(height: 20),
 
-        Text(
-          l10n.translate('cronjob_content_profile'),
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-        Text(
-          '*',
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: Colors.red,
-          ),
+        Row(
+          children: [
+            Text(
+              l10n.translate('cronjob_content_profile'),
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              '*',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Colors.red,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 

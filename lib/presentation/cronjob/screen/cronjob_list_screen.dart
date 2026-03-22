@@ -1031,101 +1031,90 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
       },
     ];
 
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: [
-          // Filter toolbar - CENTER ALIGNED
-          Padding(
+    // PHẦN 1: Filter button - OUTSIDE CARD, FULL WIDTH
+    final filterButton = Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: GestureDetector(
+          onTap: () => _handleFilterExecutions(),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
+                    ? Colors.orange
+                    : Colors.grey.shade300,
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () => _handleFilterExecutions(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
-                          ? Colors.orange.shade50
-                          : Colors.grey.shade50,
-                      border: Border.all(
-                        color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
-                            ? Colors.orange
-                            : Colors.grey.shade300,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.filter_list_outlined,
-                          size: 18,
-                          color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
-                              ? Colors.orange
-                              : Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Filter',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
-                                ? Colors.orange
-                                : Colors.grey.shade600,
-                          ),
-                        ),
-                        if (_selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            child: Text(
-                              '${_selectedStatuses.length + _selectedAgentTypes.length + (_selectedDateRange != null ? 1 : 0)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                Icon(
+                  Icons.filter_list_outlined,
+                  size: 18,
+                  color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
+                      ? Colors.orange
+                      : Colors.grey.shade600,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Filter',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
+                        ? Colors.orange
+                        : Colors.grey.shade600,
                   ),
                 ),
+                if (_selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    child: Text(
+                      '${_selectedStatuses.length + _selectedAgentTypes.length + (_selectedDateRange != null ? 1 : 0)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          
-          // Active filters display - UPDATED LAYOUT MATCHING MOCKUP
-          if (_selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null)
-            Padding(
+        ),
+      ),
+    );
+
+    // PHẦN 2: Active filters - OUTSIDE CARD, GRAY BACKGROUND
+    final activeFiltersWidget = _selectedStatuses.isNotEmpty || _selectedAgentTypes.isNotEmpty || _selectedDateRange != null
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              color: Colors.grey.shade100,
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Active filters:',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
+                  // "Active filters:" label
+                  Text(
+                    'Active filters:',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -1176,97 +1165,112 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                 ],
               ),
             ),
+          )
+        : const SizedBox.shrink();
+
+    // PHẦN 3: Table - INSIDE CARD
+    final tableCard = Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
           
           Divider(height: 1, color: Colors.grey.shade200),
           
-          // Table Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+          // PHẦN 3: Table - SCROLLABLE HORIZONTALLY
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Column(
               children: [
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'TIME',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade700,
-                      letterSpacing: 0.3,
-                    ),
+                // Table Header - WITH BACKGROUND AND BORDER
+                Container(
+                  color: Colors.grey.shade100,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            'TIME',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      SizedBox(
+                        width: 120,
+                        child: Text(
+                          'AGENT NAME',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      SizedBox(
+                        width: 220,
+                        child: Text(
+                          'ARTICLE TITLE',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          'STATUS',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   ),
                 ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'AGENT NAME',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade700,
-                      letterSpacing: 0.3,
+                Divider(height: 1, color: Colors.grey.shade200),
+                
+                // Table Rows with pagination
+                if (mockExecutions.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Text(
+                      'No execution history found.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'ARTICLE TITLE',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade700,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'STATUS',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade700,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'DURATION',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade700,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
+                  )
+                else
+                  ..._getPaginatedExecutions(mockExecutions).map((entry) {
+                    final execution = entry.value;
+                    final isSuccess = execution['status'] == 'Success';
+                    return _buildExecutionRowScrollable(execution, theme, isSuccess, () => _handleExecutionRowTap(execution));
+                  }).toList(),
               ],
             ),
           ),
-          Divider(height: 1, color: Colors.grey.shade200),
-
-          // Table Rows with pagination
-          if (mockExecutions.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text(
-                'No execution history found.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            )
-          else
-            ..._getPaginatedExecutions(mockExecutions).map((entry) {
-              final execution = entry.value;
-              final isSuccess = execution['status'] == 'Success';
-              return _buildExecutionRow(execution, theme, isSuccess, () => _handleExecutionRowTap(execution));
-            }).toList(),
 
           // Pagination footer
           Divider(height: 1, color: Colors.grey.shade200),
@@ -1277,10 +1281,20 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
         ],
       ),
     );
+
+    // Return all 3 parts: filter button + active filters + table card
+    // Filter and active filters are OUTSIDE the card
+    return Column(
+      children: [
+        filterButton,
+        activeFiltersWidget,
+        tableCard,
+      ],
+    );
   }
 
-  /// Build individual execution history row
-  Widget _buildExecutionRow(
+  /// Build execution history row with fixed width columns for horizontal scroll
+  Widget _buildExecutionRowScrollable(
     Map<String, dynamic> execution,
     ThemeData theme,
     bool isSuccess,
@@ -1293,57 +1307,68 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  flex: 1,
+                // TIME - 80px width
+                SizedBox(
+                  width: 80,
                   child: Text(
                     execution['time'] as String? ?? '',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey.shade700,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Expanded(
-                  flex: 2,
+                const SizedBox(width: 32),
+                // AGENT NAME - 120px width
+                SizedBox(
+                  width: 120,
                   child: Text(
                     execution['agent'] as String,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black87,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Expanded(
-                  flex: 3,
+                const SizedBox(width: 32),
+                // ARTICLE TITLE - 220px width
+                SizedBox(
+                  width: 220,
                   child: Text(
                     execution['title'] as String,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black87,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Expanded(
-                  flex: 1,
+                const SizedBox(width: 32),
+                // STATUS - 80px width
+                SizedBox(
+                  width: 80,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: isSuccess ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(3),
+                      color: isSuccess ? Colors.green.shade50 : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(4),
                     ),
+                    alignment: Alignment.center,
                     child: Text(
                       execution['status'] as String,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         color: isSuccess ? Colors.green : Colors.red,
                         letterSpacing: 0.2,
                       ),
@@ -1635,10 +1660,10 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                         }
                       },
                       items: [
-                        const DropdownMenuItem(value: 'days', child: Text('days')),
-                        const DropdownMenuItem(value: 'weeks', child: Text('weeks')),
-                        const DropdownMenuItem(value: 'months', child: Text('months')),
-                        const DropdownMenuItem(value: 'years', child: Text('years')),
+                        const DropdownMenuItem(value: 'days', child: SizedBox(width: 60, child: Text('days'))),
+                        const DropdownMenuItem(value: 'weeks', child: SizedBox(width: 60, child: Text('weeks'))),
+                        const DropdownMenuItem(value: 'months', child: SizedBox(width: 60, child: Text('months'))),
+                        const DropdownMenuItem(value: 'years', child: SizedBox(width: 60, child: Text('years'))),
                       ],
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
