@@ -37,6 +37,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).pushNamed(Routes.overview);
                 },
               ),
+			  SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'SEO Content Optimization',
+                description:
+                    'On-page SEO, topic clusters, internal links & content structure',
+                icon: Icons.manage_search_rounded,
+                color: Color(0xFF6366F1),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.seoOptimization);
+                },
+              ),
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
