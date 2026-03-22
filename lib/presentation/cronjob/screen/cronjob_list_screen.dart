@@ -1648,6 +1648,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                     flex: 1,
                     child: DropdownButtonFormField<String>(
                       value: tempDateUnit,
+                      isExpanded: true,
                       onChanged: (value) {
                         if (value != null) {
                           _calculateDateRangeFromAmount(
@@ -1660,10 +1661,10 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                         }
                       },
                       items: [
-                        const DropdownMenuItem(value: 'days', child: SizedBox(width: 60, child: Text('days'))),
-                        const DropdownMenuItem(value: 'weeks', child: SizedBox(width: 60, child: Text('weeks'))),
-                        const DropdownMenuItem(value: 'months', child: SizedBox(width: 60, child: Text('months'))),
-                        const DropdownMenuItem(value: 'years', child: SizedBox(width: 60, child: Text('years'))),
+                        const DropdownMenuItem(value: 'days', child: Text('days')),
+                        const DropdownMenuItem(value: 'weeks', child: Text('weeks')),
+                        const DropdownMenuItem(value: 'months', child: Text('months')),
+                        const DropdownMenuItem(value: 'years', child: Text('years')),
                       ],
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
