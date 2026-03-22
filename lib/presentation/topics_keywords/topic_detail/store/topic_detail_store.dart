@@ -72,6 +72,34 @@ class PromptItem {
     required this.sentiment,
     required this.createdAt,
   });
+
+  PromptItem copyWith({
+    String? id,
+    String? question,
+    TopicDetailTab? tab,
+    PromptTypeFilter? promptType,
+    bool? isMonitored,
+    List<PromptKeyword>? keywords,
+    String? llm,
+    String? brandMentioned,
+    String? linkAppeared,
+    String? sentiment,
+    DateTime? createdAt,
+  }) {
+    return PromptItem(
+      id: id ?? this.id,
+      question: question ?? this.question,
+      tab: tab ?? this.tab,
+      promptType: promptType ?? this.promptType,
+      isMonitored: isMonitored ?? this.isMonitored,
+      keywords: keywords ?? this.keywords,
+      llm: llm ?? this.llm,
+      brandMentioned: brandMentioned ?? this.brandMentioned,
+      linkAppeared: linkAppeared ?? this.linkAppeared,
+      sentiment: sentiment ?? this.sentiment,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
 
 class TopicDetailStore extends ChangeNotifier {
@@ -116,7 +144,7 @@ class TopicDetailStore extends ChangeNotifier {
       id: 'p2',
       question:
           'How do I choose the best IT university in Vietnam to align with my career goals?',
-      tab: TopicDetailTab.suggestion,
+      tab: TopicDetailTab.active,
       promptType: PromptTypeFilter.commercial,
       isMonitored: true,
       keywords: [
@@ -140,7 +168,7 @@ class TopicDetailStore extends ChangeNotifier {
       id: 'p3',
       question:
           'What should I expect from a high-quality IT education program in terms of coursework and facilities?',
-      tab: TopicDetailTab.keyword,
+      tab: TopicDetailTab.active,
       promptType: PromptTypeFilter.transactional,
       isMonitored: false,
       keywords: [
@@ -167,7 +195,7 @@ class TopicDetailStore extends ChangeNotifier {
       id: 'p4',
       question:
           'Could you outline the standard curriculum requirements for a Master of Science in Computer Science?',
-      tab: TopicDetailTab.inactive,
+      tab: TopicDetailTab.active,
       promptType: PromptTypeFilter.navigational,
       isMonitored: false,
       keywords: [
@@ -230,6 +258,66 @@ class TopicDetailStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void addPrompt({
+    required String question,
+    required PromptTypeFilter promptType,
+    required List<String> selectedKeywords,
+    required String topic,
+  }) {
+    final id = 'p${DateTime.now().millisecondsSinceEpoch}';
+    final keywords = <PromptKeyword>[
+      PromptKeyword(
+        value: promptType.label,
+        type: _keywordTypeFromPromptType(promptType),
+      ),
+      PromptKeyword(
+        value: topic,
+        type: PromptKeywordType.topicKeyword,
+      ),
+      ...selectedKeywords.map(
+        (keyword) => PromptKeyword(
+          value: keyword,
+          type: PromptKeywordType.neutral,
+        ),
+      ),
+    ];
+
+    _prompts.insert(
+      0,
+      PromptItem(
+        id: id,
+        question: question,
+        tab: TopicDetailTab.active,
+        promptType: promptType,
+        isMonitored: true,
+        keywords: keywords,
+        llm: 'AI Overviews',
+        brandMentioned: '-',
+        linkAppeared: '-',
+        sentiment: '-',
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    _selectedTab = TopicDetailTab.active;
+    notifyListeners();
+  }
+
+  void movePromptToInactive(String id) {
+    final promptIndex = _prompts.indexWhere((prompt) => prompt.id == id);
+    if (promptIndex < 0) {
+      return;
+    }
+
+    final prompt = _prompts[promptIndex];
+    if (prompt.tab == TopicDetailTab.inactive) {
+      return;
+    }
+
+    _prompts[promptIndex] = prompt.copyWith(tab: TopicDetailTab.inactive);
+    notifyListeners();
+  }
+
   void deletePrompt(String id) {
     _prompts.removeWhere((prompt) => prompt.id == id);
     notifyListeners();
@@ -242,20 +330,21 @@ class TopicDetailStore extends ChangeNotifier {
     }
 
     final prompt = _prompts[promptIndex];
-    _prompts[promptIndex] = PromptItem(
-      id: prompt.id,
-      question: prompt.question,
-      tab: prompt.tab,
-      promptType: prompt.promptType,
-      isMonitored: prompt.isMonitored,
-      keywords: prompt.keywords,
-      llm: prompt.llm,
-      brandMentioned: prompt.brandMentioned,
-      linkAppeared: prompt.linkAppeared,
-      sentiment: prompt.sentiment,
-      createdAt: DateTime.now(),
-    );
+    _prompts[promptIndex] = prompt.copyWith(createdAt: DateTime.now());
     notifyListeners();
+  }
+
+  PromptKeywordType _keywordTypeFromPromptType(PromptTypeFilter type) {
+    switch (type) {
+      case PromptTypeFilter.informational:
+        return PromptKeywordType.informational;
+      case PromptTypeFilter.commercial:
+        return PromptKeywordType.commercial;
+      case PromptTypeFilter.transactional:
+        return PromptKeywordType.commercial;
+      case PromptTypeFilter.navigational:
+        return PromptKeywordType.neutral;
+    }
   }
 
   List<PromptItem> get filteredPrompts {

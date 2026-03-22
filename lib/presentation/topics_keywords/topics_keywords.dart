@@ -185,34 +185,89 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
   }
 
   Widget _buildTopicDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _store.selectedTopicFilter,
-      isExpanded: true,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        border: OutlineInputBorder(
+    final selectedLabel = _store.selectedTopicFilter ?? 'Select topics';
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: _showTopicFilterPicker,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+          border: Border.all(color: const Color(0xFFD1D5DB)),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                selectedLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _store.selectedTopicFilter == null
+                      ? const Color(0xFF667085)
+                      : const Color(0xFF344054),
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: Color(0xFF667085)),
+          ],
         ),
       ),
-      hint: const Text('Select topics'),
-      items: _store.topicFilters
-          .map(
-            (topic) => DropdownMenuItem<String>(
-              value: topic,
-              child: Text(topic, overflow: TextOverflow.ellipsis),
-            ),
-          )
-          .toList(growable: false),
-      onChanged: _store.setTopicFilter,
     );
+  }
+
+  Future<void> _showTopicFilterPicker() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select topics',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1D2939),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._store.topicFilters.map((topic) {
+                  final isSelected = topic == _store.selectedTopicFilter;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(topic),
+                    trailing: isSelected
+                        ? const Icon(Icons.check, color: Color(0xFF155EEF))
+                        : null,
+                    onTap: () => Navigator.of(sheetContext).pop(topic),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected == null) {
+      return;
+    }
+
+    _store.setTopicFilter(selected);
   }
 
   Widget _buildDateRangeButton(BuildContext context) {
