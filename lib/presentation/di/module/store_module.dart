@@ -29,6 +29,7 @@ import 'package:boilerplate/presentation/all_posts/store/all_posts_store.dart';
 import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
 import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
+import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -96,6 +97,7 @@ class StoreModule {
     getIt.registerSingleton<SeoStore>(
       SeoStore(
         getIt<ErrorStore>(),
+        getIt<GetSeoDataUseCase>(),
       ),
     );
 

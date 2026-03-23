@@ -6,6 +6,7 @@ import 'package:boilerplate/presentation/seo_optimization/widgets/internal_linki
 import 'package:boilerplate/presentation/seo_optimization/widgets/content_structure_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SeoOptimizationScreen extends StatefulWidget {
   @override
@@ -77,9 +78,9 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
             color: Colors.black, size: 18.0),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: const Text(
+      title: Text(
         'SEO Content Optimization',
-        style: TextStyle(
+        style: GoogleFonts.oswald(
           color: Colors.black,
           fontSize: 17.0,
           fontWeight: FontWeight.w600,
@@ -88,7 +89,7 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
       centerTitle: false,
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh_rounded, color: Color(0xFF6366F1)),
+          icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0052CC)),
           tooltip: 'Refresh',
           onPressed: () => _seoStore.fetchMockData(),
         ),
@@ -104,15 +105,15 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
         controller: _tabController,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
-        labelColor: const Color(0xFF6366F1),
+        labelColor: const Color(0xFF0052CC),
         unselectedLabelColor: const Color(0xFF888888),
-        indicatorColor: const Color(0xFF6366F1),
+        indicatorColor: const Color(0xFF0052CC),
         indicatorWeight: 2.5,
-        labelStyle: const TextStyle(
+        labelStyle: GoogleFonts.montserrat(
           fontSize: 12.0,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: const TextStyle(
+        unselectedLabelStyle: GoogleFonts.montserrat(
           fontSize: 12.0,
           fontWeight: FontWeight.w500,
         ),

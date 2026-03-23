@@ -103,7 +103,7 @@ mixin _$SeoStore on _SeoStore, Store {
       ActionController(name: '_SeoStore', context: context);
 
   @override
-  dynamic dispose() {
+  void dispose() {
     final _$actionInfo =
         _$_SeoStoreActionController.startAction(name: '_SeoStore.dispose');
     try {

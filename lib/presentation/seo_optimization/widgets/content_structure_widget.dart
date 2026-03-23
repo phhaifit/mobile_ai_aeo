@@ -1,5 +1,6 @@
-import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
+import '../../../domain/entity/seo/content_structure_item.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ContentStructureWidget extends StatelessWidget {
   final List<ContentStructureItem> items;
@@ -34,36 +35,33 @@ class ContentStructureWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12.0),
+        color: const Color(0xFFF0F4FF),
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: const Color(0xFFD6E4FF)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.auto_fix_high, color: Colors.white, size: 22.0),
-              SizedBox(width: 8.0),
+            children: [
+              const Icon(Icons.auto_fix_high, color: Color(0xFF0052CC), size: 22.0),
+              const SizedBox(width: 8.0),
               Text(
                 'Content Structure Optimization',
-                style: TextStyle(
+                style: GoogleFonts.oswald(
                   fontSize: 14.0,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: const Color(0xFF0052CC),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6.0),
-          const Text(
+          Text(
             'AI-powered recommendations to improve how your content is structured for maximum AI citation probability.',
-            style: TextStyle(
+            style: GoogleFonts.montserrat(
               fontSize: 11.0,
-              color: Colors.white70,
+              color: const Color(0xFF555555),
               height: 1.5,
             ),
           ),
@@ -114,7 +112,7 @@ class ContentStructureWidget extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item.section,
-                            style: const TextStyle(
+                            style: GoogleFonts.montserrat(
                               fontSize: 13.0,
                               fontWeight: FontWeight.w700,
                               color: Colors.black,
@@ -127,9 +125,9 @@ class ContentStructureWidget extends StatelessWidget {
                     const SizedBox(height: 8.0),
                     Text(
                       item.recommendation,
-                      style: const TextStyle(
+                      style: GoogleFonts.montserrat(
                         fontSize: 12.0,
-                        color: Color(0xFF555555),
+                        color: const Color(0xFF555555),
                         height: 1.5,
                       ),
                     ),
@@ -140,15 +138,15 @@ class ContentStructureWidget extends StatelessWidget {
                         const Icon(
                           Icons.auto_awesome,
                           size: 12.0,
-                          color: Color(0xFF6366F1),
+                          color: Color(0xFF0052CC),
                         ),
                         const SizedBox(width: 4.0),
-                        const Text(
+                        Text(
                           'AI Recommendation',
-                          style: TextStyle(
+                          style: GoogleFonts.montserrat(
                             fontSize: 10.0,
-                            color: Color(0xFF6366F1),
-                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF0052CC),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -168,14 +166,15 @@ class ContentStructureWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
       decoration: BoxDecoration(
         color: config.color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20.0),
+        borderRadius: BorderRadius.circular(6.0),
       ),
       child: Text(
         config.label,
-        style: TextStyle(
+        style: GoogleFonts.montserrat(
           fontSize: 10.0,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: config.color,
+          letterSpacing: 0.2,
         ),
       ),
     );

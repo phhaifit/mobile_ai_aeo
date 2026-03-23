@@ -1,5 +1,6 @@
-import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
+import '../../../domain/entity/seo/seo_check_item.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OnPageSeoCheckerWidget extends StatelessWidget {
   final List<SeoCheckItem> items;
@@ -79,7 +80,7 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
       children: [
         Text(
           count.toString(),
-          style: TextStyle(
+          style: GoogleFonts.oswald(
             fontSize: 24.0,
             fontWeight: FontWeight.bold,
             color: color,
@@ -88,9 +89,9 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
         const SizedBox(height: 4.0),
         Text(
           label,
-          style: const TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 12.0,
-            color: Color(0xFF666666),
+            color: const Color(0xFF666666),
           ),
         ),
       ],
@@ -100,10 +101,10 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: GoogleFonts.montserrat(
         fontSize: 14.0,
         fontWeight: FontWeight.w700,
-        color: Colors.black,
+        color: Colors.black87,
       ),
     );
   }
@@ -144,18 +145,18 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
               children: [
                 Text(
                   item.title,
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     fontSize: 13.0,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4.0),
                 Text(
                   item.detail,
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     fontSize: 12.0,
-                    color: Color(0xFF666666),
+                    color: const Color(0xFF666666),
                     height: 1.45,
                   ),
                 ),
@@ -167,14 +168,15 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
             decoration: BoxDecoration(
               color: config.bgColor,
-              borderRadius: BorderRadius.circular(20.0),
+              borderRadius: BorderRadius.circular(6.0),
             ),
             child: Text(
               config.label,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 fontSize: 10.0,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: config.iconColor,
+                letterSpacing: 0.4,
               ),
             ),
           ),

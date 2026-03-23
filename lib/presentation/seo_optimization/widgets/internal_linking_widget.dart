@@ -1,5 +1,6 @@
-import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
+import '../../../domain/entity/seo/internal_link_suggestion.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class InternalLinkingWidget extends StatelessWidget {
   final List<InternalLinkSuggestion> suggestions;
@@ -45,15 +46,15 @@ class InternalLinkingWidget extends StatelessWidget {
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Icon(Icons.info_outline, color: Color(0xFF3B82F6), size: 18.0),
-          SizedBox(width: 10.0),
+        children: [
+          const Icon(Icons.info_outline, color: Color(0xFF3B82F6), size: 18.0),
+          const SizedBox(width: 10.0),
           Expanded(
             child: Text(
               'AI has identified internal linking opportunities based on semantic similarity between your pages.',
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 fontSize: 12.0,
-                color: Color(0xFF1D4ED8),
+                color: const Color(0xFF1D4ED8),
                 height: 1.5,
               ),
             ),
@@ -69,7 +70,7 @@ class InternalLinkingWidget extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style: GoogleFonts.oswald(
               fontSize: 14.0,
               fontWeight: FontWeight.w700,
               color: Colors.black,
@@ -78,9 +79,9 @@ class InternalLinkingWidget extends StatelessWidget {
         ),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 11.0,
-            color: Color(0xFF888888),
+            color: const Color(0xFF888888),
           ),
         ),
       ],
@@ -115,24 +116,23 @@ class InternalLinkingWidget extends StatelessWidget {
           // Anchor text + score + action
           Row(
             children: [
-              const Icon(Icons.link, size: 14.0, color: Color(0xFF6366F1)),
+              const Icon(Icons.link, size: 14.0, color: Color(0xFF0052CC)),
               const SizedBox(width: 6.0),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Anchor Text',
-                      style:
-                          TextStyle(fontSize: 10.0, color: Color(0xFF888888)),
+                      style: GoogleFonts.montserrat(fontSize: 10.0, color: const Color(0xFF888888)),
                     ),
                     const SizedBox(height: 2.0),
                     Text(
                       '"${s.anchorText}"',
-                      style: const TextStyle(
+                      style: GoogleFonts.montserrat(
                         fontSize: 12.0,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF6366F1),
+                        color: const Color(0xFF0052CC),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -183,11 +183,10 @@ class InternalLinkingWidget extends StatelessWidget {
       child: Text(
         path,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
+        style: GoogleFonts.sourceCodePro(
           fontSize: 11.0,
           color: textColor,
           fontWeight: FontWeight.w500,
-          fontFamily: 'monospace',
         ),
       ),
     );
@@ -198,15 +197,15 @@ class InternalLinkingWidget extends StatelessWidget {
       children: [
         Text(
           '$score%',
-          style: TextStyle(
+          style: GoogleFonts.oswald(
             fontSize: 14.0,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: color,
           ),
         ),
         Text(
           'relevance',
-          style: const TextStyle(fontSize: 9.0, color: Color(0xFFAAAAAA)),
+          style: GoogleFonts.montserrat(fontSize: 9.0, color: const Color(0xFFAAAAAA)),
         ),
       ],
     );
@@ -225,7 +224,7 @@ class InternalLinkingWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8.0),
         decoration: BoxDecoration(
-          color: const Color(0xFF6366F1),
+          color: const Color(0xFF0052CC),
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: const Icon(Icons.add, size: 16.0, color: Colors.white),
