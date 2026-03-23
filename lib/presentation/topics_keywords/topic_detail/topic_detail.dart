@@ -1,4 +1,9 @@
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/models/topic_suggestion.dart';
 import 'package:boilerplate/presentation/topics_keywords/topic_detail/store/topic_detail_store.dart';
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/active_tab_screen.dart';
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/inactive_tab_screen.dart';
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/keyword_tab_screen.dart';
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/suggestion_tab_screen.dart';
 import 'package:flutter/material.dart';
 
 class TopicDetailScreen extends StatefulWidget {
@@ -12,11 +17,14 @@ class TopicDetailScreen extends StatefulWidget {
 
 class _TopicDetailScreenState extends State<TopicDetailScreen> {
   late final TopicDetailStore _store;
+  late List<TopicSuggestion> _suggestions;
+  final List<TopicSuggestion> _activeTopics = [];
 
   @override
   void initState() {
     super.initState();
     _store = TopicDetailStore(topicName: widget.topicName);
+    _suggestions = _seedSuggestions(widget.topicName);
     _store.searchController.addListener(() {
       _store.onSearchChanged(_store.searchController.text);
     });
@@ -50,6 +58,13 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
             fontSize: 16,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Help',
+            onPressed: () {},
+            icon: const Icon(Icons.help_outline),
+          ),
+        ],
       ),
       body: AnimatedBuilder(
         animation: _store,
@@ -60,26 +75,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
               children: [
                 _buildTabBar(),
                 const SizedBox(height: 10),
-                _buildSearchAndFilterBar(),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: _store.filteredPrompts.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No prompts found',
-                            style: TextStyle(color: Color(0xFF667085)),
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: _store.filteredPrompts.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final prompt = _store.filteredPrompts[index];
-                            return _buildPromptCard(prompt);
-                          },
-                        ),
-                ),
+                Expanded(child: _buildTabContent()),
               ],
             ),
           );
@@ -124,58 +120,324 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     );
   }
 
-  Widget _buildSearchAndFilterBar() {
-    return Column(
-      children: [
-        TextField(
-          controller: _store.searchController,
-          decoration: InputDecoration(
-            hintText: 'Search prompts...',
-            prefixIcon: const Icon(Icons.search),
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            OutlinedButton.icon(
-              onPressed: () => _showFilterBottomSheet(context),
-              icon: const Icon(Icons.filter_list, size: 18),
-              label: const Text('Filters'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF344054),
-                side: const BorderSide(color: Color(0xFFD0D5DD)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const Spacer(),
-            ElevatedButton.icon(
-              onPressed: () => _showAddPromptBottomSheet(context),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Prompt'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6A00),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+  Widget _buildTabContent() {
+    switch (_store.selectedTab) {
+      case TopicDetailTab.active:
+        return ActiveTabScreen(
+          searchController: _store.searchController,
+          prompts: _store.filteredPrompts,
+          onOpenFilters: () => _showFilterBottomSheet(context),
+          onOpenAddPrompt: () => _showAddPromptBottomSheet(context),
+          onRefreshPrompt: (prompt) => _store.refreshPrompt(prompt.id),
+          onDeletePrompt: _confirmMakePromptInactive,
+          formatCreatedDate: _formatCreatedDate,
+        );
+      case TopicDetailTab.suggestion:
+        return SuggestionTabScreen(
+          suggestions: _suggestions,
+          topicName: widget.topicName,
+          onSuggestMore: _suggestMore,
+          onReject: _rejectSuggestion,
+          onTrack: _trackSuggestion,
+          onEdit: _editSuggestion,
+          formatCreatedAt: _formatSuggestionDate,
+        );
+      case TopicDetailTab.keyword:
+        return KeywordTabScreen(
+          searchController: _store.searchController,
+        );
+      case TopicDetailTab.inactive:
+        return InactiveTabScreen(
+          searchController: _store.searchController,
+          prompts: _store.filteredPrompts,
+          onOpenFilters: () => _showFilterBottomSheet(context),
+          onOpenAddPrompt: () => _showAddPromptBottomSheet(context),
+          onRefreshPrompt: (prompt) => _store.refreshPrompt(prompt.id),
+          onDeletePrompt: _confirmMakePromptInactive,
+          formatCreatedDate: _formatCreatedDate,
+        );
+    }
+  }
+
+  List<TopicSuggestion> _seedSuggestions(String topicName) {
+    return [
+      TopicSuggestion(
+        id: 's1',
+        title:
+            'Does an advanced IT degree actually lead to higher starting salaries and faster promotions compared to a regular IT degree?',
+        createdAt: DateTime(2026, 3, 17, 20, 44),
+        tags: ['Informational', topicName],
+        type: SuggestionType.informational,
+      ),
+      TopicSuggestion(
+        id: 's2',
+        title:
+            'Which IT certifications should I look for in the curriculum of the best undergraduate computer science programs in Vietnam to ensure I\'m job-ready?',
+        createdAt: DateTime(2026, 3, 17, 20, 44),
+        tags: ['Informational', topicName],
+        type: SuggestionType.informational,
+      ),
+      TopicSuggestion(
+        id: 's3',
+        title:
+            'Compare the internship placement rates and industry connections of top IT universities in Vietnam so I can pick the one with the best career support.',
+        createdAt: DateTime(2026, 3, 17, 20, 44),
+        tags: ['Commercial', topicName],
+        type: SuggestionType.commercial,
+      ),
+    ];
+  }
+
+  Future<void> _suggestMore() async {
+    final now = DateTime.now();
+    final extra = [
+      TopicSuggestion(
+        id: 's_${now.microsecondsSinceEpoch}_1',
+        title:
+            'What scholarship options are commonly available for international students pursuing advanced IT programs in Vietnam?',
+        createdAt: now,
+        tags: ['Informational', widget.topicName],
+        type: SuggestionType.informational,
+      ),
+      TopicSuggestion(
+        id: 's_${now.microsecondsSinceEpoch}_2',
+        title:
+            'Which universities provide the strongest AI and data engineering lab access for undergraduates in IT-related majors?',
+        createdAt: now,
+        tags: ['Commercial', widget.topicName],
+        type: SuggestionType.commercial,
+      ),
+    ];
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _suggestions = [...extra, ..._suggestions];
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generated more suggestions')),
     );
+  }
+
+  void _rejectSuggestion(TopicSuggestion suggestion) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _suggestions.removeWhere((item) => item.id == suggestion.id);
+    });
+  }
+
+  void _trackSuggestion(TopicSuggestion suggestion) {
+    if (!mounted) {
+      return;
+    }
+
+    final promptType = _toPromptTypeFilter(suggestion.type);
+    final neutralTags = suggestion.tags
+        .where((tag) => tag != suggestion.tags.first)
+        .toList(growable: false);
+
+    _store.addPrompt(
+      question: suggestion.title,
+      promptType: promptType,
+      selectedKeywords: neutralTags,
+      topic: widget.topicName,
+      switchToActiveTab: false,
+    );
+
+    setState(() {
+      _activeTopics.insert(0, suggestion);
+      _suggestions.removeWhere((item) => item.id == suggestion.id);
+    });
+  }
+
+  Future<void> _editSuggestion(TopicSuggestion suggestion) async {
+    final titleController = TextEditingController(text: suggestion.title);
+    SuggestionType tempType = suggestion.type;
+
+    final updated = await showDialog<TopicSuggestion>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Edit Suggestion',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1D2939),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Update the suggestion text and type before saving.',
+                        style: TextStyle(color: Color(0xFF475467)),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: titleController,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          hintText: 'Suggestion title',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFD0D5DD)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 8,
+                        children: SuggestionType.values.map((type) {
+                          return ChoiceChip(
+                            label: Text(_suggestionTypeLabel(type)),
+                            selected: tempType == type,
+                            onSelected: (_) {
+                              setDialogState(() {
+                                tempType = type;
+                              });
+                            },
+                          );
+                        }).toList(growable: false),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFD0D5DD)),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              final updatedTitle = titleController.text.trim();
+                              if (updatedTitle.isEmpty) {
+                                return;
+                              }
+                              Navigator.of(dialogContext).pop(
+                                suggestion.copyWith(
+                                  title: updatedTitle,
+                                  type: tempType,
+                                  tags: [
+                                    _suggestionTypeLabel(tempType),
+                                    widget.topicName,
+                                  ],
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF6A00),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Save'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    titleController.dispose();
+
+    if (updated == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      final index = _suggestions.indexWhere((item) => item.id == updated.id);
+      if (index >= 0) {
+        _suggestions[index] = updated;
+      }
+    });
+  }
+
+  PromptTypeFilter _toPromptTypeFilter(SuggestionType type) {
+    switch (type) {
+      case SuggestionType.informational:
+        return PromptTypeFilter.informational;
+      case SuggestionType.commercial:
+        return PromptTypeFilter.commercial;
+      case SuggestionType.transactional:
+        return PromptTypeFilter.transactional;
+      case SuggestionType.navigational:
+        return PromptTypeFilter.navigational;
+    }
+  }
+
+  String _suggestionTypeLabel(SuggestionType type) {
+    switch (type) {
+      case SuggestionType.informational:
+        return 'Informational';
+      case SuggestionType.commercial:
+        return 'Commercial';
+      case SuggestionType.transactional:
+        return 'Transactional';
+      case SuggestionType.navigational:
+        return 'Navigational';
+    }
+  }
+
+  String _formatSuggestionDate(DateTime value) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final hour24 = value.hour;
+    final minute = value.minute.toString().padLeft(2, '0');
+    final period = hour24 >= 12 ? 'PM' : 'AM';
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    return 'Created: ${months[value.month - 1]} ${value.day}, ${value.year}, $hour12:$minute $period';
   }
 
   Future<void> _showAddPromptBottomSheet(BuildContext context) async {
@@ -405,130 +667,6 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     );
   }
 
-  Widget _buildPromptCard(PromptItem prompt) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E7EC)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            prompt.question,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF101828),
-              fontSize: 16,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: prompt.keywords
-                .map((keyword) => _KeywordLabel(keyword: keyword))
-                .toList(growable: false),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F4F7),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'LLM: ${prompt.llm}',
-              style: const TextStyle(
-                color: Color(0xFF344054),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetaItem('Brand Mentioned', prompt.brandMentioned),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildMetaItem('Link Appeared', prompt.linkAppeared),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildMetaItem('Sentiment', prompt.sentiment),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                _formatCreatedDate(prompt.createdAt),
-                style: const TextStyle(
-                  color: Color(0xFF98A2B3),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                tooltip: 'Refresh',
-                onPressed: () => _store.refreshPrompt(prompt.id),
-                icon: const Icon(Icons.refresh, color: Color(0xFF98A2B3)),
-                visualDensity: VisualDensity.compact,
-              ),
-              IconButton(
-                tooltip: 'Delete',
-                onPressed: () => _confirmMakePromptInactive(prompt),
-                icon:
-                    const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetaItem(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFCFCFD),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFEAECF0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF667085),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF101828),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _formatCreatedDate(DateTime value) {
     final month = value.month.toString().padLeft(2, '0');
     final day = value.day.toString().padLeft(2, '0');
@@ -638,77 +776,6 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       _store.movePromptToInactive(prompt.id);
     }
   }
-}
-
-class _KeywordLabel extends StatelessWidget {
-  const _KeywordLabel({required this.keyword});
-
-  final PromptKeyword keyword;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = _styleForType(keyword.type);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: style.background,
-        border: Border.all(color: style.border),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Text(
-        keyword.value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: style.foreground,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  _KeywordStyle _styleForType(PromptKeywordType type) {
-    switch (type) {
-      case PromptKeywordType.informational:
-        return const _KeywordStyle(
-          background: Color(0xFFEFF8FF),
-          border: Color(0xFFB2DDFF),
-          foreground: Color(0xFF175CD3),
-        );
-      case PromptKeywordType.commercial:
-        return const _KeywordStyle(
-          background: Color(0xFFFFF6ED),
-          border: Color(0xFFFDDCAB),
-          foreground: Color(0xFFB54708),
-        );
-      case PromptKeywordType.topicKeyword:
-        return const _KeywordStyle(
-          background: Color(0xFFF5F3FF),
-          border: Color(0xFFD9D6FE),
-          foreground: Color(0xFF5925DC),
-        );
-      case PromptKeywordType.neutral:
-        return const _KeywordStyle(
-          background: Color(0xFFF9FAFB),
-          border: Color(0xFFEAECF0),
-          foreground: Color(0xFF475467),
-        );
-    }
-  }
-}
-
-class _KeywordStyle {
-  const _KeywordStyle({
-    required this.background,
-    required this.border,
-    required this.foreground,
-  });
-
-  final Color background;
-  final Color border;
-  final Color foreground;
 }
 
 class _AddPromptBottomSheet extends StatefulWidget {

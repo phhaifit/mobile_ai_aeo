@@ -263,6 +263,7 @@ class TopicDetailStore extends ChangeNotifier {
     required PromptTypeFilter promptType,
     required List<String> selectedKeywords,
     required String topic,
+    bool switchToActiveTab = true,
   }) {
     final id = 'p${DateTime.now().millisecondsSinceEpoch}';
     final keywords = <PromptKeyword>[
@@ -299,7 +300,9 @@ class TopicDetailStore extends ChangeNotifier {
       ),
     );
 
-    _selectedTab = TopicDetailTab.active;
+    if (switchToActiveTab) {
+      _selectedTab = TopicDetailTab.active;
+    }
     notifyListeners();
   }
 
