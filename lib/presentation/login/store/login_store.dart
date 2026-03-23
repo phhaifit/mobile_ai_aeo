@@ -9,84 +9,94 @@ import '../../../domain/usecase/user/login_usecase.dart';
 
 part 'login_store.g.dart';
 
-class LoginStore = _LoginStore with _$LoginStore;
+class UserStore = _UserStore with _$UserStore;
 
-abstract class _LoginStore with Store {
-  // use cases
-  final IsLoggedInUseCase _isLoggedInUseCase;
-  final SaveLoginStatusUseCase _saveLoginStatusUseCase;
-  final LoginUseCase _loginUseCase;
+abstract class _UserStore with Store {
+  // constructor:---------------------------------------------------------------
+  _UserStore(
+    this._isLoggedInUseCase,
+    this._saveLoginStatusUseCase,
+    this._loginUseCase,
+    this.formErrorStore,
+    this.errorStore,
+  ) {
+    // setting up disposers
+    _setupDisposers();
 
-  // stores
-  final FormErrorStore formErrorStore;
-  final ErrorStore errorStore;
-
-  // constructor
-  _LoginStore(
-    IsLoggedInUseCase isLoggedInUseCase,
-    SaveLoginStatusUseCase saveLoginStatusUseCase,
-    LoginUseCase loginUseCase,
-    FormErrorStore formErrorStore,
-    ErrorStore errorStore,
-  )   : _isLoggedInUseCase = isLoggedInUseCase,
-        _saveLoginStatusUseCase = saveLoginStatusUseCase,
-        _loginUseCase = loginUseCase,
-        formErrorStore = formErrorStore,
-        errorStore = errorStore {
     // checking if user is logged in
     _isLoggedInUseCase.call(params: null).then((value) async {
       isLoggedIn = value;
     });
   }
 
-  // observable variables
-  @observable
+  // use cases:-----------------------------------------------------------------
+  final IsLoggedInUseCase _isLoggedInUseCase;
+  final SaveLoginStatusUseCase _saveLoginStatusUseCase;
+  final LoginUseCase _loginUseCase;
+
+  // stores:--------------------------------------------------------------------
+  // for handling form errors
+  final FormErrorStore formErrorStore;
+
+  // store for handling error messages
+  final ErrorStore errorStore;
+
+  // disposers:-----------------------------------------------------------------
+  late List<ReactionDisposer> _disposers;
+
+  void _setupDisposers() {
+    _disposers = [
+      reaction((_) => success, (_) => success = false, delay: 200),
+    ];
+  }
+
+  // empty responses:-----------------------------------------------------------
+  static ObservableFuture<User?> emptyLoginResponse =
+      ObservableFuture.value(null);
+
+  // store variables:-----------------------------------------------------------
   bool isLoggedIn = false;
 
   @observable
   bool success = false;
 
   @observable
-  bool isLoading = false;
+  ObservableFuture<User?> loginFuture = emptyLoginResponse;
 
-  @observable
-  User? loginResult;
+  @computed
+  bool get isLoading => loginFuture.status == FutureStatus.pending;
 
-  // actions
+  // actions:-------------------------------------------------------------------
   @action
-  Future<void> login(String email, String password) async {
-    isLoading = true;
-    try {
-      final LoginParams loginParams =
-          LoginParams(username: email, password: password);
-      final result = await _loginUseCase.call(params: loginParams);
-      
-      if (result != null) {
+  Future login(String email, String password) async {
+    final LoginParams loginParams =
+        LoginParams(username: email, password: password);
+    final future = _loginUseCase.call(params: loginParams);
+    loginFuture = ObservableFuture(future);
+
+    await future.then((value) async {
+      if (value != null) {
         await _saveLoginStatusUseCase.call(params: true);
-        isLoggedIn = true;
-        success = true;
-        loginResult = result;
+        this.isLoggedIn = true;
+        this.success = true;
       }
-    } catch (e) {
+    }).catchError((e) {
       print(e);
-      isLoggedIn = false;
-      success = false;
-    } finally {
-      isLoading = false;
-    }
+      this.isLoggedIn = false;
+      this.success = false;
+      throw e;
+    });
   }
 
-  // logout action
-  @action
-  Future<void> logout() async {
-    isLoggedIn = false;
-    success = false;
-    loginResult = null;
+  logout() async {
+    this.isLoggedIn = false;
     await _saveLoginStatusUseCase.call(params: false);
   }
 
-  // cleanup
+  // general methods:-----------------------------------------------------------
   void dispose() {
-    // No-op for now
+    for (final d in _disposers) {
+      d();
+    }
   }
 }

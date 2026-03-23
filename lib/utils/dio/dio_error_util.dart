@@ -4,7 +4,6 @@ class DioExceptionUtil {
   // general methods:-----------------------------------------------------------
   static String handleError(DioException error) {
     String errorDescription = "";
-    // ignore: unnecessary_type_check
     if (error is DioException) {
       switch (error.type) {
         case DioExceptionType.cancel:

@@ -3,9 +3,13 @@ import 'dart:async';
 import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
+import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
+import 'package:boilerplate/presentation/forgot_password/store/forgot_password_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
-import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/cronjob_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/cronjob_execution_store.dart';
 import 'package:boilerplate/domain/usecase/cronjob/get_all_cronjobs_usecase.dart';
@@ -17,11 +21,9 @@ import 'package:boilerplate/domain/usecase/cronjob/get_cronjob_executions_usecas
 import 'package:boilerplate/domain/usecase/cronjob/create_execution_usecase.dart';
 import 'package:boilerplate/data/service/mock_execution_service.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
-import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
-import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
-import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
-import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
+import 'package:boilerplate/presentation/register/store/register_store.dart';
+import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -35,6 +37,23 @@ class StoreModule {
     );
 
     // stores:------------------------------------------------------------------
+    getIt.registerSingleton<UserStore>(
+      UserStore(
+        getIt<IsLoggedInUseCase>(),
+        getIt<SaveLoginStatusUseCase>(),
+        getIt<LoginUseCase>(),
+        getIt<FormErrorStore>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<PostStore>(
+      PostStore(
+        getIt<GetPostUseCase>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
     getIt.registerSingleton<ThemeStore>(
       ThemeStore(
         getIt<SettingRepository>(),
@@ -45,6 +64,20 @@ class StoreModule {
     getIt.registerSingleton<LanguageStore>(
       LanguageStore(
         getIt<SettingRepository>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<RegisterStore>(
+      RegisterStore(
+        getIt<FormErrorStore>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<ForgotPasswordStore>(
+      ForgotPasswordStore(
+        //getIt<FormErrorStore>(),
         getIt<ErrorStore>(),
       ),
     );
@@ -73,25 +106,6 @@ class StoreModule {
         createExecutionUseCase: getIt<CreateExecutionUseCase>(),
         getCronjobByIdUseCase: getIt<GetCronjobByIdUseCase>(),
         mockExecutionService: getIt<MockExecutionService>(),
-      ),
-    );
-
-    // Register LoginStore as singleton
-    getIt.registerSingleton<LoginStore>(
-      LoginStore(
-        getIt<IsLoggedInUseCase>(),
-        getIt<SaveLoginStatusUseCase>(),
-        getIt<LoginUseCase>(),
-        getIt<FormErrorStore>(),
-        getIt<ErrorStore>(),
-      ),
-    );
-
-    // Register PostStore as singleton
-    getIt.registerSingleton<PostStore>(
-      PostStore(
-        getIt<GetPostUseCase>(),
-        getIt<ErrorStore>(),
       ),
     );
   }

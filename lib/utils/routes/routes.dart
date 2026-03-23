@@ -1,8 +1,10 @@
-// import 'package:boilerplate/forgot_password/forgot_password.dart';
+import 'package:boilerplate/presentation/forgot_password/forgot_password.dart';
 import 'package:boilerplate/presentation/home/home.dart';
 import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/register/register.dart';
 import 'package:boilerplate/presentation/dashboard/dashboard.dart';
+import 'package:boilerplate/presentation/home/home.dart';
+import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/overview/overview.dart';
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +33,7 @@ class Routes {
     dashboard: (BuildContext context) => DashboardScreen(),
     login: (BuildContext context) => LoginScreen(),
     register: (BuildContext context) => RegisterScreen(),
+    forgotPassword: (BuildContext context) => ForgotPasswordScreen(),
     home: (BuildContext context) => HomeScreen(),
     overview: (BuildContext context) => OverviewScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),

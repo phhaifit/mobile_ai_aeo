@@ -88,12 +88,13 @@ class AppThemeData {
   static const ColorScheme darkColorScheme = ColorScheme(
     primary: Color(0xFFFF8383),
     primaryContainer: Color(0xFF1CDEC9),
-    secondary: Color(0xFF4DB8AA), // Lighter teal for dark mode
-    secondaryContainer: Color(0xFF00796B),
-    tertiary: Color(0xFFFFB74D), // Lighter orange for dark mode
-    surface: Color(0xFF121212), // Proper dark surface (not pure black)
-    error: Color(0xFFEF5350), // Brighter red for dark mode
-    onError: _lightFillColor,
+    secondary: Color(0xFF4D1F7C),
+    secondaryContainer: Color(0xFF451B6F),
+    tertiary: Color(0xFFFFB74D),
+    surface: Color(0xFF1F1929),
+    // White with 0.05 opacity
+    error: _darkFillColor,
+    onError: _darkFillColor,
     onPrimary: _darkFillColor,
     onSecondary: _darkFillColor,
     onSurface: _darkFillColor,
