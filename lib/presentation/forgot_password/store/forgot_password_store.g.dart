@@ -81,14 +81,6 @@ mixin _$ForgotPasswordStore on _ForgotPasswordStore, Store {
     });
   }
 
-  late final _$setResetEmailAsyncAction =
-      AsyncAction('_ForgotPasswordStore.setResetEmail', context: context);
-
-  @override
-  Future<void> setResetEmail(String email) {
-    return _$setResetEmailAsyncAction.run(() async => super.setResetEmail(email));
-  }
-
   late final _$sendPasswordResetAsyncAction =
       AsyncAction('_ForgotPasswordStore.sendPasswordReset', context: context);
 
@@ -98,12 +90,29 @@ mixin _$ForgotPasswordStore on _ForgotPasswordStore, Store {
         .run(() => super.sendPasswordReset(email));
   }
 
-  late final _$clearErrorAsyncAction =
-      AsyncAction('_ForgotPasswordStore.clearError', context: context);
+  late final _$_ForgotPasswordStoreActionController =
+      ActionController(name: '_ForgotPasswordStore', context: context);
 
   @override
-  Future<void> clearError() {
-    return _$clearErrorAsyncAction.run(() async => super.clearError());
+  void setResetEmail(String email) {
+    final _$actionInfo = _$_ForgotPasswordStoreActionController.startAction(
+        name: '_ForgotPasswordStore.setResetEmail');
+    try {
+      return super.setResetEmail(email);
+    } finally {
+      _$_ForgotPasswordStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void clearError() {
+    final _$actionInfo = _$_ForgotPasswordStoreActionController.startAction(
+        name: '_ForgotPasswordStore.clearError');
+    try {
+      return super.clearError();
+    } finally {
+      _$_ForgotPasswordStoreActionController.endAction(_$actionInfo);
+    }
   }
 
   @override
