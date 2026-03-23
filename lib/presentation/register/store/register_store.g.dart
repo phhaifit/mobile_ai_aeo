@@ -74,21 +74,29 @@ mixin _$RegisterStore on _RegisterStore, Store {
         .run(() => super.register(email, password, confirmPassword));
   }
 
-  late final _$setAgreedToTermsAsyncAction =
-      AsyncAction('_RegisterStore.setAgreedToTerms', context: context);
+  late final _$_RegisterStoreActionController =
+      ActionController(name: '_RegisterStore', context: context);
 
   @override
-  Future<void> setAgreedToTerms(bool value) {
-    return _$setAgreedToTermsAsyncAction
-        .run(() async => super.setAgreedToTerms(value));
+  void setAgreedToTerms(bool value) {
+    final _$actionInfo = _$_RegisterStoreActionController.startAction(
+        name: '_RegisterStore.setAgreedToTerms');
+    try {
+      return super.setAgreedToTerms(value);
+    } finally {
+      _$_RegisterStoreActionController.endAction(_$actionInfo);
+    }
   }
 
-  late final _$clearErrorAsyncAction =
-      AsyncAction('_RegisterStore.clearError', context: context);
-
   @override
-  Future<void> clearError() {
-    return _$clearErrorAsyncAction.run(() async => super.clearError());
+  void clearError() {
+    final _$actionInfo = _$_RegisterStoreActionController.startAction(
+        name: '_RegisterStore.clearError');
+    try {
+      return super.clearError();
+    } finally {
+      _$_RegisterStoreActionController.endAction(_$actionInfo);
+    }
   }
 
   @override

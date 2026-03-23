@@ -1,4 +1,7 @@
 import 'package:boilerplate/utils/routes/routes.dart';
+import 'package:boilerplate/presentation/all_posts/all_posts_screen.dart';
+import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
+import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -59,6 +62,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'All Posts',
+                description: 'View all posts',
+                icon: Icons.list,
+                color: Colors.blue,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => AllPostsScreen()),
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'AI Writer',
+                description: 'Generate content with AI',
+                icon: Icons.edit_note,
+                color: Colors.green,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => AiWriterScreen()),
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Auto Generation',
+                description: 'Automate content generation',
+                icon: Icons.autorenew,
+                color: Colors.red,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => AutoGenerationScreen()),
+                  );
                 title: 'Cronjob Automation',
                 description: 'Manage scheduled automation jobs',
                 icon: Icons.schedule,
