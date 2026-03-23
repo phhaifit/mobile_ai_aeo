@@ -97,6 +97,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     MaterialPageRoute(
                         builder: (context) => AutoGenerationScreen()),
                   );
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Cronjob Automation',
                 description: 'Manage scheduled automation jobs',
                 icon: Icons.schedule,
