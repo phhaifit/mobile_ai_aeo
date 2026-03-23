@@ -4,6 +4,7 @@ import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/register/register.dart';
 import 'package:boilerplate/presentation/dashboard/dashboard.dart';
 import 'package:boilerplate/presentation/overview/overview.dart';
+import 'package:boilerplate/presentation/template_library/template_library_screen.dart';
 import 'package:boilerplate/presentation/all_posts/all_posts_screen.dart';
 import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
 import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
@@ -21,6 +22,7 @@ class Routes {
   static const String forgotPassword = '/forgot-password';
   static const String home = '/post';
   static const String overview = '/overview';
+  static const String templateLibrary = '/template_library';
   static const String analytic = '/analytic';
   static const String allPosts = '/all-posts';
   static const String aiWriter = '/ai-writer';
@@ -43,6 +45,7 @@ class Routes {
     allPosts: (BuildContext context) => AllPostsScreen(),
     aiWriter: (BuildContext context) => AiWriterScreen(),
     autoGeneration: (BuildContext context) => AutoGenerationScreen(),
+    templateLibrary: (BuildContext context) => TemplateLibraryScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
   

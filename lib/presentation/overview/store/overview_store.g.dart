@@ -141,6 +141,124 @@ mixin _$OverviewStore on _OverviewStore, Store {
     });
   }
 
+  late final _$sentimentPositivePercentAtom =
+      Atom(name: '_OverviewStore.sentimentPositivePercent', context: context);
+
+  @override
+  double get sentimentPositivePercent {
+    _$sentimentPositivePercentAtom.reportRead();
+    return super.sentimentPositivePercent;
+  }
+
+  @override
+  set sentimentPositivePercent(double value) {
+    _$sentimentPositivePercentAtom
+        .reportWrite(value, super.sentimentPositivePercent, () {
+      super.sentimentPositivePercent = value;
+    });
+  }
+
+  late final _$sentimentPositiveCountAtom =
+      Atom(name: '_OverviewStore.sentimentPositiveCount', context: context);
+
+  @override
+  int get sentimentPositiveCount {
+    _$sentimentPositiveCountAtom.reportRead();
+    return super.sentimentPositiveCount;
+  }
+
+  @override
+  set sentimentPositiveCount(int value) {
+    _$sentimentPositiveCountAtom
+        .reportWrite(value, super.sentimentPositiveCount, () {
+      super.sentimentPositiveCount = value;
+    });
+  }
+
+  late final _$sentimentNeutralPercentAtom =
+      Atom(name: '_OverviewStore.sentimentNeutralPercent', context: context);
+
+  @override
+  double get sentimentNeutralPercent {
+    _$sentimentNeutralPercentAtom.reportRead();
+    return super.sentimentNeutralPercent;
+  }
+
+  @override
+  set sentimentNeutralPercent(double value) {
+    _$sentimentNeutralPercentAtom
+        .reportWrite(value, super.sentimentNeutralPercent, () {
+      super.sentimentNeutralPercent = value;
+    });
+  }
+
+  late final _$sentimentNeutralCountAtom =
+      Atom(name: '_OverviewStore.sentimentNeutralCount', context: context);
+
+  @override
+  int get sentimentNeutralCount {
+    _$sentimentNeutralCountAtom.reportRead();
+    return super.sentimentNeutralCount;
+  }
+
+  @override
+  set sentimentNeutralCount(int value) {
+    _$sentimentNeutralCountAtom.reportWrite(value, super.sentimentNeutralCount,
+        () {
+      super.sentimentNeutralCount = value;
+    });
+  }
+
+  late final _$sentimentNegativePercentAtom =
+      Atom(name: '_OverviewStore.sentimentNegativePercent', context: context);
+
+  @override
+  double get sentimentNegativePercent {
+    _$sentimentNegativePercentAtom.reportRead();
+    return super.sentimentNegativePercent;
+  }
+
+  @override
+  set sentimentNegativePercent(double value) {
+    _$sentimentNegativePercentAtom
+        .reportWrite(value, super.sentimentNegativePercent, () {
+      super.sentimentNegativePercent = value;
+    });
+  }
+
+  late final _$sentimentNegativeCountAtom =
+      Atom(name: '_OverviewStore.sentimentNegativeCount', context: context);
+
+  @override
+  int get sentimentNegativeCount {
+    _$sentimentNegativeCountAtom.reportRead();
+    return super.sentimentNegativeCount;
+  }
+
+  @override
+  set sentimentNegativeCount(int value) {
+    _$sentimentNegativeCountAtom
+        .reportWrite(value, super.sentimentNegativeCount, () {
+      super.sentimentNegativeCount = value;
+    });
+  }
+
+  late final _$llmShareDataAtom =
+      Atom(name: '_OverviewStore.llmShareData', context: context);
+
+  @override
+  List<LLMShareData> get llmShareData {
+    _$llmShareDataAtom.reportRead();
+    return super.llmShareData;
+  }
+
+  @override
+  set llmShareData(List<LLMShareData> value) {
+    _$llmShareDataAtom.reportWrite(value, super.llmShareData, () {
+      super.llmShareData = value;
+    });
+  }
+
   late final _$fetchMockDataAsyncAction =
       AsyncAction('_OverviewStore.fetchMockData', context: context);
 
@@ -173,7 +291,14 @@ linkVisibilityPercent: ${linkVisibilityPercent},
 linkReferences: ${linkReferences},
 suggestedBenchmark: ${suggestedBenchmark},
 topReferencedDomains: ${topReferencedDomains},
-isLoading: ${isLoading}
+isLoading: ${isLoading},
+sentimentPositivePercent: ${sentimentPositivePercent},
+sentimentPositiveCount: ${sentimentPositiveCount},
+sentimentNeutralPercent: ${sentimentNeutralPercent},
+sentimentNeutralCount: ${sentimentNeutralCount},
+sentimentNegativePercent: ${sentimentNegativePercent},
+sentimentNegativeCount: ${sentimentNegativeCount},
+llmShareData: ${llmShareData}
     ''';
   }
 }

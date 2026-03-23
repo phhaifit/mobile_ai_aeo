@@ -24,10 +24,10 @@ import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
 import 'package:boilerplate/presentation/register/store/register_store.dart';
 import 'package:boilerplate/presentation/overview/store/overview_store.dart';
+import 'package:boilerplate/presentation/template_library/store/template_library_store.dart';
 import 'package:boilerplate/presentation/all_posts/store/all_posts_store.dart';
 import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
-
 import '../../../di/service_locator.dart';
 
 class StoreModule {
@@ -98,6 +98,12 @@ class StoreModule {
     );
     getIt.registerSingleton<AutoGenerationStore>(
       AutoGenerationStore(getIt<ErrorStore>()),
+    );
+    getIt.registerSingleton<TemplateLibraryStore>(
+      TemplateLibraryStore(
+        getIt<ErrorStore>(),
+      ),
+    );
 
     // Register CronjobStore as singleton
     getIt.registerSingleton<CronjobStore>(

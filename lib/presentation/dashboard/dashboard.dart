@@ -40,6 +40,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Template Library',
+                description: 'Writing Styles & Analysis',
+                icon: Icons.style,
+                color: Colors.teal,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.templateLibrary);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Login',
                 description: 'Login',
                 icon: Icons.login,

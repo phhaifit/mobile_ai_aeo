@@ -4,6 +4,7 @@ import 'package:boilerplate/presentation/overview/widgets/metric_summary_card.da
 import 'package:boilerplate/presentation/overview/widgets/visibility_score_widget.dart';
 import 'package:boilerplate/presentation/overview/widgets/content_strategy_widget.dart';
 import 'package:boilerplate/presentation/overview/widgets/top_reference_domains_widget.dart';
+import 'package:boilerplate/presentation/overview/widgets/metrics_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 
@@ -54,7 +55,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Brand performance metrics for Your Brand in last 30 days'),
+                content: Text(
+                    'Brand performance metrics for Your Brand in last 30 days'),
                 duration: Duration(seconds: 2),
               ),
             );
@@ -107,6 +109,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
               SizedBox(height: 16.0),
               _buildMetricsSection(isMobile: true),
               SizedBox(height: 16.0),
+              _buildSentimentWidget(),
+              SizedBox(height: 16.0),
+              _buildShareOfVoiceWidget(),
+              SizedBox(height: 16.0),
               _buildTopDomainsSection(),
               SizedBox(height: 16.0),
               _buildContentStrategySection(),
@@ -137,6 +143,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         _buildMetricsSection(isMobile: false),
                         SizedBox(height: 16.0),
                         _buildTopDomainsSection(),
+                        SizedBox(height: 16.0),
+                        _buildSentimentWidget(),
+                        SizedBox(height: 16.0),
+                        _buildShareOfVoiceWidget(),
                       ],
                     ),
                   ),
@@ -229,5 +239,13 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   Widget _buildContentStrategySection() {
     return ContentStrategyWidget();
+  }
+
+  Widget _buildSentimentWidget() {
+    return MentionSentimentWidget(store: _overviewStore);
+  }
+
+  Widget _buildShareOfVoiceWidget() {
+    return ShareOfVoiceWidget(store: _overviewStore);
   }
 }
