@@ -1,3 +1,4 @@
+
 import 'package:another_flushbar/flushbar_helper.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/core/widgets/progress_indicator_widget.dart';
@@ -10,6 +11,7 @@ import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import '../../di/service_locator.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   @override
