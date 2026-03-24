@@ -12,6 +12,8 @@ import 'package:boilerplate/domain/repository/cronjob_repository.dart';
 import 'package:boilerplate/domain/repository/post/post_repository.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
+import 'package:boilerplate/domain/repository/seo_repository.dart';
+import 'package:boilerplate/data/repository/seo_repository_impl.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -35,5 +37,8 @@ class RepositoryModule {
     getIt.registerSingleton<CronjobRepository>(CronjobRepositoryImpl(
       localDataSource: getIt<CronjobDataSourceImpl>(),
     ));
+
+    // seo repository:----------------------------------------------------------
+    getIt.registerSingleton<SeoRepository>(SeoRepositoryImpl());
   }
 }
