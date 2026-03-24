@@ -2,6 +2,7 @@ import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:boilerplate/presentation/all_posts/all_posts_screen.dart';
 import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
 import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
+import 'package:boilerplate/presentation/planning_and_recommendations/planning_recommendations_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -120,6 +121,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: Colors.teal,
                 onPressed: () {
                   Navigator.of(context).pushNamed(Routes.cronjobList);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Planning Recommendations',
+                description:
+                    'AI-powered recommendations to guide content strategy and brand optimization efforts.',
+                icon: Icons.lightbulb,
+                color: Colors.amber,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => PlanningRecommendationsScreen()),
+                  );
                 },
               ),
             ],
