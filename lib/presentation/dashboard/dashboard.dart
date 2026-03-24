@@ -114,6 +114,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Integrations',
+                description: 'Manage third-party integrations',
+                icon: Icons.link,
+                color: Colors.indigo,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.integrations);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Cronjob Automation',
                 description: 'Manage scheduled automation jobs',
                 icon: Icons.schedule,
