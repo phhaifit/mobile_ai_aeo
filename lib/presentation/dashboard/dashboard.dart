@@ -2,6 +2,7 @@ import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:boilerplate/presentation/all_posts/all_posts_screen.dart';
 import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
 import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
+import 'package:boilerplate/presentation/planning_and_recommendations/planning_recommendations_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -35,6 +36,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: Colors.purple,
                 onPressed: () {
                   Navigator.of(context).pushNamed(Routes.overview);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'SEO Content Optimization',
+                description:
+                    'On-page SEO, topic clusters, internal links & content structure',
+                icon: Icons.manage_search_rounded,
+                color: Color(0xFF6366F1),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.seoOptimization);
                 },
               ),
               SizedBox(height: 20),
@@ -102,6 +115,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Integrations',
+                description: 'Manage third-party integrations',
+                icon: Icons.link,
+                color: Colors.indigo,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.integrations);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Cronjob Automation',
                 description: 'Manage scheduled automation jobs',
                 icon: Icons.schedule,
@@ -113,12 +137,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Planning Recommendations',
+                description:
+                    'AI-powered recommendations to guide content strategy and brand optimization efforts.',
+                icon: Icons.lightbulb,
+                color: Colors.amber,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => PlanningRecommendationsScreen()),
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Topics & Keywords',
                 description: 'Topics & Keywords',
                 icon: Icons.table_rows,
                 color: Colors.blue,
                 onPressed: () {
                   Navigator.of(context).pushNamed(Routes.topicsKeywords);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Prompt Library',
+                description: 'Open prompt library',
+                icon: Icons.library_books,
+                color: Colors.deepOrange,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.promptLibrary);
                 },
               ),
             ],

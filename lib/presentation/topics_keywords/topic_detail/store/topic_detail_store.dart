@@ -50,6 +50,7 @@ class PromptItem {
   final String id;
   final String question;
   final TopicDetailTab tab;
+  final DateTime? deletedAt;
   final PromptTypeFilter promptType;
   final bool isMonitored;
   final List<PromptKeyword> keywords;
@@ -63,6 +64,7 @@ class PromptItem {
     required this.id,
     required this.question,
     required this.tab,
+    this.deletedAt,
     required this.promptType,
     required this.isMonitored,
     required this.keywords,
@@ -77,6 +79,8 @@ class PromptItem {
     String? id,
     String? question,
     TopicDetailTab? tab,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
     PromptTypeFilter? promptType,
     bool? isMonitored,
     List<PromptKeyword>? keywords,
@@ -90,6 +94,7 @@ class PromptItem {
       id: id ?? this.id,
       question: question ?? this.question,
       tab: tab ?? this.tab,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       promptType: promptType ?? this.promptType,
       isMonitored: isMonitored ?? this.isMonitored,
       keywords: keywords ?? this.keywords,
@@ -289,6 +294,7 @@ class TopicDetailStore extends ChangeNotifier {
         id: id,
         question: question,
         tab: TopicDetailTab.active,
+        deletedAt: null,
         promptType: promptType,
         isMonitored: true,
         keywords: keywords,
@@ -317,7 +323,28 @@ class TopicDetailStore extends ChangeNotifier {
       return;
     }
 
-    _prompts[promptIndex] = prompt.copyWith(tab: TopicDetailTab.inactive);
+    _prompts[promptIndex] = prompt.copyWith(
+      tab: TopicDetailTab.inactive,
+      deletedAt: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  void restorePrompt(String id) {
+    final promptIndex = _prompts.indexWhere((prompt) => prompt.id == id);
+    if (promptIndex < 0) {
+      return;
+    }
+
+    final prompt = _prompts[promptIndex];
+    if (prompt.tab != TopicDetailTab.inactive) {
+      return;
+    }
+
+    _prompts[promptIndex] = prompt.copyWith(
+      tab: TopicDetailTab.active,
+      clearDeletedAt: true,
+    );
     notifyListeners();
   }
 

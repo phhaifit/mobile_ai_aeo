@@ -19,6 +19,8 @@ import 'package:boilerplate/domain/usecase/cronjob/get_cronjob_executions_usecas
 import 'package:boilerplate/domain/usecase/cronjob/create_execution_usecase.dart';
 import 'package:boilerplate/domain/usecase/cronjob/get_execution_by_id_usecase.dart';
 import 'package:boilerplate/domain/repository/cronjob_repository.dart';
+import 'package:boilerplate/domain/repository/seo_repository.dart';
+import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -76,6 +78,11 @@ class UseCaseModule {
     );
     getIt.registerSingleton<GetExecutionByIdUseCase>(
       GetExecutionByIdUseCase(repository: getIt<CronjobRepository>()),
+    );
+
+    // seo:---------------------------------------------------------------------
+    getIt.registerSingleton<GetSeoDataUseCase>(
+      GetSeoDataUseCase(repository: getIt<SeoRepository>()),
     );
   }
 }

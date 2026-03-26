@@ -7,9 +7,14 @@ import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/sugge
 import 'package:flutter/material.dart';
 
 class TopicDetailScreen extends StatefulWidget {
-  const TopicDetailScreen({super.key, required this.topicName});
+  const TopicDetailScreen({
+    super.key,
+    required this.topicName,
+    this.titleOverride,
+  });
 
   final String topicName;
+  final String? titleOverride;
 
   @override
   State<TopicDetailScreen> createState() => _TopicDetailScreenState();
@@ -50,7 +55,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
         ),
         titleSpacing: 0,
         title: Text(
-          'Topics & Keywords > ${widget.topicName}',
+          widget.titleOverride ?? 'Topics & Keywords > ${widget.topicName}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -148,13 +153,10 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
         );
       case TopicDetailTab.inactive:
         return InactiveTabScreen(
-          searchController: _store.searchController,
           prompts: _store.filteredPrompts,
-          onOpenFilters: () => _showFilterBottomSheet(context),
-          onOpenAddPrompt: () => _showAddPromptBottomSheet(context),
-          onRefreshPrompt: (prompt) => _store.refreshPrompt(prompt.id),
-          onDeletePrompt: _confirmMakePromptInactive,
-          formatCreatedDate: _formatCreatedDate,
+          onRestorePrompt: (prompt) => _store.restorePrompt(prompt.id),
+          onDeletePrompt: _confirmDeletePromptPermanently,
+          formatDeletedDate: _formatDeletedDate,
         );
     }
   }
@@ -677,6 +679,12 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     return '$month/$day/${value.year}, $hour12:$minute $period';
   }
 
+  String _formatDeletedDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '$month/$day/${value.year}';
+  }
+
   Future<void> _confirmMakePromptInactive(PromptItem prompt) async {
     final shouldMove = await showDialog<bool>(
       context: context,
@@ -774,6 +782,106 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
 
     if (shouldMove == true) {
       _store.movePromptToInactive(prompt.id);
+    }
+  }
+
+  Future<void> _confirmDeletePromptPermanently(PromptItem prompt) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          elevation: 10,
+          shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Permanently Delete Prompt',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1D2939),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      icon: const Icon(Icons.close, color: Color(0xFF98A2B3)),
+                      splashRadius: 20,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Are you sure you want to permanently delete this prompt? This action cannot be undone and will remove all associated data.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF475467),
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Divider(height: 1, color: Color(0xFFEAECF0)),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF344054),
+                        side: const BorderSide(color: Color(0xFFD0D5DD)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF7A59),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text('Delete Permanently'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      _store.deletePrompt(prompt.id);
     }
   }
 }
