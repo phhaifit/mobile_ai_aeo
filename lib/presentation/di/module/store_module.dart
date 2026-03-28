@@ -16,11 +16,30 @@ import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
 import 'package:boilerplate/presentation/content_enhancement/store/content_enhancement_store.dart';
+import 'package:boilerplate/presentation/forgot_password/store/forgot_password_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
+import 'package:boilerplate/presentation/cronjob/store/cronjob_store.dart';
+import 'package:boilerplate/presentation/cronjob/store/cronjob_execution_store.dart';
+import 'package:boilerplate/domain/usecase/cronjob/get_all_cronjobs_usecase.dart';
+import 'package:boilerplate/domain/usecase/cronjob/get_cronjob_by_id_usecase.dart';
+import 'package:boilerplate/domain/usecase/cronjob/create_cronjob_usecase.dart';
+import 'package:boilerplate/domain/usecase/cronjob/update_cronjob_usecase.dart';
+import 'package:boilerplate/domain/usecase/cronjob/delete_cronjob_usecase.dart';
+import 'package:boilerplate/domain/usecase/cronjob/get_cronjob_executions_usecase.dart';
+import 'package:boilerplate/domain/usecase/cronjob/create_execution_usecase.dart';
+import 'package:boilerplate/data/service/mock_execution_service.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
 import 'package:boilerplate/presentation/technical_seo/store/technical_seo_store.dart';
+import 'package:boilerplate/presentation/register/store/register_store.dart';
+import 'package:boilerplate/presentation/overview/store/overview_store.dart';
+import 'package:boilerplate/presentation/template_library/store/template_library_store.dart';
+import 'package:boilerplate/presentation/all_posts/store/all_posts_store.dart';
+import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
+import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
+import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
+import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -82,6 +101,69 @@ class StoreModule {
         getIt<GetAuditHistoryUseCase>(),
         getIt<GetCrawlerEventsUseCase>(),
         getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<RegisterStore>(
+      RegisterStore(
+        getIt<FormErrorStore>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<ForgotPasswordStore>(
+      ForgotPasswordStore(
+        //getIt<FormErrorStore>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<OverviewStore>(
+      OverviewStore(
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<SeoStore>(
+      SeoStore(
+        getIt<ErrorStore>(),
+        getIt<GetSeoDataUseCase>(),
+      ),
+    );
+
+    getIt.registerSingleton<AllPostsStore>(
+      AllPostsStore(getIt<ErrorStore>()),
+    );
+    getIt.registerSingleton<AiWriterStore>(
+      AiWriterStore(getIt<ErrorStore>()),
+    );
+    getIt.registerSingleton<AutoGenerationStore>(
+      AutoGenerationStore(getIt<ErrorStore>()),
+    );
+    getIt.registerSingleton<TemplateLibraryStore>(
+      TemplateLibraryStore(
+        getIt<ErrorStore>(),
+      ),
+    );
+
+    // Register CronjobStore as singleton
+    getIt.registerSingleton<CronjobStore>(
+      CronjobStore(
+        getAllCronjobsUseCase: getIt<GetAllCronjobsUseCase>(),
+        getCronjobByIdUseCase: getIt<GetCronjobByIdUseCase>(),
+        createCronjobUseCase: getIt<CreateCronjobUseCase>(),
+        updateCronjobUseCase: getIt<UpdateCronjobUseCase>(),
+        deleteCronjobUseCase: getIt<DeleteCronjobUseCase>(),
+      ),
+    );
+
+    // Register CronjobExecutionStore as singleton
+    getIt.registerSingleton<CronjobExecutionStore>(
+      CronjobExecutionStore(
+        getCronjobExecutionsUseCase: getIt<GetCronjobExecutionsUseCase>(),
+        createExecutionUseCase: getIt<CreateExecutionUseCase>(),
+        getCronjobByIdUseCase: getIt<GetCronjobByIdUseCase>(),
+        mockExecutionService: getIt<MockExecutionService>(),
       ),
     );
   }
