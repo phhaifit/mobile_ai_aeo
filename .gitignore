@@ -1,4 +1,20 @@
 # ==========================================
+# ENVIRONMENT & SECRETS
+# ==========================================
+.env
+.env.*
+!.env.example
+.claude/.env
+google-services.json
+GoogleService-Info.plist
+
+# ==========================================
+# CLAUDE CODE LOCAL FILES
+# ==========================================
+.claude/skills/**/node_modules/
+.claude/skills/**/.venv/
+
+# ==========================================
 # MISCELLANEOUS
 # ==========================================
 *.class

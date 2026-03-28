@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "638546750037",
+    "project_id": "ai-aeo-7d1b8",
+    "storage_bucket": "ai-aeo-7d1b8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:638546750037:android:969239d12be4c8504f42dc",
+        "android_client_info": {
+          "package_name": "com.iotecksolutions.todoapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDd8Arsn34R_R4ZqvcvbXbH7n4mM-3va6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
