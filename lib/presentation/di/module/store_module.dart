@@ -30,6 +30,11 @@ import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
 import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
 import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
+import 'package:boilerplate/presentation/performance_monitoring/store/performance_monitoring_store.dart';
+import 'package:boilerplate/domain/usecase/trend/get_weekly_report_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_performance_comparisons_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_improvement_suggestions_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -134,6 +139,17 @@ class StoreModule {
         createExecutionUseCase: getIt<CreateExecutionUseCase>(),
         getCronjobByIdUseCase: getIt<GetCronjobByIdUseCase>(),
         mockExecutionService: getIt<MockExecutionService>(),
+      ),
+    );
+
+    // Register PerformanceMonitoringStore as singleton
+    getIt.registerSingleton<PerformanceMonitoringStore>(
+      PerformanceMonitoringStore(
+        getIt<ErrorStore>(),
+        getIt<GetWeeklyReportUseCase>(),
+        getIt<GetTrendDataUseCase>(),
+        getIt<GetPerformanceComparisonsUseCase>(),
+        getIt<GetImprovementSuggestionsUseCase>(),
       ),
     );
   }

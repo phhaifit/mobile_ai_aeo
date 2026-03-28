@@ -14,6 +14,8 @@ import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/repository/seo_repository.dart';
 import 'package:boilerplate/data/repository/seo_repository_impl.dart';
+import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
+import 'package:boilerplate/data/repository/trend/trend_repository_impl.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -40,5 +42,8 @@ class RepositoryModule {
 
     // seo repository:----------------------------------------------------------
     getIt.registerSingleton<SeoRepository>(SeoRepositoryImpl());
+
+    // trend repository:---------------------------------------------------------
+    getIt.registerSingleton<TrendRepository>(TrendRepositoryImpl());
   }
 }

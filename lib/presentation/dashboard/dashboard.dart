@@ -41,6 +41,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Performance Monitoring',
+                description: 'Track brand visibility trends and performance',
+                icon: Icons.auto_graph,
+                color: Colors.deepOrange,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.performanceMonitoring);
+                },
+              ),
+			  SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'SEO Content Optimization',
                 description:
                     'On-page SEO, topic clusters, internal links & content structure',
