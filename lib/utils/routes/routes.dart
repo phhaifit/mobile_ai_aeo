@@ -14,6 +14,7 @@ import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
 import 'package:boilerplate/presentation/prompt_library/prompt_library.dart';
+import 'package:boilerplate/presentation/brand_setup/brand_setup_screen.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -37,6 +38,7 @@ class Routes {
   static const String autoGeneration = '/auto-generation';
   static const String integrations = '/integrations';
   static const String promptLibrary = '/prompt-library';
+  static const String brandSetup = '/brand-setup';
   // Cronjob routes
   static const String cronjobList = '/cronjob/list';
   static const String cronjobCreate = '/cronjob/create';
@@ -51,7 +53,8 @@ class Routes {
     forgotPassword: (BuildContext context) => ForgotPasswordScreen(),
     home: (BuildContext context) => HomeScreen(),
     overview: (BuildContext context) => OverviewScreen(),
-    performanceMonitoring: (BuildContext context) => PerformanceMonitoringScreen(),
+    performanceMonitoring: (BuildContext context) =>
+        PerformanceMonitoringScreen(),
     seoOptimization: (BuildContext context) => SeoOptimizationScreen(),
     topicsKeywords: (BuildContext context) => TopicsKeywordsScreen(),
     allPosts: (BuildContext context) => AllPostsScreen(),
@@ -60,6 +63,7 @@ class Routes {
     templateLibrary: (BuildContext context) => TemplateLibraryScreen(),
     integrations: (BuildContext context) => IntegrationsScreen(),
     promptLibrary: (BuildContext context) => PromptLibraryScreen(),
+    brandSetup: (BuildContext context) => const BrandSetupScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
 
