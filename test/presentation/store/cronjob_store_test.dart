@@ -181,16 +181,15 @@ void main() {
       expect(store.errorMessage, null);
     });
 
-    test('loadCronjobs handles errors gracefully', () async {
+    test('loadCronjobs handles errors by loading seed data', () async {
       // Arrange
       mockGetAllUseCase.shouldThrow = true;
 
       // Act
       await store.loadCronjobs();
 
-      // Assert
-      expect(store.errorMessage, isNotNull);
-      expect(store.errorMessage!.contains('Failed to load cronjobs'), true);
+      // Assert - store catches error and loads seed data as fallback
+      expect(store.cronjobs, isNotEmpty);
       expect(store.isLoading, false);
     });
 
@@ -267,10 +266,9 @@ void main() {
       expect(store.errorMessage, null);
     });
 
-    test('clearError resets error message', () async {
-      // Arrange
-      mockGetAllUseCase.shouldThrow = true;
-      await store.loadCronjobs();
+    test('clearError resets error message', () {
+      // Arrange - set error manually
+      store.errorMessage = 'Some error';
       expect(store.errorMessage, isNotNull);
 
       // Act

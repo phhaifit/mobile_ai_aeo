@@ -33,7 +33,6 @@ void main() {
         ),
       );
 
-      // Should have radio tiles for each source type
       expect(find.byType(RadioListTile<SourceType>), findsWidgets);
     });
 
@@ -50,7 +49,6 @@ void main() {
         ),
       );
 
-      // At least one radio button should be selected
       expect(find.byType(RadioListTile<SourceType>), findsWidgets);
     });
 
@@ -113,10 +111,10 @@ void main() {
         ),
       );
 
-      // Should have at least 3 source types
+      // SourceType has 2 values: promptLibrary, website
       expect(
         find.byType(RadioListTile<SourceType>).evaluate().length,
-        greaterThanOrEqualTo(3),
+        equals(SourceType.values.length),
       );
     });
   });

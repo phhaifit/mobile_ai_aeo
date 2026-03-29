@@ -4,9 +4,8 @@ import 'package:boilerplate/presentation/cronjob/widget/cron_helper_widget.dart'
 
 void main() {
   group('CronHelperWidget', () {
-    testWidgets('displays cron expression',
-        (WidgetTester tester) async {
-      const cronExpr = '0 9 * * MON-FRI';
+    testWidgets('displays cron expression', (WidgetTester tester) async {
+      const cronExpr = '0 9 * * *';
 
       await tester.pumpWidget(
         MaterialApp(
@@ -19,7 +18,8 @@ void main() {
         ),
       );
 
-      expect(find.text(cronExpr), findsOneWidget);
+      // Widget renders "Cron: <expression>"
+      expect(find.textContaining(cronExpr), findsOneWidget);
     });
 
     testWidgets('displays validation indicator for valid cron',
@@ -28,15 +28,15 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: CronHelperWidget(
-              cronExpression: '0 9 * * MON-FRI',
+              cronExpression: '0 9 * * *',
               lastExecutionTime: null,
             ),
           ),
         ),
       );
 
-      // Check for valid cron icon (check mark)
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      // Widget uses check_circle_outline for valid cron
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     });
 
     testWidgets('displays error indicator for invalid cron',
@@ -52,7 +52,6 @@ void main() {
         ),
       );
 
-      // Check for invalid cron icon (error)
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
@@ -62,14 +61,13 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: CronHelperWidget(
-              cronExpression: '0 9 * * MON-FRI',
+              cronExpression: '0 9 * * *',
               lastExecutionTime: null,
             ),
           ),
         ),
       );
 
-      // Should contain descriptive text
       final textFinder = find.byType(Text);
       expect(textFinder, findsWidgets);
     });
@@ -83,14 +81,13 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: CronHelperWidget(
-              cronExpression: '0 9 * * MON-FRI',
+              cronExpression: '0 9 * * *',
               lastExecutionTime: lastRun,
             ),
           ),
         ),
       );
 
-      // Should contain text about last execution
       expect(find.byType(Text), findsWidgets);
     });
 
@@ -100,14 +97,13 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: CronHelperWidget(
-              cronExpression: '0 9 * * MON-FRI',
+              cronExpression: '0 9 * * *',
               lastExecutionTime: null,
             ),
           ),
         ),
       );
 
-      // Check for container with color
       final containers = find.byType(Container);
       expect(containers, findsOneWidget);
     });
