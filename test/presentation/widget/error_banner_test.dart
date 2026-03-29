@@ -93,7 +93,7 @@ void main() {
       );
 
       final textButtons = find.byType(TextButton);
-      await tester.tap(textButtons.at(1)); // Retry button
+      await tester.tap(textButtons.at(0)); // Retry button
       expect(onRetryCalled, true);
     });
 
