@@ -21,6 +21,8 @@ import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/repository/seo_repository.dart' as seo_opt;
 import 'package:boilerplate/data/repository/seo_repository_impl.dart' as seo_opt;
+import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
+import 'package:boilerplate/data/repository/trend/trend_repository_impl.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -56,5 +58,8 @@ class RepositoryModule {
     getIt.registerSingleton<CronjobRepository>(CronjobRepositoryImpl(
       localDataSource: getIt<CronjobDataSourceImpl>(),
     ));
+
+    // trend repository:---------------------------------------------------------
+    getIt.registerSingleton<TrendRepository>(TrendRepositoryImpl());
   }
 }

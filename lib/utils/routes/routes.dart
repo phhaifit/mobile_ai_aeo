@@ -5,6 +5,7 @@ import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/register/register.dart';
 import 'package:boilerplate/presentation/dashboard/dashboard.dart';
 import 'package:boilerplate/presentation/overview/overview.dart';
+import 'package:boilerplate/presentation/performance_monitoring/performance_monitoring_screen.dart';
 import 'package:boilerplate/presentation/seo_optimization/seo_optimization.dart';
 import 'package:boilerplate/presentation/technical_seo/technical_seo_screen.dart';
 import 'package:boilerplate/presentation/topics_keywords/topics_keywords.dart';
@@ -30,6 +31,7 @@ class Routes {
   static const String contentEnhancement = '/content-enhancement';
   static const String technicalSeo = '/technical-seo';
   static const String overview = '/overview';
+  static const String performanceMonitoring = '/performance-monitoring';
   static const String topicsKeywords = '/topics-keywords';
   static const String templateLibrary = '/template_library';
   static const String analytic = '/analytic';
@@ -55,6 +57,7 @@ class Routes {
     contentEnhancement: (BuildContext context) => const ContentEnhancementScreen(),
     technicalSeo: (BuildContext context) => const TechnicalSeoScreen(),
     overview: (BuildContext context) => OverviewScreen(),
+    performanceMonitoring: (BuildContext context) => PerformanceMonitoringScreen(),
     seoOptimization: (BuildContext context) => SeoOptimizationScreen(),
     topicsKeywords: (BuildContext context) => TopicsKeywordsScreen(),
     allPosts: (BuildContext context) => AllPostsScreen(),
