@@ -47,56 +47,57 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
           }
           return SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildPageHeader(),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 14.0),
                   if (isWide)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: _buildBrandProfile()),
-                        const SizedBox(width: 16.0),
+                        const SizedBox(width: 12.0),
                         Expanded(child: _buildKnowledgeBase()),
                       ],
                     )
                   else ...[
                     _buildBrandProfile(),
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 12.0),
                     _buildKnowledgeBase(),
                   ],
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 12.0),
                   if (isWide)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: _buildLinks()),
-                        const SizedBox(width: 16.0),
+                        const SizedBox(width: 12.0),
                         Expanded(child: _buildRewriteRules()),
                       ],
                     )
                   else ...[
                     _buildLinks(),
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 12.0),
                     _buildRewriteRules(),
                   ],
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 12.0),
                   _buildLlmMonitoring(),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 12.0),
                   if (isWide)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: _buildBrandPositioning()),
-                        const SizedBox(width: 16.0),
+                        const SizedBox(width: 12.0),
                         Expanded(child: _buildProjects()),
                       ],
                     )
                   else ...[
                     _buildBrandPositioning(),
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 12.0),
                     _buildProjects(),
                   ],
                 ],
@@ -114,36 +115,55 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14.0),
-        side: const BorderSide(color: Color(0xFFE7E9EE)),
+        borderRadius: BorderRadius.circular(16.0),
+        side: const BorderSide(color: Color(0xFFE5E7EB)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Phase 1 • Feature 5',
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.shield_outlined,
+                      color: Color(0xFF2563EB)),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Phase 1 • Feature 5',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Brand Setup & Configuration',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Configure brand profile, knowledge base, links, rewrites, and LLM monitoring in one place.',
               style: TextStyle(
-                color: Colors.blue.shade600,
                 fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Brand Setup & Configuration',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Configure brand profiles, knowledge bases, link rewrites, and LLM monitoring so every AI answer cites the right source.',
-              style: TextStyle(
-                fontSize: 14,
                 color: Color(0xFF4B5563),
                 height: 1.45,
               ),
@@ -174,7 +194,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
 
     return SectionCard(
       title: 'Brand profile',
-      subtitle: 'Identity, verification, and primary details',
+      subtitle: 'Identity and verification',
       actions: [
         _buildGhostButton('Edit profile'),
         _buildPrimaryButton('Verify domain'),
@@ -186,12 +206,12 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
               profile.logoUrl,
-              width: 76,
-              height: 76,
+              width: 68,
+              height: 68,
               fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +222,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                       child: Text(
                         profile.name,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF0F172A),
                         ),
@@ -217,24 +237,24 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   profile.tagline,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: Color(0xFF4B5563),
-                    height: 1.5,
+                    height: 1.45,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Wrap(
-                  spacing: 10,
+                  spacing: 8,
                   runSpacing: 8,
                   children: [
                     _buildInfoChip(Icons.language, profile.website),
                     _buildInfoChip(Icons.work_outline, profile.industry),
                     _buildInfoChip(Icons.schedule,
-                        'Polling every ${_store.defaultPollingMinutes}m'),
+                        'Polling ${_store.defaultPollingMinutes}m'),
                   ],
                 ),
               ],
@@ -248,7 +268,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
   Widget _buildKnowledgeBase() {
     return SectionCard(
       title: 'Knowledge base management',
-      subtitle: 'Control what sources AI engines read and how fresh they are',
+      subtitle: 'Sources AI engines will read and how fresh they are',
       actions: [
         _buildPrimaryButton('Add source'),
       ],
@@ -273,7 +293,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
@@ -301,7 +321,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                             child: Text(
                               kb.title,
                               style: const TextStyle(
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF0F172A),
                               ),
@@ -315,32 +335,26 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         kb.type,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
-                        spacing: 12,
-                        runSpacing: 8,
+                        spacing: 10,
+                        runSpacing: 6,
                         children: [
                           _buildSmallPill(
                               Icons.auto_awesome, '${kb.sources} sources'),
-                          _buildSmallPill(
-                              Icons.schedule, 'Fresh: ${kb.freshness}'),
+                          _buildSmallPill(Icons.schedule, kb.freshness),
                         ],
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.more_horiz, color: Color(0xFF9CA3AF)),
                 ),
               ],
             ),
@@ -353,15 +367,17 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
   Widget _buildLinks() {
     return SectionCard(
       title: 'URL link management',
-      subtitle: 'Control monitored domains and link health',
+      subtitle: 'Tracked domains and key endpoints',
       actions: [
         _buildGhostButton('Bulk import'),
         _buildPrimaryButton('Add URL'),
       ],
       child: Column(
-        children: _store.links.map((link) {
+        children: _store.links.asMap().entries.map((entry) {
+          final index = entry.key;
+          final link = entry.value;
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -374,8 +390,9 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Text(
                     link.type,
@@ -398,12 +415,13 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F172A),
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         link.label,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
                       ),
@@ -412,7 +430,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                 ),
                 Switch.adaptive(
                   value: link.monitored,
-                  onChanged: (_) {},
+                  onChanged: (value) => _store.toggleLink(index, value),
                   activeColor: const Color(0xFF2563EB),
                 ),
               ],
@@ -589,7 +607,9 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: _store.llmConfigs.map((llm) {
+            children: _store.llmConfigs.asMap().entries.map((entry) {
+              final index = entry.key;
+              final llm = entry.value;
               return Container(
                 width: 320,
                 padding: const EdgeInsets.all(14),
@@ -615,7 +635,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                         ),
                         Switch.adaptive(
                           value: llm.enabled,
-                          onChanged: (_) {},
+                          onChanged: (value) => _store.toggleLlm(index, value),
                           activeColor: const Color(0xFF2563EB),
                         ),
                       ],

@@ -161,6 +161,31 @@ mixin _$BrandSetupStore on _BrandSetupStore, Store {
     return _$loadMockDataAsyncAction.run(() => super.loadMockData());
   }
 
+  late final _$_BrandSetupStoreActionController =
+      ActionController(name: '_BrandSetupStore', context: context);
+
+  @override
+  void toggleLink(int index, bool monitored) {
+    final _$actionInfo = _$_BrandSetupStoreActionController.startAction(
+        name: '_BrandSetupStore.toggleLink');
+    try {
+      return super.toggleLink(index, monitored);
+    } finally {
+      _$_BrandSetupStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void toggleLlm(int index, bool enabled) {
+    final _$actionInfo = _$_BrandSetupStoreActionController.startAction(
+        name: '_BrandSetupStore.toggleLlm');
+    try {
+      return super.toggleLlm(index, enabled);
+    } finally {
+      _$_BrandSetupStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
   @override
   String toString() {
     return '''

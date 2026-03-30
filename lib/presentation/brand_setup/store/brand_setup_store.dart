@@ -131,6 +131,30 @@ abstract class _BrandSetupStore with Store {
   int get activeRules => rewriteRules.where((e) => e.enabled).length;
 
   @action
+  void toggleLink(int index, bool monitored) {
+    if (index < 0 || index >= links.length) return;
+    final link = links[index];
+    links[index] = LinkItem(
+      url: link.url,
+      label: link.label,
+      type: link.type,
+      monitored: monitored,
+    );
+  }
+
+  @action
+  void toggleLlm(int index, bool enabled) {
+    if (index < 0 || index >= llmConfigs.length) return;
+    final llm = llmConfigs[index];
+    llmConfigs[index] = LlmConfig(
+      name: llm.name,
+      enabled: enabled,
+      tier: llm.tier,
+      pollingMinutes: llm.pollingMinutes,
+    );
+  }
+
+  @action
   Future<void> loadMockData() async {
     isLoading = true;
     await Future.delayed(Duration(milliseconds: 250));
