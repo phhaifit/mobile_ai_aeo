@@ -34,6 +34,7 @@ dependencies:
   firebase_crashlytics: ^4.3.0
   flutter_dotenv: ^5.1.0
   flutter_mobx: ^2.0.6+5
+  fl_chart: ^0.69.0
   # G
   get_it: ^7.2.0
   google_fonts: ^8.0.2

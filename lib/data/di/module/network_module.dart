@@ -5,6 +5,7 @@ import 'package:boilerplate/core/data/network/dio/interceptors/auth_interceptor.
 import 'package:boilerplate/core/data/network/dio/interceptors/logging_interceptor.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
+import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
 import 'package:boilerplate/data/network/constants/endpoints.dart';
 import 'package:boilerplate/data/network/interceptors/error_interceptor.dart';
 import 'package:boilerplate/data/service/mock_execution_service.dart';
@@ -78,5 +79,6 @@ class NetworkModule {
     // api's:-------------------------------------------------------------------
     getIt.registerSingleton(PostApi(getIt<DioClient>()));
     getIt.registerSingleton(ContentApi(getIt<DioClient>(instanceName: 'aiDioClient')));
+    getIt.registerSingleton(SeoApi(getIt<DioClient>(instanceName: 'aiDioClient')));
   }
 }

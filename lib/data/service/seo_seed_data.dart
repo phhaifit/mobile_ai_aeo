@@ -1,3 +1,4 @@
+import '../../domain/entity/seo/check_status.dart';
 import '../../domain/entity/seo/seo_check_item.dart';
 import '../../domain/entity/seo/topic_cluster.dart';
 import '../../domain/entity/seo/internal_link_suggestion.dart';
@@ -17,44 +18,44 @@ class SeoSeedData {
   static List<SeoCheckItem> _getOnPageSeoItems() {
     return [
       SeoCheckItem(
-        title: 'Title Tag',
-        detail: 'Title is 58 characters — within the 50–60 char sweet spot.',
-        status: SeoStatus.pass,
+        name: 'Title Tag',
+        description: 'Title is 58 characters — within the 50–60 char sweet spot.',
+        status: CheckStatus.pass,
       ),
       SeoCheckItem(
-        title: 'Meta Description',
-        detail: 'Meta description is 172 characters. Consider trimming to <160.',
-        status: SeoStatus.warn,
+        name: 'Meta Description',
+        description: 'Meta description is 172 characters. Consider trimming to <160.',
+        status: CheckStatus.warning,
       ),
       SeoCheckItem(
-        title: 'H1 Tag',
-        detail: 'Page is missing an H1 heading. Add one for better crawlability.',
-        status: SeoStatus.fail,
+        name: 'H1 Tag',
+        description: 'Page is missing an H1 heading. Add one for better crawlability.',
+        status: CheckStatus.fail,
       ),
       SeoCheckItem(
-        title: 'Image Alt Text',
-        detail: '3 of 7 images are missing alt attributes.',
-        status: SeoStatus.warn,
+        name: 'Image Alt Text',
+        description: '3 of 7 images are missing alt attributes.',
+        status: CheckStatus.warning,
       ),
       SeoCheckItem(
-        title: 'Canonical URL',
-        detail: 'Canonical tag is present and points to the correct URL.',
-        status: SeoStatus.pass,
+        name: 'Canonical URL',
+        description: 'Canonical tag is present and points to the correct URL.',
+        status: CheckStatus.pass,
       ),
       SeoCheckItem(
-        title: 'Page Load Speed',
-        detail: 'LCP is 1.9 s (Good). Core Web Vitals look healthy.',
-        status: SeoStatus.pass,
+        name: 'Page Load Speed',
+        description: 'LCP is 1.9 s (Good). Core Web Vitals look healthy.',
+        status: CheckStatus.pass,
       ),
       SeoCheckItem(
-        title: 'Mobile Friendliness',
-        detail: 'Viewport meta tag detected. Page is mobile-responsive.',
-        status: SeoStatus.pass,
+        name: 'Mobile Friendliness',
+        description: 'Viewport meta tag detected. Page is mobile-responsive.',
+        status: CheckStatus.pass,
       ),
       SeoCheckItem(
-        title: 'Structured Data',
-        detail: 'No schema markup found. Add Article or Product schema.',
-        status: SeoStatus.fail,
+        name: 'Structured Data',
+        description: 'No schema markup found. Add Article or Product schema.',
+        status: CheckStatus.fail,
       ),
     ];
   }

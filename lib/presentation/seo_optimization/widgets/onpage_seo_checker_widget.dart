@@ -1,3 +1,4 @@
+import '../../../domain/entity/seo/check_status.dart';
 import '../../../domain/entity/seo/seo_check_item.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,9 +19,9 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final passCount = items.where((i) => i.status == SeoStatus.pass).length;
-    final warnCount = items.where((i) => i.status == SeoStatus.warn).length;
-    final failCount = items.where((i) => i.status == SeoStatus.fail).length;
+    final passCount = items.where((i) => i.status == CheckStatus.pass).length;
+    final warnCount = items.where((i) => i.status == CheckStatus.warning).length;
+    final failCount = items.where((i) => i.status == CheckStatus.fail).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -144,7 +145,7 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title,
+                  item.name,
                   style: GoogleFonts.montserrat(
                     fontSize: 13.0,
                     fontWeight: FontWeight.w700,
@@ -153,7 +154,7 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 4.0),
                 Text(
-                  item.detail,
+                  item.description,
                   style: GoogleFonts.montserrat(
                     fontSize: 12.0,
                     color: const Color(0xFF666666),
@@ -185,9 +186,9 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
     );
   }
 
-  _StatusConfig _statusConfig(SeoStatus status) {
+  _StatusConfig _statusConfig(CheckStatus status) {
     switch (status) {
-      case SeoStatus.pass:
+      case CheckStatus.pass:
         return _StatusConfig(
           icon: Icons.check,
           iconColor: const Color(0xFF22C55E),
@@ -195,7 +196,7 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
           borderColor: const Color(0xFFBBF7D0),
           label: 'Pass',
         );
-      case SeoStatus.warn:
+      case CheckStatus.warning:
         return _StatusConfig(
           icon: Icons.warning_amber_rounded,
           iconColor: const Color(0xFFF59E0B),
@@ -203,7 +204,7 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
           borderColor: const Color(0xFFFDE68A),
           label: 'Warn',
         );
-      case SeoStatus.fail:
+      case CheckStatus.fail:
         return _StatusConfig(
           icon: Icons.close,
           iconColor: const Color(0xFFEF4444),

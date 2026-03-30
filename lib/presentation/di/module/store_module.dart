@@ -27,6 +27,11 @@ import 'package:boilerplate/domain/usecase/cronjob/create_execution_usecase.dart
 import 'package:boilerplate/data/service/mock_execution_service.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
+import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
+import 'package:boilerplate/presentation/technical_seo/store/technical_seo_store.dart';
 import 'package:boilerplate/presentation/register/store/register_store.dart';
 import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 import 'package:boilerplate/presentation/template_library/store/template_library_store.dart';
@@ -35,6 +40,11 @@ import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
 import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
 import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
+import 'package:boilerplate/presentation/performance_monitoring/store/performance_monitoring_store.dart';
+import 'package:boilerplate/domain/usecase/trend/get_weekly_report_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_performance_comparisons_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_improvement_suggestions_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -89,13 +99,22 @@ class StoreModule {
       ),
     );
 
+    getIt.registerSingleton<TechnicalSeoStore>(
+      TechnicalSeoStore(
+        getIt<RunSeoAuditUseCase>(),
+        getIt<GetAuditStatusUseCase>(),
+        getIt<GetAuditHistoryUseCase>(),
+        getIt<GetCrawlerEventsUseCase>(),
+        getIt<ErrorStore>(),
+      ),
+    );
+
     getIt.registerSingleton<RegisterStore>(
       RegisterStore(
         getIt<FormErrorStore>(),
         getIt<ErrorStore>(),
       ),
     );
-
     getIt.registerSingleton<ForgotPasswordStore>(
       ForgotPasswordStore(
         //getIt<FormErrorStore>(),
@@ -149,6 +168,17 @@ class StoreModule {
         createExecutionUseCase: getIt<CreateExecutionUseCase>(),
         getCronjobByIdUseCase: getIt<GetCronjobByIdUseCase>(),
         mockExecutionService: getIt<MockExecutionService>(),
+      ),
+    );
+
+    // Register PerformanceMonitoringStore as singleton
+    getIt.registerSingleton<PerformanceMonitoringStore>(
+      PerformanceMonitoringStore(
+        getIt<ErrorStore>(),
+        getIt<GetWeeklyReportUseCase>(),
+        getIt<GetTrendDataUseCase>(),
+        getIt<GetPerformanceComparisonsUseCase>(),
+        getIt<GetImprovementSuggestionsUseCase>(),
       ),
     );
   }
