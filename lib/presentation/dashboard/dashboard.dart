@@ -50,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).pushNamed(Routes.performanceMonitoring);
                 },
               ),
-			  SizedBox(height: 20),
+              SizedBox(height: 20),
               _buildNavigationButton(
                 context,
                 title: 'SEO Content Optimization',
@@ -195,6 +195,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: Colors.deepOrange,
                 onPressed: () {
                   Navigator.of(context).pushNamed(Routes.promptLibrary);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Brand Setup & Config',
+                description:
+                    'Manage brand profile, knowledge base, links, rewrites, and LLM monitoring.',
+                icon: Icons.verified,
+                color: Colors.blueGrey,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.brandSetup);
                 },
               ),
             ],
