@@ -3,6 +3,7 @@ import 'package:boilerplate/presentation/all_posts/all_posts_screen.dart';
 import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
 import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
 import 'package:boilerplate/presentation/planning_and_recommendations/planning_recommendations_screen.dart';
+import 'package:boilerplate/presentation/content_enhancement/content_enhancement_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -93,6 +94,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => AllPostsScreen()),
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Content Enhancement',
+                description: 'Enhance, rewrite, humanize & summarize content',
+                icon: Icons.auto_fix_high,
+                color: Colors.deepPurple,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => const ContentEnhancementScreen()),
                   );
                 },
               ),

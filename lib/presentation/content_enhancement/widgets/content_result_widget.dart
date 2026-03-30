@@ -1,4 +1,3 @@
-import 'package:boilerplate/domain/entity/content/content_operation.dart';
 import 'package:boilerplate/domain/entity/content/content_result.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,66 +14,64 @@ class ContentResultWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (result == null) {
-      return Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: const Center(
-          child: Text(
-            'Result will appear here',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ),
-      );
-    }
+    if (result == null) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.4)),
-        borderRadius: BorderRadius.circular(8.0),
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.04),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Chip(
-                label: Text(
-                  result!.operation.displayName,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                padding: EdgeInsets.zero,
-              ),
-              Row(
-                children: [
-                  if (result!.tokensUsed != null)
-                    Text(
-                      '${result!.tokensUsed} tokens',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.copy, size: 20),
-                    tooltip: 'Copy result',
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: result!.resultText));
-                      onCopy?.call();
-                    },
+              if (result!.tokensUsed != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                ],
+                  child: Text(
+                    '${result!.tokensUsed} tokens',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () {
+                  Clipboard.setData(
+                      ClipboardData(text: result!.resultText));
+                  onCopy?.call();
+                },
+                icon: const Icon(Icons.copy, size: 15),
+                label: const Text('Copy', style: TextStyle(fontSize: 12)),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF64748B),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SelectableText(result!.resultText),
+          const SizedBox(height: 12),
+          SelectableText(
+            result!.resultText,
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.6,
+              color: Color(0xFF334155),
+            ),
+          ),
         ],
       ),
     );

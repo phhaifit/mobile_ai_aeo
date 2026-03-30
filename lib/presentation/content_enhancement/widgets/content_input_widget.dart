@@ -14,22 +14,26 @@ class ContentInputWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: controller,
-          maxLines: 8,
-          maxLength: 10000,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            hintText: 'Enter text to process...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            contentPadding: const EdgeInsets.all(12.0),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.clear),
+    return TextField(
+      controller: controller,
+      maxLines: 8,
+      maxLength: 10000,
+      onChanged: onChanged,
+      style: const TextStyle(fontSize: 14, height: 1.5),
+      decoration: InputDecoration(
+        hintText: 'Paste or type your content here...',
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        border: InputBorder.none,
+        counterText: '',
+        contentPadding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        suffixIcon: Padding(
+          padding: const EdgeInsets.only(top: 4, right: 4),
+          child: Align(
+            alignment: Alignment.topRight,
+            widthFactor: 1,
+            heightFactor: 1,
+            child: IconButton(
+              icon: Icon(Icons.clear, size: 18, color: Colors.grey.shade400),
               tooltip: 'Clear text',
               onPressed: () {
                 controller.clear();
@@ -38,7 +42,7 @@ class ContentInputWidget extends StatelessWidget {
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

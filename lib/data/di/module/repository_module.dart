@@ -53,7 +53,6 @@ class RepositoryModule {
     getIt.registerSingleton<seo_opt.SeoRepository>(
       seo_opt.SeoRepositoryImpl(),
     );
-
     // cronjob repository:------------------------------------------------------
     getIt.registerSingleton<CronjobRepository>(CronjobRepositoryImpl(
       localDataSource: getIt<CronjobDataSourceImpl>(),

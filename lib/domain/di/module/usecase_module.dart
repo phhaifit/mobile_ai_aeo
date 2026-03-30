@@ -4,14 +4,14 @@ import 'package:boilerplate/domain/repository/content/content_repository.dart';
 import 'package:boilerplate/domain/repository/post/post_repository.dart';
 import 'package:boilerplate/domain/repository/seo/seo_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
-import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart';
-import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
-import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
-import 'package:boilerplate/domain/usecase/content/summarize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/summarize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/post/delete_post_usecase.dart';
 import 'package:boilerplate/domain/usecase/post/find_post_by_id_usecase.dart';
 import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
@@ -96,7 +96,6 @@ class UseCaseModule {
     getIt.registerSingleton<GetCrawlerEventsUseCase>(
       GetCrawlerEventsUseCase(getIt<SeoRepository>()),
     );
-
     // cronjob:-----------------------------------------------------------------
     getIt.registerSingleton<GetAllCronjobsUseCase>(
       GetAllCronjobsUseCase(repository: getIt<CronjobRepository>()),
