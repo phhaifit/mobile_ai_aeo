@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:boilerplate/domain/repository/content/content_repository.dart';
+import 'package:boilerplate/domain/repository/overview/overview_repository.dart';
 import 'package:boilerplate/domain/repository/post/post_repository.dart';
 import 'package:boilerplate/domain/repository/seo/seo_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
+import 'package:boilerplate/domain/usecase/overview/get_overview_metrics_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
@@ -41,6 +43,11 @@ import '../../../di/service_locator.dart';
 
 class UseCaseModule {
   static Future<void> configureUseCaseModuleInjection() async {
+    // overview:----------------------------------------------------------------
+    getIt.registerSingleton<GetOverviewMetricsUseCase>(
+      GetOverviewMetricsUseCase(getIt<OverviewRepository>()),
+    );
+
     // user:--------------------------------------------------------------------
     getIt.registerSingleton<IsLoggedInUseCase>(
       IsLoggedInUseCase(getIt<UserRepository>()),

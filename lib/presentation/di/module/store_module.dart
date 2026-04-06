@@ -4,6 +4,7 @@ import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
+import 'package:boilerplate/domain/usecase/overview/get_overview_metrics_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
@@ -126,6 +127,7 @@ class StoreModule {
     getIt.registerSingleton<OverviewStore>(
       OverviewStore(
         getIt<ErrorStore>(),
+        getIt<GetOverviewMetricsUseCase>(),
       ),
     );
 

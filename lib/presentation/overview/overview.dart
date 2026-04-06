@@ -20,7 +20,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
   void initState() {
     super.initState();
     _overviewStore = getIt<OverviewStore>();
-    _overviewStore.fetchMockData();
+    // TODO: Get projectId from route params or current project
+    const projectId = '6542ec8c-0e5d-4694-8088-db9f17ac9e21';
+    _overviewStore.fetchOverviewMetrics(projectId);
   }
 
   @override
@@ -109,10 +111,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
               SizedBox(height: 16.0),
               _buildMetricsSection(isMobile: true),
               SizedBox(height: 16.0),
-              _buildSentimentWidget(),
-              SizedBox(height: 16.0),
-              _buildShareOfVoiceWidget(),
-              SizedBox(height: 16.0),
               _buildTopDomainsSection(),
               SizedBox(height: 16.0),
               _buildContentStrategySection(),
@@ -143,10 +141,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         _buildMetricsSection(isMobile: false),
                         SizedBox(height: 16.0),
                         _buildTopDomainsSection(),
-                        SizedBox(height: 16.0),
-                        _buildSentimentWidget(),
-                        SizedBox(height: 16.0),
-                        _buildShareOfVoiceWidget(),
                       ],
                     ),
                   ),
@@ -239,13 +233,5 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   Widget _buildContentStrategySection() {
     return ContentStrategyWidget();
-  }
-
-  Widget _buildSentimentWidget() {
-    return MentionSentimentWidget(store: _overviewStore);
-  }
-
-  Widget _buildShareOfVoiceWidget() {
-    return ShareOfVoiceWidget(store: _overviewStore);
   }
 }

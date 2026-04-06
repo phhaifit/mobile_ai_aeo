@@ -25,4 +25,8 @@ class Endpoints {
   static String seoAuditResult(String id) => "/api/v1/seo/audit/$id";
   static String seoCrawler(String url) =>
       "/api/v1/seo/crawler?url=${Uri.encodeComponent(url)}";
+
+  // overview metrics endpoints
+  static String getOverviewMetrics(String projectId) =>
+      "/api/projects/$projectId/metrics/overview";
 }
