@@ -1,10 +1,10 @@
+import 'package:boilerplate/presentation/analytic/store/analytic_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
-import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 
 /// Widget displaying Mention Sentiment Tracking with a stacked progress bar
 class MentionSentimentWidget extends StatelessWidget {
-  final OverviewStore store;
+  final AnalyticStore store;
 
   const MentionSentimentWidget({
     Key? key,
@@ -75,6 +75,29 @@ class MentionSentimentWidget extends StatelessWidget {
         store.sentimentNeutralPercent +
         store.sentimentNegativePercent;
 
+    // Handle empty data case
+    if (total == 0 || total.isNaN || total.isInfinite) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8.0),
+        child: Container(
+          height: 32.0,
+          decoration: BoxDecoration(
+            color: Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Center(
+            child: Text(
+              'No data',
+              style: TextStyle(
+                color: Color(0xFFBBBBBB),
+                fontSize: 12.0,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(8.0),
       child: Container(
@@ -86,26 +109,35 @@ class MentionSentimentWidget extends StatelessWidget {
         child: Row(
           children: [
             // Positive segment (Green)
-            Expanded(
-              flex: (store.sentimentPositivePercent / total * 100).toInt(),
-              child: Container(
-                color: Color(0xFF4CAF50), // Green
+            if (store.sentimentPositivePercent > 0)
+              Expanded(
+                flex: (store.sentimentPositivePercent / total * 100)
+                    .toInt()
+                    .clamp(1, 100),
+                child: Container(
+                  color: Color(0xFF4CAF50), // Green
+                ),
               ),
-            ),
             // Neutral segment (Grey)
-            Expanded(
-              flex: (store.sentimentNeutralPercent / total * 100).toInt(),
-              child: Container(
-                color: Color(0xFFBDBDBD), // Grey
+            if (store.sentimentNeutralPercent > 0)
+              Expanded(
+                flex: (store.sentimentNeutralPercent / total * 100)
+                    .toInt()
+                    .clamp(1, 100),
+                child: Container(
+                  color: Color(0xFFBDBDBD), // Grey
+                ),
               ),
-            ),
             // Negative segment (Red)
-            Expanded(
-              flex: (store.sentimentNegativePercent / total * 100).toInt(),
-              child: Container(
-                color: Color(0xFFF44336), // Red
+            if (store.sentimentNegativePercent > 0)
+              Expanded(
+                flex: (store.sentimentNegativePercent / total * 100)
+                    .toInt()
+                    .clamp(1, 100),
+                child: Container(
+                  color: Color(0xFFF44336), // Red
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -190,7 +222,7 @@ class MentionSentimentWidget extends StatelessWidget {
 
 /// Widget displaying Share of Voice across LLMs
 class ShareOfVoiceWidget extends StatelessWidget {
-  final OverviewStore store;
+  final AnalyticStore store;
 
   const ShareOfVoiceWidget({
     Key? key,
@@ -276,7 +308,7 @@ class ShareOfVoiceWidget extends StatelessWidget {
           // Your Brand row
           _buildProgressBarRow(
             label: 'Your Brand',
-            percentage: llmData.brandPercent,
+            percentage: llmData.brandMentionPercent,
             color: Color(0xFF2196F3),
             isBrand: true,
           ),
@@ -285,7 +317,12 @@ class ShareOfVoiceWidget extends StatelessWidget {
           // Competitor Avg row
           _buildProgressBarRow(
             label: 'Competitor Avg',
-            percentage: llmData.competitorAvgPercent,
+            percentage: llmData.competitorAvgMentions > 0
+                ? (llmData.competitorAvgMentions /
+                        (llmData.brandMentions +
+                            llmData.competitorAvgMentions)) *
+                    100
+                : 0.0,
             color: Color(0xFFFFA726),
             isBrand: false,
           ),

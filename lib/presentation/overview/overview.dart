@@ -4,7 +4,6 @@ import 'package:boilerplate/presentation/overview/widgets/metric_summary_card.da
 import 'package:boilerplate/presentation/overview/widgets/visibility_score_widget.dart';
 import 'package:boilerplate/presentation/overview/widgets/content_strategy_widget.dart';
 import 'package:boilerplate/presentation/overview/widgets/top_reference_domains_widget.dart';
-import 'package:boilerplate/presentation/overview/widgets/metrics_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 

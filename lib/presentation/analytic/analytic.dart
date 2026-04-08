@@ -4,18 +4,19 @@ import 'package:boilerplate/presentation/analytic/widgets/metrics_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 
-class AnalysisScreen extends StatefulWidget {
+class AnalyticScreen extends StatefulWidget {
   @override
-  State<AnalysisScreen> createState() => _AnalysisScreenState();
+  State<AnalyticScreen> createState() => _AnalyticScreenState();
 }
 
-class _AnalysisScreenState extends State<AnalysisScreen> {
+class _AnalyticScreenState extends State<AnalyticScreen> {
   late final AnalyticStore _analyticStore;
 
   @override
   void initState() {
     super.initState();
     _analyticStore = getIt<AnalyticStore>();
+    // TODO: Get projectId from route params or current project
     const projectId = '6542ec8c-0e5d-4694-8088-db9f17ac9e21';
     _analyticStore.fetchAnalyticsMetrics(projectId);
   }
@@ -71,7 +72,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Detailed analysis of mentions and AI platforms'),
+                content: Text('Sentiment tracking and AI platform insights'),
                 duration: Duration(seconds: 2),
               ),
             );
@@ -82,6 +83,31 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _buildBody(BuildContext context) {
+    if (_analyticStore.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_analyticStore.errorStore.errorMessage.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_analyticStore.errorStore.errorMessage),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                const projectId = '6542ec8c-0e5d-4694-8088-db9f17ac9e21';
+                _analyticStore.fetchAnalyticsMetrics(projectId);
+              },
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return SingleChildScrollView(

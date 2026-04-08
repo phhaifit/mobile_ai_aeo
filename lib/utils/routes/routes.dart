@@ -1,4 +1,4 @@
-import 'package:boilerplate/presentation/analysis/analysis.dart';
+import 'package:boilerplate/presentation/analytic/analytic.dart';
 import 'package:boilerplate/presentation/content_enhancement/content_enhancement_screen.dart';
 import 'package:boilerplate/presentation/forgot_password/forgot_password.dart';
 import 'package:boilerplate/presentation/home/home.dart';
@@ -62,7 +62,7 @@ class Routes {
         const ContentEnhancementScreen(),
     technicalSeo: (BuildContext context) => const TechnicalSeoScreen(),
     overview: (BuildContext context) => OverviewScreen(),
-    analysis: (BuildContext context) => AnalysisScreen(),
+    analysis: (BuildContext context) => AnalyticScreen(),
     performanceMonitoring: (BuildContext context) =>
         PerformanceMonitoringScreen(),
     seoOptimization: (BuildContext context) => SeoOptimizationScreen(),

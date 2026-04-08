@@ -4,7 +4,7 @@ class Endpoints {
   Endpoints._();
 
   // base url (default fallback, overridden by EnvironmentConfig)
-  static const String baseUrl = "http://jsonplaceholder.typicode.com";
+  static const String baseUrl = "https://api.aeo.how";
 
   // timeouts
   static const int receiveTimeout = 15000;
@@ -29,4 +29,8 @@ class Endpoints {
   // overview metrics endpoints
   static String getOverviewMetrics(String projectId) =>
       "/api/projects/$projectId/metrics/overview";
+
+  // analytics metrics endpoints
+  static String getAnalyticsMetrics(String projectId) =>
+      "/api/projects/$projectId/metrics/analytics";
 }
