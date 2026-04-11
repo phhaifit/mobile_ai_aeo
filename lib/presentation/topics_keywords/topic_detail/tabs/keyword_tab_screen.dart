@@ -1,3 +1,4 @@
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/models/topic_keyword.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -33,9 +34,23 @@ class KeywordTabScreen extends StatefulWidget {
   const KeywordTabScreen({
     super.key,
     required this.searchController,
+    required this.apiKeywords,
+    required this.isLoading,
+    this.errorMessage,
+    required this.onRetry,
+    required this.onAddKeywords,
+    required this.onSuggestKeywords,
+    required this.onDeleteKeyword,
   });
 
   final TextEditingController searchController;
+  final List<TopicKeyword> apiKeywords;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+  final Future<bool> Function(List<String> keywords) onAddKeywords;
+  final Future<List<String>> Function(List<String> keywords) onSuggestKeywords;
+  final Future<bool> Function(String keywordId) onDeleteKeyword;
 
   @override
   State<KeywordTabScreen> createState() => _KeywordTabScreenState();
@@ -43,26 +58,44 @@ class KeywordTabScreen extends StatefulWidget {
 
 class _KeywordTabScreenState extends State<KeywordTabScreen> {
   final Set<String> _selectedKeywordIds = <String>{};
-  final List<String> _baseSuggestedKeywords = [
-    'best universities for information technology degrees',
-    'online master degree in computer science',
-    'is a masters in information technology worth it',
-    'what jobs can you get with an IT degree',
-    'computer science vs information technology degree',
-    'coding bootcamp vs college degree for tech jobs',
-    'scholarships for computer science students',
-    'top AI courses in undergraduate IT programs',
-  ];
+  final Set<String> _deletingKeywordIds = <String>{};
 
   late List<Keyword> _keywords;
   late List<Keyword> _visibleKeywords;
+  bool _isDeleting = false;
 
   @override
   void initState() {
     super.initState();
-    _keywords = _seedKeywords();
+    // Boot from API keywords; they may be empty on first frame if still loading
+    _keywords = _fromApiKeywords(widget.apiKeywords);
     _visibleKeywords = _applySearch(_keywords, widget.searchController.text);
     widget.searchController.addListener(_handleSearchChanged);
+  }
+
+  @override
+  void didUpdateWidget(KeywordTabScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-sync when the store delivers fresh keywords from the API
+    if (oldWidget.apiKeywords != widget.apiKeywords) {
+      final existing = _keywords.map((k) => k.id).toSet();
+      final newItems = _fromApiKeywords(widget.apiKeywords)
+          .where((k) => !existing.contains(k.id))
+          .toList();
+      if (newItems.isNotEmpty || _keywords.isEmpty) {
+        setState(() {
+          _keywords = [
+            ..._fromApiKeywords(widget.apiKeywords),
+            // Keep any locally-added keywords not yet in API
+            ..._keywords.where(
+              (k) => !widget.apiKeywords.map((tk) => tk.id).contains(k.id),
+            ),
+          ];
+          _visibleKeywords =
+              _applySearch(_keywords, widget.searchController.text);
+        });
+      }
+    }
   }
 
   @override
@@ -77,35 +110,14 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
     });
   }
 
-  List<Keyword> _seedKeywords() {
-    final baseTime = DateTime(2026, 3, 17, 14, 22);
-    return [
-      Keyword(
-        id: 'k1',
-        text: 'best undergraduate computer science programs in Vietnam',
-        createdAt: baseTime,
-      ),
-      Keyword(
-        id: 'k2',
-        text: 'how to choose an IT university in Vietnam',
-        createdAt: baseTime,
-      ),
-      Keyword(
-        id: 'k3',
-        text: 'benefits of advanced programs in information technology',
-        createdAt: baseTime,
-      ),
-      Keyword(
-        id: 'k4',
-        text: 'master of science in computer science curriculum requirements',
-        createdAt: baseTime,
-      ),
-      Keyword(
-        id: 'k5',
-        text: 'what to expect from a high-quality IT education program',
-        createdAt: baseTime,
-      ),
-    ];
+  List<Keyword> _fromApiKeywords(List<TopicKeyword> raw) {
+    return raw.map((tk) {
+      return Keyword(
+        id: tk.id,
+        text: tk.text,
+        createdAt: DateTime.now(), // Real API doesn't return created_at easily, mock for now or use now.
+      );
+    }).toList();
   }
 
   List<Keyword> _applySearch(List<Keyword> source, String query) {
@@ -127,8 +139,15 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
   }
 
   void _toggleSelectAllVisible(bool selected) {
+    if (_isDeleting) {
+      return;
+    }
+
     setState(() {
       for (final keyword in _visibleKeywords) {
+        if (_deletingKeywordIds.contains(keyword.id)) {
+          continue;
+        }
         if (selected) {
           _selectedKeywordIds.add(keyword.id);
         } else {
@@ -147,6 +166,10 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
   }
 
   void _toggleSelectOne(String id, bool selected) {
+    if (_isDeleting || _deletingKeywordIds.contains(id)) {
+      return;
+    }
+
     setState(() {
       if (selected) {
         _selectedKeywordIds.add(id);
@@ -167,7 +190,7 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
 
   Future<void> _confirmDeleteBulk() async {
     final count = _selectedKeywordIds.length;
-    if (count == 0) {
+    if (count == 0 || _isDeleting) {
       return;
     }
 
@@ -180,11 +203,15 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
     );
 
     if (shouldDelete == true) {
-      _deleteByIds(_selectedKeywordIds.toSet());
+      await _deleteByIds(_selectedKeywordIds.toSet());
     }
   }
 
   Future<void> _confirmDeleteSingle(Keyword keyword) async {
+    if (_isDeleting) {
+      return;
+    }
+
     final shouldDelete = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -194,35 +221,84 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
     );
 
     if (shouldDelete == true) {
-      _deleteByIds({keyword.id});
+      await _deleteByIds({keyword.id});
     }
   }
 
-  void _deleteByIds(Set<String> ids) {
+  Future<void> _deleteByIds(Set<String> ids) async {
     if (ids.isEmpty) {
       return;
     }
 
+    setState(() {
+      _isDeleting = true;
+      _deletingKeywordIds.addAll(ids);
+    });
+
+    final deletedIds = <String>{};
+    for (final id in ids) {
+      final success = await widget.onDeleteKeyword(id);
+      if (success) {
+        deletedIds.add(id);
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+
     _keywords =
-        _keywords.where((keyword) => !ids.contains(keyword.id)).toList();
-    _selectedKeywordIds.removeAll(ids);
+        _keywords.where((keyword) => !deletedIds.contains(keyword.id)).toList();
+    _selectedKeywordIds.removeAll(deletedIds);
 
     setState(() {
+      _isDeleting = false;
+      _deletingKeywordIds.removeAll(ids);
       _visibleKeywords = _applySearch(_keywords, widget.searchController.text);
     });
+
+    final failedCount = ids.length - deletedIds.length;
+    if (failedCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Delete failed for $failedCount keyword(s). Please retry.'),
+          backgroundColor: const Color(0xFFB42318),
+        ),
+      );
+    }
   }
 
   Future<void> _addKeyword() async {
+    if (_isDeleting) {
+      return;
+    }
+
     final addedKeywords = await _showAddKeywordsModal();
     if (addedKeywords == null || addedKeywords.isEmpty) {
       return;
     }
 
-    _insertKeywords(addedKeywords);
+    final success = await widget.onAddKeywords(addedKeywords);
+    if (!mounted || success) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Unable to add keywords. Please try again.'),
+        backgroundColor: Color(0xFFB42318),
+      ),
+    );
   }
 
   Future<List<String>?> _showAddKeywordsModal() {
     final isMobile = MediaQuery.of(context).size.width < 720;
+
+    Future<List<String>> refreshSuggestions() {
+      return widget.onSuggestKeywords(
+        _keywords.map((keyword) => keyword.text).toList(growable: false),
+      );
+    }
 
     if (isMobile) {
       return showModalBottomSheet<List<String>>(
@@ -233,7 +309,8 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
           return FractionallySizedBox(
             heightFactor: 0.92,
             child: _AddKeywordsModal(
-              suggestions: _baseSuggestedKeywords,
+              suggestions: const [],
+              onRefreshSuggestions: refreshSuggestions,
               isMobile: true,
             ),
           );
@@ -252,7 +329,8 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760, maxHeight: 620),
             child: _AddKeywordsModal(
-              suggestions: _baseSuggestedKeywords,
+              suggestions: const [],
+              onRefreshSuggestions: refreshSuggestions,
               isMobile: false,
             ),
           ),
@@ -261,54 +339,11 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
     );
   }
 
-  void _insertKeywords(List<String> newKeywords) {
-    if (newKeywords.isEmpty) {
-      return;
-    }
-
-    final existing = _keywords.map((item) => item.text.toLowerCase()).toSet();
-    final now = DateTime.now();
-    final insertItems = <Keyword>[];
-
-    for (final value in newKeywords) {
-      final normalized = value.trim();
-      if (normalized.isEmpty) {
-        continue;
-      }
-      if (existing.contains(normalized.toLowerCase())) {
-        continue;
-      }
-      existing.add(normalized.toLowerCase());
-      insertItems.add(
-        Keyword(
-          id: 'k_${DateTime.now().microsecondsSinceEpoch}_${insertItems.length}',
-          text: normalized,
-          createdAt: now,
-        ),
-      );
-    }
-
-    if (insertItems.isEmpty) {
-      return;
-    }
-
-    final normalizedSearch = widget.searchController.text.trim().toLowerCase();
-    final visibleInsert = insertItems.where((item) {
-      if (normalizedSearch.isEmpty) {
-        return true;
-      }
-      return item.text.toLowerCase().contains(normalizedSearch);
-    }).toList(growable: false);
-
-    setState(() {
-      _keywords = [...insertItems, ..._keywords];
-      if (visibleInsert.isNotEmpty) {
-        _visibleKeywords = [...visibleInsert, ..._visibleKeywords];
-      }
-    });
-  }
-
   Future<void> _editKeyword(Keyword keyword) async {
+    if (_isDeleting || _deletingKeywordIds.contains(keyword.id)) {
+      return;
+    }
+
     final controller = TextEditingController(text: keyword.text);
     final updated = await showDialog<String>(
       context: context,
@@ -417,13 +452,56 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Loading state (first load)
+    if (widget.isLoading && _keywords.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Error state (no data)
+    if (widget.errorMessage != null && _keywords.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded,
+                size: 38, color: Color(0xFFD0D5DD)),
+            const SizedBox(height: 10),
+            Text(
+              widget.errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF667085), fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: widget.onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6A00),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
+        if (_isDeleting)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
         _KeywordActionBar(
           searchController: widget.searchController,
           selectedCount: _selectedKeywordIds.length,
           onDelete: _confirmDeleteBulk,
           onAdd: _addKeyword,
+          isDeleting: _isDeleting,
         ),
         const SizedBox(height: 12),
         Expanded(
@@ -440,6 +518,8 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
                         onToggleOne: _toggleSelectOne,
                         onEdit: _editKeyword,
                         onDeleteOne: _confirmDeleteSingle,
+                        deletingIds: _deletingKeywordIds,
+                        isDeleting: _isDeleting,
                         dateFormatter: _formatDate,
                       );
                     }
@@ -451,6 +531,8 @@ class _KeywordTabScreenState extends State<KeywordTabScreen> {
                       onToggleOne: _toggleSelectOne,
                       onEdit: _editKeyword,
                       onDeleteOne: _confirmDeleteSingle,
+                      deletingIds: _deletingKeywordIds,
+                      isDeleting: _isDeleting,
                       dateFormatter: _formatDate,
                     );
                   },
@@ -467,12 +549,14 @@ class _KeywordActionBar extends StatelessWidget {
     required this.selectedCount,
     required this.onDelete,
     required this.onAdd,
+    required this.isDeleting,
   });
 
   final TextEditingController searchController;
   final int selectedCount;
   final VoidCallback onDelete;
   final VoidCallback onAdd;
+  final bool isDeleting;
 
   @override
   Widget build(BuildContext context) {
@@ -480,9 +564,15 @@ class _KeywordActionBar extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 760;
         final deleteButton = OutlinedButton.icon(
-          onPressed: selectedCount == 0 ? null : onDelete,
-          icon: const Icon(Icons.delete_outline, size: 18),
-          label: Text('Delete ($selectedCount)'),
+          onPressed: selectedCount == 0 || isDeleting ? null : onDelete,
+          icon: isDeleting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.delete_outline, size: 18),
+          label: Text(isDeleting ? 'Deleting...' : 'Delete ($selectedCount)'),
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFFDC2626),
             side: BorderSide(
@@ -502,7 +592,7 @@ class _KeywordActionBar extends StatelessWidget {
         );
 
         final addButton = ElevatedButton.icon(
-          onPressed: onAdd,
+          onPressed: isDeleting ? null : onAdd,
           icon: const Icon(Icons.add, size: 18),
           label: const Text('Add Keyword'),
           style: ElevatedButton.styleFrom(
@@ -596,6 +686,8 @@ class KeywordMobileList extends StatelessWidget {
     required this.onToggleOne,
     required this.onEdit,
     required this.onDeleteOne,
+    required this.deletingIds,
+    required this.isDeleting,
     required this.dateFormatter,
   });
 
@@ -605,6 +697,8 @@ class KeywordMobileList extends StatelessWidget {
   final void Function(String id, bool selected) onToggleOne;
   final ValueChanged<Keyword> onEdit;
   final ValueChanged<Keyword> onDeleteOne;
+  final Set<String> deletingIds;
+  final bool isDeleting;
   final String Function(DateTime) dateFormatter;
 
   @override
@@ -627,7 +721,9 @@ class KeywordMobileList extends StatelessWidget {
               children: [
                 Checkbox(
                   value: allVisibleSelected,
-                  onChanged: (value) => onToggleAll(value ?? false),
+                  onChanged: isDeleting
+                      ? null
+                      : (value) => onToggleAll(value ?? false),
                 ),
                 const SizedBox(width: 2),
                 const Text(
@@ -648,6 +744,7 @@ class KeywordMobileList extends StatelessWidget {
                   const Divider(height: 1, color: Color(0xFFEAECF0)),
               itemBuilder: (context, index) {
                 final keyword = keywords[index];
+                final isRowDeleting = deletingIds.contains(keyword.id);
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -658,8 +755,9 @@ class KeywordMobileList extends StatelessWidget {
                     children: [
                       Checkbox(
                         value: keyword.isSelected,
-                        onChanged: (value) =>
-                            onToggleOne(keyword.id, value ?? false),
+                        onChanged: isDeleting || isRowDeleting
+                            ? null
+                            : (value) => onToggleOne(keyword.id, value ?? false),
                       ),
                       const SizedBox(width: 2),
                       Expanded(
@@ -691,17 +789,33 @@ class KeywordMobileList extends StatelessWidget {
                       Column(
                         children: [
                           IconButton(
-                            onPressed: () => onEdit(keyword),
+                            onPressed: isDeleting || isRowDeleting
+                                ? null
+                                : () => onEdit(keyword),
                             icon: const Icon(Icons.edit_outlined),
                             color: const Color(0xFF155EEF),
                             splashRadius: 18,
                           ),
-                          IconButton(
-                            onPressed: () => onDeleteOne(keyword),
-                            icon: const Icon(Icons.delete_outline),
-                            color: const Color(0xFFEF4444),
-                            splashRadius: 18,
-                          ),
+                          isRowDeleting
+                              ? const SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  ),
+                                )
+                              : IconButton(
+                                  onPressed: isDeleting
+                                      ? null
+                                      : () => onDeleteOne(keyword),
+                                  icon: const Icon(Icons.delete_outline),
+                                  color: const Color(0xFFEF4444),
+                                  splashRadius: 18,
+                                ),
                         ],
                       ),
                     ],
@@ -719,10 +833,12 @@ class KeywordMobileList extends StatelessWidget {
 class _AddKeywordsModal extends StatefulWidget {
   const _AddKeywordsModal({
     required this.suggestions,
+    required this.onRefreshSuggestions,
     required this.isMobile,
   });
 
   final List<String> suggestions;
+  final Future<List<String>> Function() onRefreshSuggestions;
   final bool isMobile;
 
   @override
@@ -733,11 +849,14 @@ class _AddKeywordsModalState extends State<_AddKeywordsModal> {
   final TextEditingController _controller = TextEditingController();
   final List<String> _selectedKeywords = [];
   late List<String> _suggestedKeywords;
+  bool _isInitialLoading = true;
+  bool _isRefreshingSuggestions = false;
 
   @override
   void initState() {
     super.initState();
     _suggestedKeywords = List<String>.from(widget.suggestions);
+    _loadInitialSuggestions();
   }
 
   @override
@@ -786,14 +905,69 @@ class _AddKeywordsModalState extends State<_AddKeywordsModal> {
         .toList(growable: false);
   }
 
-  void _refreshSuggestions() {
-    setState(() {
-      if (_suggestedKeywords.length < 2) {
+  Future<void> _loadInitialSuggestions() async {
+    try {
+      final initialSuggestions = await widget.onRefreshSuggestions();
+      if (!mounted) {
         return;
       }
-      final first = _suggestedKeywords.removeAt(0);
-      _suggestedKeywords.add(first);
+
+      setState(() {
+        _suggestedKeywords = List<String>.from(initialSuggestions);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to load keyword suggestions. You can still add manually.'),
+            backgroundColor: Color(0xFFB42318),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitialLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshSuggestions() async {
+    if (_isRefreshingSuggestions) {
+      return;
+    }
+
+    setState(() {
+      _isRefreshingSuggestions = true;
     });
+
+    try {
+      final refreshedSuggestions = await widget.onRefreshSuggestions();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _suggestedKeywords = List<String>.from(refreshedSuggestions);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to refresh suggestions. Please try again.'),
+            backgroundColor: Color(0xFFB42318),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshingSuggestions = false;
+        });
+      }
+    }
   }
 
   @override
@@ -949,9 +1123,21 @@ class _AddKeywordsModalState extends State<_AddKeywordsModal> {
                           ),
                         ),
                         TextButton.icon(
-                          onPressed: _refreshSuggestions,
-                          icon: const Icon(Icons.refresh, size: 16),
-                          label: const Text('Refresh'),
+                          onPressed:
+                              _isRefreshingSuggestions ? null : _refreshSuggestions,
+                          icon: _isRefreshingSuggestions
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF667085),
+                                  ),
+                                )
+                              : const Icon(Icons.refresh, size: 16),
+                          label: Text(
+                            _isRefreshingSuggestions ? 'Refreshing...' : 'Refresh',
+                          ),
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFF667085),
                           ),
@@ -972,7 +1158,11 @@ class _AddKeywordsModalState extends State<_AddKeywordsModal> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFEAECF0)),
                     ),
-                    child: _availableSuggestions.isEmpty
+                    child: _isInitialLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(),
+                          )
+                        : _availableSuggestions.isEmpty
                         ? const Center(
                             child: Text(
                               'No suggested keywords',
@@ -1091,6 +1281,8 @@ class KeywordTable extends StatelessWidget {
     required this.onToggleOne,
     required this.onEdit,
     required this.onDeleteOne,
+    required this.deletingIds,
+    required this.isDeleting,
     required this.dateFormatter,
   });
 
@@ -1100,6 +1292,8 @@ class KeywordTable extends StatelessWidget {
   final void Function(String id, bool selected) onToggleOne;
   final ValueChanged<Keyword> onEdit;
   final ValueChanged<Keyword> onDeleteOne;
+  final Set<String> deletingIds;
+  final bool isDeleting;
   final String Function(DateTime) dateFormatter;
 
   @override
@@ -1124,7 +1318,9 @@ class KeywordTable extends StatelessWidget {
                   width: 48,
                   child: Checkbox(
                     value: allVisibleSelected,
-                    onChanged: (value) => onToggleAll(value ?? false),
+                    onChanged: isDeleting
+                        ? null
+                        : (value) => onToggleAll(value ?? false),
                   ),
                 ),
                 const Expanded(
@@ -1169,15 +1365,23 @@ class KeywordTable extends StatelessWidget {
               itemCount: keywords.length,
               itemBuilder: (context, index) {
                 final keyword = keywords[index];
+                final isRowDeleting = deletingIds.contains(keyword.id);
                 return AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
                   child: KeywordRow(
                     key: ValueKey(keyword.id),
                     keyword: keyword,
                     isSelected: keyword.isSelected,
-                    onChanged: (selected) => onToggleOne(keyword.id, selected),
-                    onEdit: () => onEdit(keyword),
-                    onDelete: () => onDeleteOne(keyword),
+                    isDeleting: isRowDeleting,
+                    onChanged: isDeleting || isRowDeleting
+                        ? (_) {}
+                        : (selected) => onToggleOne(keyword.id, selected),
+                    onEdit: isDeleting || isRowDeleting
+                        ? null
+                        : () => onEdit(keyword),
+                    onDelete: isDeleting
+                        ? null
+                        : () => onDeleteOne(keyword),
                     dateLabel: dateFormatter(keyword.createdAt),
                   ),
                 );
@@ -1195,6 +1399,7 @@ class KeywordRow extends StatelessWidget {
     super.key,
     required this.keyword,
     required this.isSelected,
+    required this.isDeleting,
     required this.onChanged,
     required this.onEdit,
     required this.onDelete,
@@ -1203,9 +1408,10 @@ class KeywordRow extends StatelessWidget {
 
   final Keyword keyword;
   final bool isSelected;
+  final bool isDeleting;
   final ValueChanged<bool> onChanged;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
   final String dateLabel;
 
   @override
@@ -1214,7 +1420,7 @@ class KeywordRow extends StatelessWidget {
       height: 64,
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: const Color(0xFFEAECF0).withOpacity(0.8)),
+          bottom: BorderSide(color: const Color(0xFFEAECF0).withValues(alpha: 0.8)),
         ),
       ),
       child: Row(
@@ -1223,7 +1429,7 @@ class KeywordRow extends StatelessWidget {
             width: 48,
             child: Checkbox(
               value: isSelected,
-              onChanged: (value) => onChanged(value ?? false),
+              onChanged: isDeleting ? null : (value) => onChanged(value ?? false),
             ),
           ),
           Expanded(
@@ -1259,12 +1465,24 @@ class KeywordRow extends StatelessWidget {
                   color: const Color(0xFF155EEF),
                   splashRadius: 18,
                 ),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline),
-                  color: const Color(0xFFEF4444),
-                  splashRadius: 18,
-                ),
+                isDeleting
+                    ? const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        onPressed: onDelete,
+                        icon: const Icon(Icons.delete_outline),
+                        color: const Color(0xFFEF4444),
+                        splashRadius: 18,
+                      ),
               ],
             ),
           ),
