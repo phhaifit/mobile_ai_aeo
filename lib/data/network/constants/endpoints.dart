@@ -13,6 +13,9 @@ class Endpoints {
   // AI service timeout (longer for AI processing)
   static const int aiReceiveTimeout = 60000;
 
+  // auth endpoints
+  static const String signup = "/api/auth/signup";
+
   // post endpoints
   static const String getPosts = "/posts";
 

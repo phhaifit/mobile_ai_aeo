@@ -8,6 +8,7 @@ import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
 import 'package:boilerplate/data/network/constants/endpoints.dart';
 import 'package:boilerplate/data/network/interceptors/error_interceptor.dart';
+import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/service/mock_execution_service.dart';
 import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
 import 'package:event_bus/event_bus.dart';
@@ -77,6 +78,9 @@ class NetworkModule {
     getIt.registerSingleton<DioClient>(aiClient, instanceName: 'aiDioClient');
 
     // api's:-------------------------------------------------------------------
+    getIt.registerSingleton(AuthApi(getIt<DioClient>()));
+
+    // api:---------------------------------------------------------------------
     getIt.registerSingleton(PostApi(getIt<DioClient>()));
     getIt.registerSingleton(ContentApi(getIt<DioClient>(instanceName: 'aiDioClient')));
     getIt.registerSingleton(SeoApi(getIt<DioClient>(instanceName: 'aiDioClient')));

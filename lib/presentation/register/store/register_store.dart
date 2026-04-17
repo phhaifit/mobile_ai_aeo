@@ -1,6 +1,7 @@
 import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:mobx/mobx.dart';
+import 'package:boilerplate/domain/usecase/user/signup_usecase.dart';
 
 part 'register_store.g.dart';
 
@@ -9,12 +10,16 @@ class RegisterStore = _RegisterStore with _$RegisterStore;
 abstract class _RegisterStore with Store {
   // constructor:---------------------------------------------------------------
   _RegisterStore(
+    this.signupUseCase,
     this.formErrorStore,
     this.errorStore,
   ) {
     // setting up disposers
     _setupDisposers();
   }
+
+  // use cases:-----------------------------------------------------------------
+  final SignupUseCase signupUseCase;
 
   // stores:--------------------------------------------------------------------
   // for handling form errors
@@ -41,6 +46,9 @@ abstract class _RegisterStore with Store {
   bool success = false;
 
   @observable
+  String successMessage = '';
+
+  @observable
   bool agreedToTerms = false;
 
   @observable
@@ -51,10 +59,9 @@ abstract class _RegisterStore with Store {
 
   // actions:-------------------------------------------------------------------
   @action
-  Future<void> register(
-      String email, String password, String confirmPassword) async {
-    // Mock validation
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+  Future<void> register(String fullName, String email, String password, String confirmPassword) async {
+    // Validation
+    if (fullName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       errorStore.setErrorMessage('All fields are required');
       return;
     }
@@ -69,18 +76,23 @@ abstract class _RegisterStore with Store {
       return;
     }
 
-    // Simulate network call
-    final future = Future<bool>.delayed(
-      const Duration(seconds: 2),
-      () => true,
+    final future = signupUseCase.call(
+      params: SignupParams(
+        fullName: fullName,
+        email: email,
+        password: password,
+      ),
     );
 
-    registerFuture = ObservableFuture(future);
+    registerFuture = ObservableFuture(future.then((value) => true));
 
     await future.then((value) {
-      if (value) {
+      if (value != null && value['success'] == true) {
         success = true;
+        successMessage = value['message'] ?? 'Signup successful.';
         errorStore.setErrorMessage('');
+      } else {
+        errorStore.setErrorMessage(value?['message'] ?? 'Signup failed');
       }
     }).catchError((error) {
       errorStore.setErrorMessage(error.toString());

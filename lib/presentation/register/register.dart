@@ -346,6 +346,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
         await _registerStore.register(
+          _fullnameController.text,
           _emailController.text,
           _passwordController.text,
           _passwordController.text,
@@ -390,9 +391,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget navigate(BuildContext context) {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-          Routes.home, (Route<dynamic> route) => false);
+    Future.delayed(const Duration(milliseconds: 0), () {
+      FlushbarHelper.createSuccess(
+        message: _registerStore.successMessage.isNotEmpty
+            ? _registerStore.successMessage
+            : 'Signup successful.',
+        title: 'Success',
+        duration: const Duration(seconds: 3),
+      )..show(context).then((_) {
+          // Delay to allow the user to read the message, then redirect to login screen
+          Future.delayed(const Duration(seconds: 1), () {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+                Routes.login, (Route<dynamic> route) => false);
+          });
+        });
     });
 
     return Container();

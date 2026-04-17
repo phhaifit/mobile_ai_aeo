@@ -11,6 +11,7 @@ import 'package:boilerplate/data/repository/cronjob_repository_impl.dart';
 import 'package:boilerplate/data/repository/post/post_repository_impl.dart';
 import 'package:boilerplate/data/repository/seo/seo_repository_impl.dart';
 import 'package:boilerplate/data/repository/setting/setting_repository_impl.dart';
+import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/repository/user/user_repository_impl.dart';
 import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
 import 'package:boilerplate/domain/repository/content/content_repository.dart';
@@ -35,6 +36,7 @@ class RepositoryModule {
 
     getIt.registerSingleton<UserRepository>(UserRepositoryImpl(
       getIt<SharedPreferenceHelper>(),
+      getIt<AuthApi>(),
     ));
 
     getIt.registerSingleton<PostRepository>(PostRepositoryImpl(

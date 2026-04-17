@@ -33,6 +33,22 @@ mixin _$RegisterStore on _RegisterStore, Store {
     });
   }
 
+  late final _$successMessageAtom =
+      Atom(name: '_RegisterStore.successMessage', context: context);
+
+  @override
+  String get successMessage {
+    _$successMessageAtom.reportRead();
+    return super.successMessage;
+  }
+
+  @override
+  set successMessage(String value) {
+    _$successMessageAtom.reportWrite(value, super.successMessage, () {
+      super.successMessage = value;
+    });
+  }
+
   late final _$agreedToTermsAtom =
       Atom(name: '_RegisterStore.agreedToTerms', context: context);
 
@@ -69,9 +85,10 @@ mixin _$RegisterStore on _RegisterStore, Store {
       AsyncAction('_RegisterStore.register', context: context);
 
   @override
-  Future<void> register(String email, String password, String confirmPassword) {
+  Future<void> register(
+      String fullName, String email, String password, String confirmPassword) {
     return _$registerAsyncAction
-        .run(() => super.register(email, password, confirmPassword));
+        .run(() => super.register(fullName, email, password, confirmPassword));
   }
 
   late final _$_RegisterStoreActionController =
@@ -103,6 +120,7 @@ mixin _$RegisterStore on _RegisterStore, Store {
   String toString() {
     return '''
 success: ${success},
+successMessage: ${successMessage},
 agreedToTerms: ${agreedToTerms},
 registerFuture: ${registerFuture},
 isLoading: ${isLoading}
