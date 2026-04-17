@@ -37,4 +37,10 @@ class Endpoints {
   // content profiles endpoints
   static String getContentProfiles(String projectId) =>
       "/api/projects/$projectId/content-profiles";
+
+  // prompts & content generation
+  static const String promptsByProject = "/api/prompts/by-project";
+
+  static String promptContentGenerations(String promptId) =>
+      "/api/prompts/$promptId/content-generations";
 }

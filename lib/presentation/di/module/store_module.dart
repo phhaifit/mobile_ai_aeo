@@ -17,6 +17,8 @@ import 'package:boilerplate/domain/usecase/content/get_content_profiles_usecase.
 import 'package:boilerplate/domain/usecase/content/create_content_profile_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/update_content_profile_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/delete_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/prompt/create_content_generation_usecase.dart';
+import 'package:boilerplate/domain/usecase/prompt/get_prompts_by_project_usecase.dart';
 import 'package:boilerplate/presentation/content_enhancement/store/content_enhancement_store.dart';
 import 'package:boilerplate/presentation/forgot_password/store/forgot_password_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
@@ -42,6 +44,7 @@ import 'package:boilerplate/presentation/register/store/register_store.dart';
 import 'package:boilerplate/presentation/analytic/store/analytic_store.dart';
 import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 import 'package:boilerplate/presentation/template_library/store/template_library_store.dart';
+import 'package:boilerplate/presentation/template_library/store/content_generation_store.dart';
 import 'package:boilerplate/presentation/all_posts/store/all_posts_store.dart';
 import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
@@ -167,6 +170,15 @@ class StoreModule {
         getIt<CreateContentProfileUseCase>(),
         getIt<UpdateContentProfileUseCase>(),
         getIt<DeleteContentProfileUseCase>(),
+      ),
+    );
+
+    getIt.registerSingleton<ContentGenerationStore>(
+      ContentGenerationStore(
+        getIt<ErrorStore>(),
+        getIt<GetContentProfilesUseCase>(),
+        getIt<GetPromptsByProjectUseCase>(),
+        getIt<CreateContentGenerationUseCase>(),
       ),
     );
 
