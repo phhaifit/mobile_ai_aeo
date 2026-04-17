@@ -33,4 +33,8 @@ class Endpoints {
   // analytics metrics endpoints
   static String getAnalyticsMetrics(String projectId) =>
       "/api/projects/$projectId/metrics/analytics";
+
+  // content profiles endpoints
+  static String getContentProfiles(String projectId) =>
+      "/api/projects/$projectId/content-profiles";
 }

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:boilerplate/presentation/template_library/models/writing_style_model.dart';
+import 'package:boilerplate/domain/entity/content/content_profile.dart';
 
-/// Card widget for displaying individual writing style templates
+/// Card widget for displaying individual content profile templates
 class IndustryTemplateCard extends StatelessWidget {
-  final WritingStyleModel style;
+  final ContentProfile profile;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const IndustryTemplateCard({
     Key? key,
-    required this.style,
+    required this.profile,
     required this.onTap,
+    this.onEdit,
+    this.onDelete,
   }) : super(key: key);
 
   @override
@@ -39,40 +43,28 @@ class IndustryTemplateCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Color indicator and title
+                  // Title with color indicator
                   Row(
                     children: [
                       Container(
                         width: 12,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: _parseColor(style.color),
+                          color: Color(0xFF2196F3),
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
                       SizedBox(width: 10.0),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              style.name,
-                              style: TextStyle(
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF333333),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              style.industry,
-                              style: TextStyle(
-                                fontSize: 11.0,
-                                color: Color(0xFF999999),
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          profile.name,
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF333333),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -80,46 +72,82 @@ class IndustryTemplateCard extends StatelessWidget {
                   SizedBox(height: 12.0),
                   // Description
                   Text(
-                    style.description,
+                    profile.description,
                     style: TextStyle(
-                      fontSize: 12.0,
+                      fontSize: 13.0,
                       color: Color(0xFF666666),
-                      height: 1.4,
+                      height: 1.5,
                     ),
-                    maxLines: 2,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 12.0),
-                  // Preview tags
-                  Wrap(
-                    spacing: 6.0,
-                    runSpacing: 6.0,
-                    children: [
-                      _buildPreviewTag('Voice', style.voice),
-                      _buildPreviewTag('Tone', style.tone),
-                    ],
-                  ),
-                  SizedBox(height: 12.0),
-                  // View details button
+                  SizedBox(height: 16.0),
+                  // Action buttons row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.w600,
-                          color: _parseColor(style.color),
+                      // View Details button
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: onTap,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                'View Details',
+                                style: TextStyle(
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2196F3),
+                                ),
+                              ),
+                              SizedBox(width: 4.0),
+                              Icon(
+                                Icons.arrow_forward,
+                                size: 14.0,
+                                color: Color(0xFF2196F3),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(width: 4.0),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 14.0,
-                        color: _parseColor(style.color),
-                      ),
                     ],
                   ),
+                  // Edit and Delete buttons
+                  if (onEdit != null || onDelete != null) ...[
+                    SizedBox(height: 12.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (onEdit != null)
+                          Tooltip(
+                            message: 'Edit Profile',
+                            child: IconButton(
+                              onPressed: onEdit,
+                              icon: Icon(Icons.edit, size: 18),
+                              color: Color(0xFF2196F3),
+                              splashRadius: 20,
+                              padding: EdgeInsets.zero,
+                              constraints:
+                                  BoxConstraints(minWidth: 36, minHeight: 36),
+                            ),
+                          ),
+                        if (onDelete != null)
+                          Tooltip(
+                            message: 'Delete Profile',
+                            child: IconButton(
+                              onPressed: onDelete,
+                              icon: Icon(Icons.delete, size: 18),
+                              color: Colors.red,
+                              splashRadius: 20,
+                              padding: EdgeInsets.zero,
+                              constraints:
+                                  BoxConstraints(minWidth: 36, minHeight: 36),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -127,41 +155,5 @@ class IndustryTemplateCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildPreviewTag(String label, String content) {
-    final preview = content.split('.').first.replaceAll(RegExp(r'[,;]'), '');
-    final displayText =
-        preview.length > 20 ? '${preview.substring(0, 17)}...' : preview;
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: _parseColor(style.color).withOpacity(0.08),
-        borderRadius: BorderRadius.circular(6.0),
-        border: Border.all(
-          color: _parseColor(style.color).withOpacity(0.2),
-          width: 0.5,
-        ),
-      ),
-      child: Text(
-        displayText,
-        style: TextStyle(
-          fontSize: 10.0,
-          color: _parseColor(style.color),
-          fontWeight: FontWeight.w500,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-
-  Color _parseColor(String colorString) {
-    try {
-      return Color(int.parse(colorString.replaceFirst('#', '0xff')));
-    } catch (e) {
-      return Color(0xFF2196F3);
-    }
   }
 }

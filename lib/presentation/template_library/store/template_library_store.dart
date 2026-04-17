@@ -1,6 +1,10 @@
 import 'package:mobx/mobx.dart';
 import 'package:boilerplate/core/stores/error/error_store.dart';
-import 'package:boilerplate/presentation/template_library/models/writing_style_model.dart';
+import 'package:boilerplate/domain/entity/content/content_profile.dart';
+import 'package:boilerplate/domain/usecase/content/get_content_profiles_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/create_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/update_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/delete_content_profile_usecase.dart';
 
 part 'template_library_store.g.dart';
 
@@ -9,6 +13,10 @@ class TemplateLibraryStore = _TemplateLibraryStore with _$TemplateLibraryStore;
 abstract class _TemplateLibraryStore with Store {
   final String TAG = "_TemplateLibraryStore";
   final ErrorStore errorStore;
+  final GetContentProfilesUseCase _getContentProfilesUseCase;
+  final CreateContentProfileUseCase _createContentProfileUseCase;
+  final UpdateContentProfileUseCase _updateContentProfileUseCase;
+  final DeleteContentProfileUseCase _deleteContentProfileUseCase;
 
   // Observable variables
   @observable
@@ -18,7 +26,7 @@ abstract class _TemplateLibraryStore with Store {
   String inputUrl = '';
 
   @observable
-  List<WritingStyleModel> industryTemplates = [];
+  List<ContentProfile> contentProfiles = [];
 
   @observable
   WebsiteAnalysisResult? analysisResult;
@@ -27,142 +35,39 @@ abstract class _TemplateLibraryStore with Store {
   bool isAnalyzing = false;
 
   @observable
-  WritingStyleModel? selectedTemplate;
+  ContentProfile? selectedContentProfile;
+
+  @observable
+  bool isSavingProfile = false;
+
+  @observable
+  bool isDeletingProfile = false;
 
   // Constructor
-  _TemplateLibraryStore(this.errorStore);
+  _TemplateLibraryStore(
+    this.errorStore,
+    this._getContentProfilesUseCase,
+    this._createContentProfileUseCase,
+    this._updateContentProfileUseCase,
+    this._deleteContentProfileUseCase,
+  );
 
   // Actions
   @action
-  Future<void> fetchIndustryTemplates() async {
+  Future<void> fetchIndustryTemplates({String? projectId}) async {
     isLoading = true;
     try {
-      await Future.delayed(Duration(milliseconds: 600));
-
-      industryTemplates = [
-        // Technology/SaaS Templates
-        WritingStyleModel(
-          id: 'tech_startup',
-          name: 'Tech Innovator',
-          description:
-              'Forward-thinking, cutting-edge communication style for emerging tech companies.',
-          voice:
-              'Visionary, dynamic, approachable. Uses contemporary language and industry jargon naturally. Balances technical depth with accessibility. Emphasizes innovation and future possibilities. Conversational yet authoritative.',
-          tone:
-              'Energetic, optimistic, slightly rebellious. Challenges conventional thinking while maintaining credibility. Quick-paced and forward-looking. Occasionally uses humor and wit to engage. Confident without being arrogant.',
-          audience:
-              'Tech-savvy entrepreneurs, venture capitalists, early adopters (ages 25-45). Decision-makers in the SaaS space who value innovation and ROI. CTOs, product managers, and growth-focused leaders.',
-          industry: 'Technology/SaaS',
-          color: '#007AFF',
-        ),
-        WritingStyleModel(
-          id: 'enterprise_solution',
-          name: 'Enterprise Authority',
-          description:
-              'Comprehensive, data-driven approach for enterprise software and infrastructure.',
-          voice:
-              'Authoritative, precise, reliability-focused. Uses structured, professional language with technical accuracy. Emphasizes security, scalability, and measurable outcomes. Demonstrates deep industry expertise through detailed explanations.',
-          tone:
-              'Professional, methodical, trustworthy. Serious and solution-oriented. Uses evidence-based reasoning. Avoids hyperbole; instead focuses on verifiable benefits. Inspires confidence through competence.',
-          audience:
-              'CIOs, CTOs, IT directors, enterprise architects (ages 40-60). Organizations prioritizing stability, compliance, and long-term ROI. Risk-conscious decision-makers from finance and operations.',
-          industry: 'Technology/SaaS',
-          color: '#0051BA',
-        ),
-
-        // E-commerce Templates
-        WritingStyleModel(
-          id: 'ecommerce_lifestyle',
-          name: 'Lifestyle Ambassador',
-          description:
-              'Aspirational, lifestyle-driven language for premium e-commerce and fashion brands.',
-          voice:
-              'Inspirational, curated, exclusive. Creates desire through storytelling and experience-focused narratives. Uses lifestyle language and trend awareness. Connects products to identity and self-expression. Warmly personal but stylishly refined.',
-          tone:
-              'Sophisticated, aspirational, engaging. Celebratory and inviting. Creates FOMO thoughtfully through scarcity and exclusivity. Empowers rather than pressures. Feels like advice from a trusted friend with great taste.',
-          audience:
-              'Fashion-conscious consumers, trend followers (ages 18-40). Urban professionals seeking quality and status. Individuals who view shopping as self-expression and lifestyle choice.',
-          industry: 'E-commerce',
-          color: '#FF2D55',
-        ),
-        WritingStyleModel(
-          id: 'ecommerce_value',
-          name: 'Value Hunter',
-          description:
-              'Deal-focused, value-conscious messaging for budget-friendly retail.',
-          voice:
-              'Friendly, clear, no-nonsense. Celebrates savings with genuine enthusiasm. Uses plain language and straightforward comparisons. Emphasizes quality-to-price ratio tirelessly. Feels like a savvy shopper sharing tips.',
-          tone:
-              'Enthusiastic about deals, practical, encouraging. Casual and authentic. Celebrates wins with customers. Transparent about savings and benefits. Creates urgency around limited deals without manipulation.',
-          audience:
-              'Budget-conscious shoppers, families, value-seekers (ages 25-55). Smart buyers who research prices and compare. Individuals who take pride in finding great deals and smart purchases.',
-          industry: 'E-commerce',
-          color: '#FFA500',
-        ),
-
-        // Healthcare Templates
-        WritingStyleModel(
-          id: 'healthcare_empathy',
-          name: 'Patient-Centric Care',
-          description:
-              'Compassionate, accessible communication for patient-facing healthcare services.',
-          voice:
-              'Warm, empathetic, reassuring. Uses plain English avoiding unnecessary medical jargon. Acknowledges patient concerns and fears respectfully. Provides clear, actionable guidance. Demonstrates genuine care through attentive language.',
-          tone:
-              'Comforting, trustworthy, patient-focused. Calm and confident. Never dismissive of concerns. Explains complex topics in understandable terms. Balances professionalism with human warmth.',
-          audience:
-              'Patients seeking health information, caregivers (ages 18-75). Individuals managing health concerns who need clear guidance. People building relationships with healthcare providers.',
-          industry: 'Healthcare',
-          color: '#00B050',
-        ),
-        WritingStyleModel(
-          id: 'healthcare_clinical',
-          name: 'Clinical Precision',
-          description:
-              'Evidence-based, technically rigorous communication for medical professionals.',
-          voice:
-              'Scientific, precise, formally authoritative. Grounded in research and clinical evidence. Uses appropriate medical terminology accurately. Acknowledges complexity and nuance in treatment decisions. Respects practitioner expertise.',
-          tone:
-              'Professional, objective, carefully measured. Absent of marketing language. Substantive and detailed. Respects intelligence and experience of medical professionals. Open to ongoing evidence evolution.',
-          audience:
-              'Healthcare professionals, medical researchers, institutional administrators. Clinicians seeking evidence-based information. Organizations focused on clinical excellence and compliance.',
-          industry: 'Healthcare',
-          color: '#0078D4',
-        ),
-
-        // Marketing Templates
-        WritingStyleModel(
-          id: 'marketing_narrative',
-          name: 'Brand Storyteller',
-          description:
-              'Narrative-driven, emotional connection-building for content marketing strategies.',
-          voice:
-              'Narrative-focused, emotionally intelligent, human-centered. Tells compelling stories that resonate beyond superficial benefits. Weaves brand values into relatable experiences. Authentic and genuine without manufactured emotion.',
-          tone:
-              'Warm, reflective, inspiring. Invites reflection and emotional connection. Celebrates customer stories and experiences. Thoughtful and unhurried. Builds community rather than just audiences.',
-          audience:
-              'Values-driven consumers, conscious shoppers (ages 25-50). Individuals seeking brands aligned with their beliefs. People who build loyalty around shared stories and values.',
-          industry: 'Marketing',
-          color: '#E61E24',
-        ),
-        WritingStyleModel(
-          id: 'marketing_performance',
-          name: 'Growth Catalyst',
-          description:
-              'Data-driven, conversion-focused messaging for performance marketing campaigns.',
-          voice:
-              'Clear, results-oriented, persuasive. Uses data and social proof confidently. Direct and benefit-focused. Speaks in terms of transformation and measurable outcomes. Energetic and action-oriented.',
-          tone:
-              'Confident, motivating, results-driven. Urgent without being pushy. Optimistic about possibilities. Uses power words strategically. Focuses on forward momentum and winning.',
-          audience:
-              'Results-conscious professionals, ambitious entrepreneurs (ages 25-55). Growth-minded individuals seeking competitive advantage. Decision-makers focused on ROI and KPIs.',
-          industry: 'Marketing',
-          color: '#FF6B35',
-        ),
-      ];
-
+      // Use provided projectId or fallback to default
+      final id = projectId ?? '9022c9d7-7443-4a33-96aa-56628ba81220';
+      
+      final profiles = await _getContentProfilesUseCase(params: id);
+      contentProfiles = profiles;
+      
+      print('$TAG fetchIndustryTemplates: Loaded ${profiles.length} content profiles');
+      
       errorStore.setErrorMessage('');
     } catch (error) {
+      print('$TAG fetchIndustryTemplates error: $error');
       errorStore.setErrorMessage(error.toString());
     } finally {
       isLoading = false;
@@ -228,8 +133,111 @@ abstract class _TemplateLibraryStore with Store {
   }
 
   @action
-  void selectTemplate(WritingStyleModel template) {
-    selectedTemplate = template;
+  void selectContentProfile(ContentProfile profile) {
+    selectedContentProfile = profile;
+  }
+
+  @action
+  Future<void> createContentProfile({
+    required String projectId,
+    required String name,
+    required String description,
+    required String voiceAndTone,
+    required String audience,
+  }) async {
+    isSavingProfile = true;
+    try {
+      final params = CreateContentProfileParams(
+        projectId: projectId,
+        name: name,
+        description: description,
+        voiceAndTone: voiceAndTone,
+        audience: audience,
+      );
+      
+      final newProfile = await _createContentProfileUseCase(params: params);
+      contentProfiles.add(newProfile);
+      
+      print('$TAG createContentProfile: Profile created successfully');
+      errorStore.setErrorMessage('');
+    } catch (error) {
+      print('$TAG createContentProfile error: $error');
+      errorStore.setErrorMessage(error.toString());
+      rethrow;
+    } finally {
+      isSavingProfile = false;
+    }
+  }
+
+  @action
+  Future<void> updateContentProfile({
+    required String projectId,
+    required String contentProfileId,
+    required String name,
+    required String description,
+    required String voiceAndTone,
+    required String audience,
+  }) async {
+    isSavingProfile = true;
+    try {
+      final params = UpdateContentProfileParams(
+        projectId: projectId,
+        contentProfileId: contentProfileId,
+        name: name,
+        description: description,
+        voiceAndTone: voiceAndTone,
+        audience: audience,
+      );
+      
+      final updatedProfile = await _updateContentProfileUseCase(params: params);
+      
+      // Update in list
+      final index = contentProfiles.indexWhere((p) => p.id == contentProfileId);
+      if (index != -1) {
+        contentProfiles[index] = updatedProfile;
+      }
+      
+      print('$TAG updateContentProfile: Profile updated successfully');
+      errorStore.setErrorMessage('');
+    } catch (error) {
+      print('$TAG updateContentProfile error: $error');
+      errorStore.setErrorMessage(error.toString());
+      rethrow;
+    } finally {
+      isSavingProfile = false;
+    }
+  }
+
+  @action
+  Future<void> deleteContentProfile({
+    required String projectId,
+    required String contentProfileId,
+  }) async {
+    isDeletingProfile = true;
+    try {
+      final params = DeleteContentProfileParams(
+        projectId: projectId,
+        contentProfileId: contentProfileId,
+      );
+      
+      await _deleteContentProfileUseCase(params: params);
+      
+      // Remove from list
+      contentProfiles.removeWhere((p) => p.id == contentProfileId);
+      
+      if (selectedContentProfile?.id == contentProfileId) {
+        selectedContentProfile = null;
+      }
+      
+      print('$TAG deleteContentProfile: Profile deleted successfully');
+      errorStore.setErrorMessage('');
+    } catch (error) {
+      print('$TAG deleteContentProfile error: $error');
+      errorStore.setErrorMessage(error.toString());
+      rethrow;
+    } finally {
+      isDeletingProfile = false;
+    }
   }
 
   @action

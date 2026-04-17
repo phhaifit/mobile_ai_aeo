@@ -13,6 +13,10 @@ import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart'
 import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/summarize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/get_content_profiles_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/create_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/update_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/delete_content_profile_usecase.dart';
 import 'package:boilerplate/presentation/content_enhancement/store/content_enhancement_store.dart';
 import 'package:boilerplate/presentation/forgot_password/store/forgot_password_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
@@ -159,6 +163,10 @@ class StoreModule {
     getIt.registerSingleton<TemplateLibraryStore>(
       TemplateLibraryStore(
         getIt<ErrorStore>(),
+        getIt<GetContentProfilesUseCase>(),
+        getIt<CreateContentProfileUseCase>(),
+        getIt<UpdateContentProfileUseCase>(),
+        getIt<DeleteContentProfileUseCase>(),
       ),
     );
 
