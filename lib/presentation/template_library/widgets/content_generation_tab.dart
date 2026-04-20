@@ -1,7 +1,10 @@
 import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/domain/entity/content/content_profile.dart';
 import 'package:boilerplate/domain/entity/prompt/content_generation_result.dart';
 import 'package:boilerplate/presentation/template_library/store/content_generation_store.dart';
+import 'package:boilerplate/presentation/template_library/ui_content_industry.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 
 /// Hardcoded AEO / SEO reference sources (high-quality pages).
@@ -33,8 +36,7 @@ const List<_ContentTypeOption> _contentTypes = [
   _ContentTypeOption(value: 'email', label: 'Email'),
   _ContentTypeOption(value: 'copywriting', label: 'Copywriting'),
   _ContentTypeOption(value: 'blog_post', label: 'Blog post'),
-  _ContentTypeOption(
-      value: 'social_media_post', label: 'Social media post'),
+  _ContentTypeOption(value: 'social_media_post', label: 'Social media post'),
 ];
 
 const List<_PlatformOption> _platforms = [
@@ -47,10 +49,14 @@ const List<_PlatformOption> _platforms = [
 
 /// Preset keyword packs (famous / high-intent topics).
 const List<_KeywordPreset> _keywordPresets = [
-  _KeywordPreset(label: 'AI & machine learning', keywords: ['AI', 'machine learning']),
+  _KeywordPreset(
+      label: 'AI & machine learning', keywords: ['AI', 'machine learning']),
   _KeywordPreset(label: 'SEO & AEO', keywords: ['SEO', 'AEO']),
-  _KeywordPreset(label: 'Content marketing', keywords: ['content marketing', 'brand']),
-  _KeywordPreset(label: 'Digital transformation', keywords: ['digital transformation', 'innovation']),
+  _KeywordPreset(
+      label: 'Content marketing', keywords: ['content marketing', 'brand']),
+  _KeywordPreset(
+      label: 'Digital transformation',
+      keywords: ['digital transformation', 'innovation']),
 ];
 
 class _LabeledUrl {
@@ -78,6 +84,8 @@ class _KeywordPreset {
 }
 
 class ContentGenerationTab extends StatefulWidget {
+  const ContentGenerationTab({Key? key}) : super(key: key);
+
   @override
   State<ContentGenerationTab> createState() => _ContentGenerationTabState();
 }
@@ -99,6 +107,10 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
   bool _useCustomKeywords = false;
   int _keywordPresetIndex = 0;
 
+  /// UI-only industry bucket (not sent to API).
+  UiContentIndustry _selectedUiIndustry = UiContentIndustry.technologySaas;
+  bool _didScheduleIndustryAutoPick = false;
+
   static const String _demoProjectLabel = 'Demo project (fixed)';
 
   @override
@@ -116,6 +128,24 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
     _customKeywordsController.dispose();
     _customerPersonaController.dispose();
     super.dispose();
+  }
+
+  /// Public method to set profile ID from outside (e.g., from profile preview).
+  /// Syncs [UiContentIndustry] so the profile appears under the matching UI bucket.
+  void setProfileId(String profileId) {
+    setState(() {
+      _contentProfileId = profileId;
+      for (final p in _store.contentProfiles) {
+        if (p.id == profileId) {
+          _selectedUiIndustry = uiIndustryForContentProfile(p);
+          break;
+        }
+      }
+    });
+  }
+
+  List<ContentProfile> get _profilesForSelectedIndustry {
+    return profilesInIndustry(_store.contentProfiles, _selectedUiIndustry);
   }
 
   String _effectiveReferenceUrl() {
@@ -145,7 +175,7 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
   }
 
   String? get _effectiveProfileId {
-    final profiles = _store.contentProfiles;
+    final profiles = _profilesForSelectedIndustry;
     if (profiles.isEmpty) return null;
     if (_contentProfileId != null &&
         profiles.any((p) => p.id == _contentProfileId)) {
@@ -245,6 +275,18 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
           );
         }
 
+        final allProfiles = _store.contentProfiles;
+        if (allProfiles.isNotEmpty && !_didScheduleIndustryAutoPick) {
+          _didScheduleIndustryAutoPick = true;
+          final first = firstIndustryWithProfiles(allProfiles);
+          if (first != null && first != _selectedUiIndustry) {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              setState(() => _selectedUiIndustry = first);
+            });
+          }
+        }
+
         return SingleChildScrollView(
           padding: EdgeInsets.all(16),
           child: Column(
@@ -260,7 +302,7 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
               ),
               SizedBox(height: 8),
               Text(
-                'Pick a prompt and content profile, then generate an article for your project.',
+                'Pick industry (UI grouping only), a content profile, and a prompt. Industry is not sent to the API.',
                 style: TextStyle(
                   fontSize: 13,
                   color: Color(0xFF666666),
@@ -278,6 +320,31 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
                   ),
                 ],
                 onChanged: null,
+              ),
+              SizedBox(height: 16),
+              _buildDropdown<UiContentIndustry>(
+                label: 'Industry (templates)',
+                value: _selectedUiIndustry,
+                items: UiContentIndustry.values
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e.tagLabel),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) {
+                  if (v == null) return;
+                  setState(() {
+                    _selectedUiIndustry = v;
+                    final filtered =
+                        profilesInIndustry(_store.contentProfiles, v);
+                    if (_contentProfileId != null &&
+                        !filtered.any((p) => p.id == _contentProfileId)) {
+                      _contentProfileId = null;
+                    }
+                  });
+                },
               ),
               SizedBox(height: 16),
               _buildProfileDropdown(),
@@ -394,8 +461,8 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
-                  value: _keywordPresetIndex.clamp(
-                      0, _keywordPresets.length - 1),
+                  value:
+                      _keywordPresetIndex.clamp(0, _keywordPresets.length - 1),
                   items: List.generate(
                     _keywordPresets.length,
                     (i) => DropdownMenuItem(
@@ -507,9 +574,11 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<T>(
+          isExpanded: true,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             isDense: true,
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           value: value,
           items: items,
@@ -520,11 +589,32 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
   }
 
   Widget _buildProfileDropdown() {
-    final profiles = _store.contentProfiles;
-    if (profiles.isEmpty) {
+    final all = _store.contentProfiles;
+    if (all.isEmpty) {
       return Text(
         'No content profiles yet. Create one from the toolbar.',
         style: TextStyle(color: Color(0xFF999999), fontSize: 13),
+      );
+    }
+    final profiles = _profilesForSelectedIndustry;
+    if (profiles.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Content profile',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: Color(0xFF333333),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'No profiles in ${_selectedUiIndustry.tagLabel} for this UI grouping. Pick another industry or create profiles.',
+            style: TextStyle(color: Color(0xFF999999), fontSize: 13),
+          ),
+        ],
       );
     }
     final validId = _effectiveProfileId ?? profiles.first.id;
@@ -535,7 +625,11 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
           .map(
             (p) => DropdownMenuItem(
               value: p.id,
-              child: Text(p.name, overflow: TextOverflow.ellipsis),
+              child: Text(
+                p.name,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
           )
           .toList(),
@@ -561,7 +655,11 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
           .map(
             (p) => DropdownMenuItem(
               value: p.id,
-              child: Text(p.label, overflow: TextOverflow.ellipsis),
+              child: Text(
+                p.label,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
           )
           .toList(),
@@ -627,12 +725,10 @@ class _ContentGenerationResultDialog extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _ChipLabel(
-                        label: 'Status', value: result.completionStatus),
+                    _ChipLabel(label: 'Status', value: result.completionStatus),
                     _ChipLabel(label: 'Type', value: result.contentType),
                     if (result.contentFormat != null)
-                      _ChipLabel(
-                          label: 'Format', value: result.contentFormat!),
+                      _ChipLabel(label: 'Format', value: result.contentFormat!),
                     if (result.createdAt != null)
                       _ChipLabel(label: 'Created', value: result.createdAt!),
                   ],

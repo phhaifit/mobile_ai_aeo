@@ -39,16 +39,19 @@ class IndustryTemplateCard extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(12.0),
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Title with color indicator
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: 12,
                         height: 12,
+                        margin: EdgeInsets.only(top: 2),
                         decoration: BoxDecoration(
                           color: Color(0xFF2196F3),
                           borderRadius: BorderRadius.circular(3),
@@ -69,91 +72,162 @@ class IndustryTemplateCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 12.0),
-                  // Description
-                  Text(
-                    profile.description,
-                    style: TextStyle(
-                      fontSize: 13.0,
-                      color: Color(0xFF666666),
-                      height: 1.5,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+                  SizedBox(height: 8.0),
+
+                  // Description with smart truncation
+                  _DescriptionWithDetails(
+                    description: profile.description,
+                    onViewDetails: onTap,
                   ),
-                  SizedBox(height: 16.0),
-                  // Action buttons row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // View Details button
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: onTap,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Text(
-                                'View Details',
-                                style: TextStyle(
-                                  fontSize: 12.0,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2196F3),
-                                ),
-                              ),
-                              SizedBox(width: 4.0),
-                              Icon(
-                                Icons.arrow_forward,
-                                size: 14.0,
+
+                  SizedBox(height: 8.0),
+
+                  // Edit and Delete buttons (compact)
+                  if (onEdit != null || onDelete != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (onEdit != null)
+                            SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: IconButton(
+                                onPressed: onEdit,
+                                icon: Icon(Icons.edit, size: 16),
                                 color: Color(0xFF2196F3),
+                                splashRadius: 16,
+                                padding: EdgeInsets.zero,
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          if (onDelete != null)
+                            SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: IconButton(
+                                onPressed: onDelete,
+                                icon: Icon(Icons.delete, size: 16),
+                                color: Colors.red,
+                                splashRadius: 16,
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                        ],
                       ),
-                    ],
-                  ),
-                  // Edit and Delete buttons
-                  if (onEdit != null || onDelete != null) ...[
-                    SizedBox(height: 12.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (onEdit != null)
-                          Tooltip(
-                            message: 'Edit Profile',
-                            child: IconButton(
-                              onPressed: onEdit,
-                              icon: Icon(Icons.edit, size: 18),
-                              color: Color(0xFF2196F3),
-                              splashRadius: 20,
-                              padding: EdgeInsets.zero,
-                              constraints:
-                                  BoxConstraints(minWidth: 36, minHeight: 36),
-                            ),
-                          ),
-                        if (onDelete != null)
-                          Tooltip(
-                            message: 'Delete Profile',
-                            child: IconButton(
-                              onPressed: onDelete,
-                              icon: Icon(Icons.delete, size: 18),
-                              color: Colors.red,
-                              splashRadius: 20,
-                              padding: EdgeInsets.zero,
-                              constraints:
-                                  BoxConstraints(minWidth: 36, minHeight: 36),
-                            ),
-                          ),
-                      ],
                     ),
-                  ],
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Smart description widget with truncation and details modal
+class _DescriptionWithDetails extends StatefulWidget {
+  final String description;
+  final VoidCallback onViewDetails;
+
+  const _DescriptionWithDetails({
+    required this.description,
+    required this.onViewDetails,
+  });
+
+  @override
+  State<_DescriptionWithDetails> createState() =>
+      _DescriptionWithDetailsState();
+}
+
+class _DescriptionWithDetailsState extends State<_DescriptionWithDetails> {
+  late final _textPainter = TextPainter(
+    text: TextSpan(
+      text: widget.description,
+      style: TextStyle(
+        fontSize: 13.0,
+        color: Color(0xFF666666),
+        height: 1.45,
+      ),
+    ),
+    maxLines: 2,
+    textDirection: TextDirection.ltr,
+  );
+
+  late bool _isTruncated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _textPainter.layout(maxWidth: MediaQuery.of(context).size.width - 56);
+      if (_textPainter.didExceedMaxLines) {
+        setState(() => _isTruncated = true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.description,
+          style: TextStyle(
+            fontSize: 13.0,
+            color: Color(0xFF666666),
+            height: 1.45,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (_isTruncated)
+          Padding(
+            padding: EdgeInsets.only(top: 6.0),
+            child: GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('Profile Details'),
+                    content: SingleChildScrollView(
+                      child: Text(widget.description),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'View Details',
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2196F3),
+                    ),
+                  ),
+                  SizedBox(width: 3.0),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 12.0,
+                    color: Color(0xFF2196F3),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

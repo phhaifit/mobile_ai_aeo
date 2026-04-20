@@ -156,7 +156,7 @@ abstract class _TemplateLibraryStore with Store {
       );
       
       final newProfile = await _createContentProfileUseCase(params: params);
-      contentProfiles.add(newProfile);
+      contentProfiles = [...contentProfiles, newProfile];
       
       print('$TAG createContentProfile: Profile created successfully');
       errorStore.setErrorMessage('');
@@ -190,11 +190,13 @@ abstract class _TemplateLibraryStore with Store {
       );
       
       final updatedProfile = await _updateContentProfileUseCase(params: params);
-      
-      // Update in list
+
       final index = contentProfiles.indexWhere((p) => p.id == contentProfileId);
       if (index != -1) {
-        contentProfiles[index] = updatedProfile;
+        contentProfiles = [
+          for (var i = 0; i < contentProfiles.length; i++)
+            if (i == index) updatedProfile else contentProfiles[i],
+        ];
       }
       
       print('$TAG updateContentProfile: Profile updated successfully');
@@ -221,9 +223,9 @@ abstract class _TemplateLibraryStore with Store {
       );
       
       await _deleteContentProfileUseCase(params: params);
-      
-      // Remove from list
-      contentProfiles.removeWhere((p) => p.id == contentProfileId);
+
+      contentProfiles =
+          contentProfiles.where((p) => p.id != contentProfileId).toList();
       
       if (selectedContentProfile?.id == contentProfileId) {
         selectedContentProfile = null;

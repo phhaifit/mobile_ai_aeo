@@ -3,15 +3,20 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/template_library/store/template_library_store.dart';
 import 'package:boilerplate/domain/entity/content/content_profile.dart';
+import 'package:boilerplate/presentation/template_library/widgets/loading_widgets.dart';
+import 'package:boilerplate/presentation/template_library/widgets/profile_operation_banner.dart';
 
 class ContentProfileFormModal extends StatefulWidget {
   final String projectId;
   final ContentProfile? profile; // null for create, not null for update
+  /// Screen context that stays valid after this dialog is popped (for loading + snackbars).
+  final BuildContext hostContext;
   final VoidCallback onSuccess;
 
   const ContentProfileFormModal({
     Key? key,
     required this.projectId,
+    required this.hostContext,
     this.profile,
     required this.onSuccess,
   }) : super(key: key);
@@ -22,6 +27,10 @@ class ContentProfileFormModal extends StatefulWidget {
 }
 
 class _ContentProfileFormModalState extends State<ContentProfileFormModal> {
+  static const Color _fieldFocusColor = Color(0xFF2196F3);
+  static const BorderRadius _fieldRadius =
+      BorderRadius.all(Radius.circular(8));
+
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _voiceAndToneController;
@@ -29,12 +38,48 @@ class _ContentProfileFormModalState extends State<ContentProfileFormModal> {
   final _formKey = GlobalKey<FormState>();
   late final TemplateLibraryStore _store;
 
+  /// Outlined fields: label always floated (like focused), hints with e.g., focus ring blue not app red primary.
+  InputDecoration _profileFieldDecoration({
+    required String labelText,
+    required String hintText,
+    int maxLines = 1,
+  }) {
+    final outline = OutlineInputBorder(borderRadius: _fieldRadius);
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      floatingLabelBehavior: FloatingLabelBehavior.always,
+      alignLabelWithHint: maxLines > 1,
+      border: outline,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: _fieldRadius,
+        borderSide: BorderSide(color: Colors.grey.shade400),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: _fieldRadius,
+        borderSide: const BorderSide(color: _fieldFocusColor, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: _fieldRadius,
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: _fieldRadius,
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.error,
+          width: 2,
+        ),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _store = getIt<TemplateLibraryStore>();
-    _nameController =
-        TextEditingController(text: widget.profile?.name ?? '');
+    _nameController = TextEditingController(text: widget.profile?.name ?? '');
     _descriptionController =
         TextEditingController(text: widget.profile?.description ?? '');
     _voiceAndToneController =
@@ -61,189 +106,196 @@ class _ContentProfileFormModalState extends State<ContentProfileFormModal> {
       child: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Text(
-                  isEditMode ? 'Edit Content Profile' : 'Create Content Profile',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                SizedBox(height: 24),
-
-                // Name field
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Profile Name',
-                    hintText: 'e.g: E-commerce Ambassador',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: _fieldFocusColor,
                   ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter profile name';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
-                // Description field
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    hintText:
-                        'Detailed description of this content style...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Text(
+                    isEditMode
+                        ? 'Edit Content Profile'
+                        : 'Create Content Profile',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter description';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
+                  SizedBox(height: 24),
 
-                // Voice and Tone field
-                TextFormField(
-                  controller: _voiceAndToneController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Voice & Tone',
-                    hintText:
-                        'e.g: Enthusiastic, engaging, high-pressure...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  // Name field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: _profileFieldDecoration(
+                      labelText: 'Profile Name',
+                      hintText: 'e.g: E-commerce Ambassador',
                     ),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) {
+                        return 'Please enter profile name';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter voice and tone';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
+                  SizedBox(height: 16),
 
-                // Audience field
-                TextFormField(
-                  controller: _audienceController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Target Audience',
-                    hintText:
-                        'e.g: Online shopping consumers (18-40 years old)...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  // Description field
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    decoration: _profileFieldDecoration(
+                      labelText: 'Description',
+                      hintText:
+                          'e.g: Brand story, key benefits, tone for product pages…',
+                      maxLines: 3,
                     ),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) {
+                        return 'Please enter description';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter target audience';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 24),
+                  SizedBox(height: 16),
 
-                // Action buttons - Using Observer for reactive state
-                Observer(
-                  builder: (_) => Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _store.isSavingProfile
-                            ? null
-                            : () => Navigator.pop(context),
-                        child: Text('Cancel'),
-                      ),
-                      SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _store.isSavingProfile
-                            ? null
-                            : () async {
-                                if (_formKey.currentState!.validate()) {
-                                  try {
-                                    if (isEditMode) {
-                                      await _store.updateContentProfile(
-                                        projectId: widget.projectId,
-                                        contentProfileId: widget.profile!.id,
-                                        name: _nameController.text,
-                                        description:
-                                            _descriptionController.text,
-                                        voiceAndTone:
-                                            _voiceAndToneController.text,
-                                        audience: _audienceController.text,
-                                      );
-                                    } else {
-                                      await _store.createContentProfile(
-                                        projectId: widget.projectId,
-                                        name: _nameController.text,
-                                        description:
-                                            _descriptionController.text,
-                                        voiceAndTone:
-                                            _voiceAndToneController.text,
-                                        audience: _audienceController.text,
-                                      );
-                                    }
-                                    if (mounted) {
-                                      Navigator.pop(context);
-                                      widget.onSuccess();
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(isEditMode
-                                              ? 'Profile updated successfully'
-                                              : 'Profile created successfully'),
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Error: ${_store.errorStore.errorMessage}'),
-                                        duration: Duration(seconds: 3),
+                  // Voice and Tone field
+                  TextFormField(
+                    controller: _voiceAndToneController,
+                    maxLines: 3,
+                    decoration: _profileFieldDecoration(
+                      labelText: 'Voice & Tone',
+                      hintText:
+                          'e.g: Warm expert — short sentences, confident, no jargon…',
+                      maxLines: 3,
+                    ),
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) {
+                        return 'Please enter voice and tone';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+
+                  // Audience field
+                  TextFormField(
+                    controller: _audienceController,
+                    maxLines: 3,
+                    decoration: _profileFieldDecoration(
+                      labelText: 'Target Audience',
+                      hintText:
+                          'e.g: Online shoppers 18–40, price-sensitive, mobile-first…',
+                      maxLines: 3,
+                    ),
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) {
+                        return 'Please enter target audience';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 24),
+
+                  // Action buttons - Using Observer for reactive state
+                  Observer(
+                    builder: (_) => Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: _store.isSavingProfile
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: Text('Cancel'),
+                        ),
+                        SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: _store.isSavingProfile
+                              ? null
+                              : () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    final host = widget.hostContext;
+                                    Navigator.pop(context);
+
+                                    await Future<void>.delayed(Duration.zero);
+                                    if (!host.mounted) return;
+
+                                    showDialog<void>(
+                                      context: host,
+                                      barrierDismissible: false,
+                                      builder: (_) => LoadingDialog(
+                                        message: isEditMode
+                                            ? 'Updating profile...'
+                                            : 'Creating profile...',
                                       ),
                                     );
+
+                                    try {
+                                      if (isEditMode) {
+                                        await _store.updateContentProfile(
+                                          projectId: widget.projectId,
+                                          contentProfileId: widget.profile!.id,
+                                          name: _nameController.text,
+                                          description:
+                                              _descriptionController.text,
+                                          voiceAndTone:
+                                              _voiceAndToneController.text,
+                                          audience: _audienceController.text,
+                                        );
+                                      } else {
+                                        await _store.createContentProfile(
+                                          projectId: widget.projectId,
+                                          name: _nameController.text,
+                                          description:
+                                              _descriptionController.text,
+                                          voiceAndTone:
+                                              _voiceAndToneController.text,
+                                          audience: _audienceController.text,
+                                        );
+                                      }
+
+                                      if (host.mounted) {
+                                        Navigator.of(host, rootNavigator: true)
+                                            .pop();
+                                        widget.onSuccess();
+                                        showProfileOperationTopBanner(
+                                          host,
+                                          success: true,
+                                          message: isEditMode
+                                              ? 'Profile updated successfully.'
+                                              : 'Profile created successfully.',
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (host.mounted) {
+                                        Navigator.of(host, rootNavigator: true)
+                                            .pop();
+                                        final err =
+                                            _store.errorStore.errorMessage
+                                                .trim();
+                                        showProfileOperationTopBanner(
+                                          host,
+                                          success: false,
+                                          message: err.isNotEmpty
+                                              ? 'Failed: $err'
+                                              : 'Something went wrong. Please try again.',
+                                        );
+                                      }
+                                    }
                                   }
-                                }
-                              },
-                        child: _store.isSavingProfile
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(isEditMode ? 'Update' : 'Create'),
-                      ),
-                    ],
+                                },
+                          child: Text(isEditMode ? 'Update' : 'Create'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

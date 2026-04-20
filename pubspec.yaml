@@ -10,7 +10,7 @@ description: Jarvis AEO - AI-powered Ask Engine Optimization mobile app.
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.6 <4.0.0'
+  sdk: ">=3.0.6 <4.0.0"
 
 dependencies:
   flutter:
@@ -34,6 +34,7 @@ dependencies:
   firebase_crashlytics: ^4.3.0
   flutter_dotenv: ^5.1.0
   flutter_mobx: ^2.0.6+5
+  flutter_spinkit: ^5.2.1
   fl_chart: ^0.69.0
   # G
   get_it: ^7.2.0
