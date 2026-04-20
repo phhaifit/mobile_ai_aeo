@@ -3,6 +3,7 @@ import 'package:boilerplate/domain/entity/content/content_profile.dart';
 import 'package:boilerplate/domain/entity/prompt/content_generation_result.dart';
 import 'package:boilerplate/presentation/template_library/store/content_generation_store.dart';
 import 'package:boilerplate/presentation/template_library/ui_content_industry.dart';
+import 'package:boilerplate/presentation/template_library/widgets/loading_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
@@ -216,25 +217,44 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
       return;
     }
 
-    final persona = _customerPersonaController.text.trim();
-    final result = await _store.generateContent(
-      promptId: promptId,
-      contentProfileId: profileId,
-      contentType: _contentTypeValue,
-      keywords: keywords,
-      referencePageUrl: refUrl,
-      platform: _platformValue,
-      improvement: _improvementController.text.trim(),
-      referenceType: _referenceTypeController.text.trim(),
-      customerPersonaId: persona.isEmpty ? null : persona,
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => LoadingDialog(
+        message: 'Generating content…',
+      ),
     );
+    await Future<void>.delayed(Duration.zero);
+
+    final persona = _customerPersonaController.text.trim();
+    ContentGenerationResult? result;
+    try {
+      result = await _store.generateContent(
+        promptId: promptId,
+        contentProfileId: profileId,
+        contentType: _contentTypeValue,
+        keywords: keywords,
+        referencePageUrl: refUrl,
+        platform: _platformValue,
+        improvement: _improvementController.text.trim(),
+        referenceType: _referenceTypeController.text.trim(),
+        customerPersonaId: persona.isEmpty ? null : persona,
+      );
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
 
     if (!mounted) return;
     if (result != null) {
+      final generated = result;
       await showDialog<void>(
         context: context,
         barrierDismissible: true,
-        builder: (ctx) => _ContentGenerationResultDialog(result: result),
+        builder: (ctx) =>
+            _ContentGenerationResultDialog(result: generated),
       );
     } else if (_store.errorStore.errorMessage.isNotEmpty) {
       _toast(_store.errorStore.errorMessage);
@@ -529,22 +549,13 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: _store.isGenerating
-                        ? SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            'Generate',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
+                    child: Text(
+                      'Generate',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
                 ),
               ),

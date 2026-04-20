@@ -1,8 +1,9 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
-/// Rounded card from the top (overlay), not full width — profile create / update / delete.
+/// Frosted-glass style banner from the top (overlay), not full width.
 void showProfileOperationTopBanner(
   BuildContext context, {
   required bool success,
@@ -102,9 +103,26 @@ class _ProfileTopBannerOverlayState extends State<_ProfileTopBannerOverlay>
       400.0,
     );
 
-    final bg = widget.success
-        ? const Color(0xFF1B5E20)
-        : const Color(0xFFB71C1C);
+    final success = widget.success;
+    final gradientColors = success
+        ? <Color>[
+            Colors.white.withOpacity(0.52),
+            const Color(0xFFC8E6C9).withOpacity(0.42),
+            const Color(0xFFA5D6A7).withOpacity(0.32),
+          ]
+        : <Color>[
+            Colors.white.withOpacity(0.55),
+            const Color(0xFFFFCDD2).withOpacity(0.45),
+            const Color(0xFFFFB4AB).withOpacity(0.32),
+          ];
+
+    final accent = success
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFFC62828);
+    final iconBg = success
+        ? const Color(0xFF4CAF50).withOpacity(0.18)
+        : const Color(0xFFE57373).withOpacity(0.22);
+    final textColor = const Color(0xFF263238);
 
     return Material(
       type: MaterialType.transparency,
@@ -121,69 +139,94 @@ class _ProfileTopBannerOverlayState extends State<_ProfileTopBannerOverlay>
                   position: _slide,
                   child: FadeTransition(
                     opacity: _fade,
-                    child: Material(
-                      elevation: 8,
-                      shadowColor: Colors.black38,
-                      borderRadius: BorderRadius.circular(14),
-                      color: bg,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.22),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                widget.success
-                                    ? Icons.check_rounded
-                                    : Icons.error_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: gradientColors,
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                widget.message,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.5,
-                                  height: 1.25,
-                                ),
-                              ),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.72),
+                              width: 1.2,
                             ),
-                            const SizedBox(width: 4),
-                            TextButton.icon(
-                              onPressed: _dismiss,
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                color: Colors.white,
-                                size: 18,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.07),
+                                blurRadius: 22,
+                                offset: const Offset(0, 10),
                               ),
-                              label: const Text(
-                                'Dismiss',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: iconBg,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.55),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    success
+                                        ? Icons.check_rounded
+                                        : Icons.error_rounded,
+                                    color: accent,
+                                    size: 20,
+                                  ),
                                 ),
-                              ),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    widget.message,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13.5,
+                                      height: 1.25,
+                                    ),
+                                  ),
                                 ),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
+                                const SizedBox(width: 4),
+                                TextButton.icon(
+                                  onPressed: _dismiss,
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    color: textColor.withOpacity(0.75),
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'Dismiss',
+                                    style: TextStyle(
+                                      color: textColor.withOpacity(0.85),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: textColor,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
