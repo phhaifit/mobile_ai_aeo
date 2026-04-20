@@ -125,6 +125,22 @@ mixin _$OverviewStore on _OverviewStore, Store {
     });
   }
 
+  late final _$competitorScoresAtom =
+      Atom(name: '_OverviewStore.competitorScores', context: context);
+
+  @override
+  Map<String, int> get competitorScores {
+    _$competitorScoresAtom.reportRead();
+    return super.competitorScores;
+  }
+
+  @override
+  set competitorScores(Map<String, int> value) {
+    _$competitorScoresAtom.reportWrite(value, super.competitorScores, () {
+      super.competitorScores = value;
+    });
+  }
+
   late final _$isLoadingAtom =
       Atom(name: '_OverviewStore.isLoading', context: context);
 
@@ -182,6 +198,7 @@ linkVisibilityPercent: ${linkVisibilityPercent},
 linkReferences: ${linkReferences},
 suggestedBenchmark: ${suggestedBenchmark},
 topReferencedDomains: ${topReferencedDomains},
+competitorScores: ${competitorScores},
 isLoading: ${isLoading}
     ''';
   }

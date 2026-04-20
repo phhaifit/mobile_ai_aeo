@@ -1,6 +1,7 @@
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/analytic/store/analytic_store.dart';
 import 'package:boilerplate/presentation/analytic/widgets/metrics_widgets.dart';
+import 'package:boilerplate/presentation/template_library/widgets/loading_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 
@@ -17,7 +18,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
     super.initState();
     _analyticStore = getIt<AnalyticStore>();
     // TODO: Get projectId from route params or current project
-    const projectId = '6542ec8c-0e5d-4694-8088-db9f17ac9e21';
+    const projectId = '9022c9d7-7443-4a33-96aa-56628ba81220';
     _analyticStore.fetchAnalyticsMetrics(projectId);
   }
 
@@ -85,7 +86,25 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
   Widget _buildBody(BuildContext context) {
     if (_analyticStore.isLoading) {
       return Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LoadingIndicator(
+              size: 52,
+              color: Color(0xFF2196F3),
+              animationType: AnimationType.ring,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Loading analysis…',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF666666),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
