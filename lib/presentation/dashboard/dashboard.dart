@@ -189,17 +189,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
-                title: 'Prompt Library',
-                description: 'Open prompt library',
-                icon: Icons.library_books,
-                color: Colors.deepOrange,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.promptLibrary);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
                 title: 'Brand Setup & Config',
                 description:
                     'Manage brand profile, knowledge base, links, rewrites, and LLM monitoring.',

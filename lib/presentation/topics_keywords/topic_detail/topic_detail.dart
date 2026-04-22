@@ -1,19 +1,19 @@
-import 'package:boilerplate/presentation/topics_keywords/topic_detail/models/topic_suggestion.dart';
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/models/topic_keyword.dart';
 import 'package:boilerplate/presentation/topics_keywords/topic_detail/store/topic_detail_store.dart';
-import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/active_tab_screen.dart';
-import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/inactive_tab_screen.dart';
 import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/keyword_tab_screen.dart';
-import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/suggestion_tab_screen.dart';
+import 'package:boilerplate/presentation/topics_keywords/topic_detail/tabs/prompt_tab_screen.dart';
 import 'package:flutter/material.dart';
 
 class TopicDetailScreen extends StatefulWidget {
   const TopicDetailScreen({
     super.key,
     required this.topicName,
+    this.topicId,
     this.titleOverride,
   });
 
   final String topicName;
+  final String? topicId;
   final String? titleOverride;
 
   @override
@@ -22,17 +22,18 @@ class TopicDetailScreen extends StatefulWidget {
 
 class _TopicDetailScreenState extends State<TopicDetailScreen> {
   late final TopicDetailStore _store;
-  late List<TopicSuggestion> _suggestions;
-  final List<TopicSuggestion> _activeTopics = [];
 
   @override
   void initState() {
     super.initState();
-    _store = TopicDetailStore(topicName: widget.topicName);
-    _suggestions = _seedSuggestions(widget.topicName);
+    _store = TopicDetailStore(
+      topicName: widget.topicName,
+      topicId: widget.topicId,
+    );
     _store.searchController.addListener(() {
       _store.onSearchChanged(_store.searchController.text);
     });
+    _store.fetchKeywords();
   }
 
   @override
@@ -101,7 +102,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
           final isActive = tab == _store.selectedTab;
           return Expanded(
             child: GestureDetector(
-              onTap: () => _store.setTab(tab),
+              onTap: () => _onTabSelected(tab),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
@@ -127,322 +128,82 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
 
   Widget _buildTabContent() {
     switch (_store.selectedTab) {
-      case TopicDetailTab.active:
-        return ActiveTabScreen(
-          searchController: _store.searchController,
-          prompts: _store.filteredPrompts,
-          onOpenFilters: () => _showFilterBottomSheet(context),
-          onOpenAddPrompt: () => _showAddPromptBottomSheet(context),
-          onRefreshPrompt: (prompt) => _store.refreshPrompt(prompt.id),
-          onDeletePrompt: _confirmMakePromptInactive,
-          formatCreatedDate: _formatCreatedDate,
-        );
-      case TopicDetailTab.suggestion:
-        return SuggestionTabScreen(
-          suggestions: _suggestions,
-          topicName: widget.topicName,
-          onSuggestMore: _suggestMore,
-          onReject: _rejectSuggestion,
-          onTrack: _trackSuggestion,
-          onEdit: _editSuggestion,
-          formatCreatedAt: _formatSuggestionDate,
+      case TopicDetailTab.prompt:
+        return _buildPromptApiState(
+          child: PromptTabScreen(
+            searchController: _store.searchController,
+            prompts: _store.filteredPrompts,
+            isDeletingPrompt: _store.isDeletingPrompt,
+            monitoringCapacity: _store.monitoringCapacity,
+            isMonitoringCapacityLoading: _store.isMonitoringCapacityLoading,
+            monitoringCapacityError: _store.monitoringCapacityError,
+            onOpenFilters: () => _showFilterBottomSheet(context),
+            onOpenAddPrompt: () => _showAddPromptBottomSheet(context),
+            onRefreshPrompt: (prompt) => _store.refreshPrompt(prompt.id),
+            onDeletePrompt: _confirmDeletePrompt,
+            onRetryMonitoring: _store.fetchMonitoringCapacity,
+            formatCreatedDate: _formatCreatedDate,
+          ),
         );
       case TopicDetailTab.keyword:
         return KeywordTabScreen(
           searchController: _store.searchController,
+          apiKeywords: _store.keywords,
+          isLoading: _store.isKeywordsLoading,
+          errorMessage: _store.keywordsError,
+          onRetry: _store.fetchKeywords,
+          onAddKeywords: _store.addKeywords,
+          onSuggestKeywords: _store.suggestKeywords,
+          onDeleteKeyword: _store.deleteKeywordById,
         );
-      case TopicDetailTab.inactive:
-        return InactiveTabScreen(
-          prompts: _store.filteredPrompts,
-          onRestorePrompt: (prompt) => _store.restorePrompt(prompt.id),
-          onDeletePrompt: _confirmDeletePromptPermanently,
-          formatDeletedDate: _formatDeletedDate,
-        );
     }
   }
 
-  List<TopicSuggestion> _seedSuggestions(String topicName) {
-    return [
-      TopicSuggestion(
-        id: 's1',
-        title:
-            'Does an advanced IT degree actually lead to higher starting salaries and faster promotions compared to a regular IT degree?',
-        createdAt: DateTime(2026, 3, 17, 20, 44),
-        tags: ['Informational', topicName],
-        type: SuggestionType.informational,
-      ),
-      TopicSuggestion(
-        id: 's2',
-        title:
-            'Which IT certifications should I look for in the curriculum of the best undergraduate computer science programs in Vietnam to ensure I\'m job-ready?',
-        createdAt: DateTime(2026, 3, 17, 20, 44),
-        tags: ['Informational', topicName],
-        type: SuggestionType.informational,
-      ),
-      TopicSuggestion(
-        id: 's3',
-        title:
-            'Compare the internship placement rates and industry connections of top IT universities in Vietnam so I can pick the one with the best career support.',
-        createdAt: DateTime(2026, 3, 17, 20, 44),
-        tags: ['Commercial', topicName],
-        type: SuggestionType.commercial,
-      ),
-    ];
-  }
-
-  Future<void> _suggestMore() async {
-    final now = DateTime.now();
-    final extra = [
-      TopicSuggestion(
-        id: 's_${now.microsecondsSinceEpoch}_1',
-        title:
-            'What scholarship options are commonly available for international students pursuing advanced IT programs in Vietnam?',
-        createdAt: now,
-        tags: ['Informational', widget.topicName],
-        type: SuggestionType.informational,
-      ),
-      TopicSuggestion(
-        id: 's_${now.microsecondsSinceEpoch}_2',
-        title:
-            'Which universities provide the strongest AI and data engineering lab access for undergraduates in IT-related majors?',
-        createdAt: now,
-        tags: ['Commercial', widget.topicName],
-        type: SuggestionType.commercial,
-      ),
-    ];
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _suggestions = [...extra, ..._suggestions];
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Generated more suggestions')),
-    );
-  }
-
-  void _rejectSuggestion(TopicSuggestion suggestion) {
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _suggestions.removeWhere((item) => item.id == suggestion.id);
-    });
-  }
-
-  void _trackSuggestion(TopicSuggestion suggestion) {
-    if (!mounted) {
-      return;
-    }
-
-    final promptType = _toPromptTypeFilter(suggestion.type);
-    final neutralTags = suggestion.tags
-        .where((tag) => tag != suggestion.tags.first)
-        .toList(growable: false);
-
-    _store.addPrompt(
-      question: suggestion.title,
-      promptType: promptType,
-      selectedKeywords: neutralTags,
-      topic: widget.topicName,
-      switchToActiveTab: false,
-    );
-
-    setState(() {
-      _activeTopics.insert(0, suggestion);
-      _suggestions.removeWhere((item) => item.id == suggestion.id);
-    });
-  }
-
-  Future<void> _editSuggestion(TopicSuggestion suggestion) async {
-    final titleController = TextEditingController(text: suggestion.title);
-    SuggestionType tempType = suggestion.type;
-
-    final updated = await showDialog<TopicSuggestion>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Edit Suggestion',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1D2939),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(dialogContext).pop(),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Update the suggestion text and type before saving.',
-                        style: TextStyle(color: Color(0xFF475467)),
-                      ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: titleController,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          hintText: 'Suggestion title',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Color(0xFFD0D5DD)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Wrap(
-                        spacing: 8,
-                        children: SuggestionType.values.map((type) {
-                          return ChoiceChip(
-                            label: Text(_suggestionTypeLabel(type)),
-                            selected: tempType == type,
-                            onSelected: (_) {
-                              setDialogState(() {
-                                tempType = type;
-                              });
-                            },
-                          );
-                        }).toList(growable: false),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          OutlinedButton(
-                            onPressed: () => Navigator.of(dialogContext).pop(),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFD0D5DD)),
-                            ),
-                            child: const Text('Cancel'),
-                          ),
-                          const SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () {
-                              final updatedTitle = titleController.text.trim();
-                              if (updatedTitle.isEmpty) {
-                                return;
-                              }
-                              Navigator.of(dialogContext).pop(
-                                suggestion.copyWith(
-                                  title: updatedTitle,
-                                  type: tempType,
-                                  tags: [
-                                    _suggestionTypeLabel(tempType),
-                                    widget.topicName,
-                                  ],
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF6A00),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Save'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    titleController.dispose();
-
-    if (updated == null || !mounted) {
-      return;
-    }
-
-    setState(() {
-      final index = _suggestions.indexWhere((item) => item.id == updated.id);
-      if (index >= 0) {
-        _suggestions[index] = updated;
-      }
-    });
-  }
-
-  PromptTypeFilter _toPromptTypeFilter(SuggestionType type) {
-    switch (type) {
-      case SuggestionType.informational:
-        return PromptTypeFilter.informational;
-      case SuggestionType.commercial:
-        return PromptTypeFilter.commercial;
-      case SuggestionType.transactional:
-        return PromptTypeFilter.transactional;
-      case SuggestionType.navigational:
-        return PromptTypeFilter.navigational;
+  Future<void> _onTabSelected(TopicDetailTab tab) async {
+    _store.setTab(tab);
+    if (tab == TopicDetailTab.keyword) {
+      await _store.fetchKeywords();
+    } else {
+      await Future.wait([
+        _store.fetchPromptsForTab(tab),
+        _store.fetchMonitoringCapacity(),
+      ]);
     }
   }
 
-  String _suggestionTypeLabel(SuggestionType type) {
-    switch (type) {
-      case SuggestionType.informational:
-        return 'Informational';
-      case SuggestionType.commercial:
-        return 'Commercial';
-      case SuggestionType.transactional:
-        return 'Transactional';
-      case SuggestionType.navigational:
-        return 'Navigational';
+  Widget _buildPromptApiState({required Widget child}) {
+    if (_store.isLoading && _store.filteredPrompts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
-  }
 
-  String _formatSuggestionDate(DateTime value) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hour24 = value.hour;
-    final minute = value.minute.toString().padLeft(2, '0');
-    final period = hour24 >= 12 ? 'PM' : 'AM';
-    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-    return 'Created: ${months[value.month - 1]} ${value.day}, ${value.year}, $hour12:$minute $period';
+    if (_store.errorMessage != null && _store.filteredPrompts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _store.errorMessage!,
+              style: const TextStyle(color: Color(0xFF667085)),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => _store.fetchPromptsForTab(_store.selectedTab),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return child;
   }
 
   Future<void> _showAddPromptBottomSheet(BuildContext context) async {
+    if (_store.keywords.isEmpty) {
+      // Show loading indicator or simply await since it is fast
+      await _store.fetchKeywords();
+    }
+
     final result = await showModalBottomSheet<_AddPromptResult>(
       context: context,
       isScrollControlled: true,
@@ -452,6 +213,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       builder: (sheetContext) {
         return _AddPromptBottomSheet(
           defaultTopic: widget.topicName,
+          keywords: _store.keywords,
         );
       },
     );
@@ -463,7 +225,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     _store.addPrompt(
       question: result.prompt,
       promptType: result.promptType,
-      selectedKeywords: result.keywords,
+      selectedKeywordIds: result.keywords,
       topic: result.topic,
     );
   }
@@ -596,21 +358,31 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                         final isSelected = localMonitoring == status;
                         return Container(
                           margin: const EdgeInsets.only(bottom: 2),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? const Color(0xFFF2F8FF)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: RadioListTile<MonitoringStatusFilter>(
-                            value: status,
-                            groupValue: localMonitoring,
+                          child: ListTile(
                             dense: true,
-                            contentPadding: EdgeInsets.zero,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                            ),
+                            onTap: () {
+                              setModalState(() {
+                                localMonitoring = status;
+                              });
+                            },
+                            leading: Icon(
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              size: 20,
+                              color: isSelected
+                                  ? const Color(0xFF155EEF)
+                                  : const Color(0xFF98A2B3),
+                            ),
                             title: Text(
                               status.label,
                               style: const TextStyle(
@@ -618,14 +390,6 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                                 color: Color(0xFF344054),
                               ),
                             ),
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setModalState(() {
-                                localMonitoring = value;
-                              });
-                            },
                           ),
                         );
                       }),
@@ -679,113 +443,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     return '$month/$day/${value.year}, $hour12:$minute $period';
   }
 
-  String _formatDeletedDate(DateTime value) {
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '$month/$day/${value.year}';
-  }
-
-  Future<void> _confirmMakePromptInactive(PromptItem prompt) async {
-    final shouldMove = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          elevation: 10,
-          shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Make Prompt Inactive',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D2939),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                      icon: const Icon(Icons.close, color: Color(0xFF98A2B3)),
-                      splashRadius: 20,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Are you sure you want to make this prompt inactive?\nIt will be moved to the Inactive tab.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF475467),
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0xFFEAECF0)),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF344054),
-                        side: const BorderSide(color: Color(0xFFD0D5DD)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF7A59),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: const Text('Inactive'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (shouldMove == true) {
-      _store.movePromptToInactive(prompt.id);
-    }
-  }
-
-  Future<void> _confirmDeletePromptPermanently(PromptItem prompt) async {
+  Future<void> _confirmDeletePrompt(PromptItem prompt) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -809,7 +467,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                   children: [
                     const Expanded(
                       child: Text(
-                        'Permanently Delete Prompt',
+                        'Delete Prompt',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w700,
@@ -826,7 +484,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Are you sure you want to permanently delete this prompt? This action cannot be undone and will remove all associated data.',
+                  'Are you sure you want to delete this prompt from the current list?',
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF475467),
@@ -869,7 +527,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                           vertical: 12,
                         ),
                       ),
-                      child: const Text('Delete Permanently'),
+                      child: const Text('Delete'),
                     ),
                   ],
                 ),
@@ -881,15 +539,35 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     );
 
     if (shouldDelete == true) {
-      _store.deletePrompt(prompt.id);
+      final success = await _store.deletePromptById(prompt.id);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Prompt deleted successfully.'),
+            backgroundColor: Color(0xFF067647),
+          ),
+        );
+      }
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Delete prompt failed. Please retry.'),
+            backgroundColor: Color(0xFFB42318),
+          ),
+        );
+      }
     }
   }
 }
 
 class _AddPromptBottomSheet extends StatefulWidget {
-  const _AddPromptBottomSheet({required this.defaultTopic});
+  const _AddPromptBottomSheet({
+    required this.defaultTopic,
+    this.keywords = const [],
+  });
 
   final String defaultTopic;
+  final List<TopicKeyword> keywords;
 
   @override
   State<_AddPromptBottomSheet> createState() => _AddPromptBottomSheetState();
@@ -933,17 +611,10 @@ class _AddPromptBottomSheetState extends State<_AddPromptBottomSheet> {
     ),
   ];
 
-  final List<String> _keywords = const [
-    'best undergraduate computer science programs in Vietnam',
-    'how to choose an IT university in Vietnam',
-    'benefits of advanced programs in information technology',
-    'master of science in computer science curriculum requirements',
-    'what to expect from a high-quality IT education program',
-  ];
 
   late String _selectedTopic;
   late String _selectedCategory;
-  final Set<String> _selectedKeywords = {};
+  final Set<TopicKeyword> _selectedKeywords = {};
 
   @override
   void initState() {
@@ -1060,7 +731,7 @@ class _AddPromptBottomSheetState extends State<_AddPromptBottomSheet> {
         prompt: promptText,
         topic: _selectedTopic,
         promptType: _categoryToPromptType(_selectedCategory),
-        keywords: _selectedKeywords.toList(growable: false),
+        keywords: _selectedKeywords.map((k) => k.id).toList(),
       ),
     );
   }
@@ -1366,7 +1037,7 @@ class _AddPromptBottomSheetState extends State<_AddPromptBottomSheet> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _keywords.map((keyword) {
+          children: widget.keywords.map((keyword) {
             final isSelected = _selectedKeywords.contains(keyword);
             return InkWell(
               borderRadius: BorderRadius.circular(999),
@@ -1394,7 +1065,7 @@ class _AddPromptBottomSheetState extends State<_AddPromptBottomSheet> {
                       : const Color(0xFFF9FAFB),
                 ),
                 child: Text(
-                  keyword,
+                  keyword.text,
                   style: TextStyle(
                     color: isSelected
                         ? const Color(0xFF155EEF)

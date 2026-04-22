@@ -56,23 +56,50 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
             child: Column(
               children: [
                 _buildTopFilters(context),
+                if (_store.isDeletingTopics)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: items.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No topics found',
-                            style: TextStyle(color: Color(0xFF667085)),
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: items.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            return _buildTopicCard(context, items[index]);
-                          },
-                        ),
+                  child: _store.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _store.errorMessage != null
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _store.errorMessage!,
+                                    style: const TextStyle(
+                                      color: Color(0xFF667085),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  OutlinedButton(
+                                    onPressed: _store.fetchTopics,
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : items.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No topics found',
+                                    style: TextStyle(color: Color(0xFF667085)),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  itemCount: items.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    return _buildTopicCard(context, items[index]);
+                                  },
+                                ),
                 ),
               ],
             ),
@@ -162,7 +189,7 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
 
   Widget _buildDeleteButton(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: _store.selectedCount == 0
+      onPressed: _store.selectedCount == 0 || _store.isDeletingTopics
           ? null
           : () => _showDeleteSelectedDialog(context),
       style: OutlinedButton.styleFrom(
@@ -174,14 +201,20 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
         ),
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
-      icon: const Icon(Icons.delete_outline),
-      label: const Text('Delete Topics'),
+      icon: _store.isDeletingTopics
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.delete_outline),
+      label: Text(_store.isDeletingTopics ? 'Deleting...' : 'Delete Topics'),
     );
   }
 
   Widget _buildAddTopicButton() {
     return ElevatedButton.icon(
-      onPressed: () => showAddTopicModal(context),
+      onPressed: _store.isDeletingTopics ? null : () => showAddTopicModal(context),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFFF6A00),
         foregroundColor: Colors.white,
@@ -201,7 +234,7 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: _showTopicFilterPicker,
+      onTap: _store.isDeletingTopics ? null : _showTopicFilterPicker,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -288,7 +321,9 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
         : '${_formatDate(_store.dateRange!.start)} - ${_formatDate(_store.dateRange!.end)}';
 
     return OutlinedButton.icon(
-      onPressed: () async {
+      onPressed: _store.isDeletingTopics
+          ? null
+          : () async {
         final now = DateTime.now();
         final picked = await showDateRangePicker(
           context: context,
@@ -318,9 +353,14 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
   }
 
   Widget _buildTopicCard(BuildContext context, TopicKeywordItem item) {
+    final isRowDeleting = _store.deletingTopicIds.contains(item.id);
+    final isInteractionLocked = _store.isDeletingTopics;
+
     return Dismissible(
       key: ValueKey(item.id),
-      direction: DismissDirection.endToStart,
+      direction: isInteractionLocked
+          ? DismissDirection.none
+          : DismissDirection.endToStart,
       background: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFEF4444),
@@ -344,11 +384,32 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
         ),
       ),
       confirmDismiss: (_) async {
-        return _showDeleteSingleDialog(context);
+        if (_store.isDeletingTopics) {
+          return false;
+        }
+
+        final shouldDelete = await _showDeleteSingleDialog(context);
+        if (!shouldDelete) {
+          return false;
+        }
+
+        final deleted = await _store.deleteTopicById(item.id);
+        if (!context.mounted) {
+          return false;
+        }
+
+        if (!deleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to delete topic. Please try again.'),
+            ),
+          );
+          return false;
+        }
+
+        return true;
       },
-      onDismissed: (_) {
-        _store.deleteTopicById(item.id);
-      },
+      onDismissed: (_) {},
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -356,119 +417,148 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
         shadowColor: Colors.black12,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {
+          onTap: isInteractionLocked
+              ? null
+              : () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => TopicDetailScreen(topicName: item.topic),
+                builder: (_) => TopicDetailScreen(
+                  topicName: item.topic,
+                  topicId: item.id,
+                ),
               ),
             );
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Checkbox(
-                      value: item.isSelected,
-                      onChanged: (value) {
-                        _store.toggleRowSelection(item.id, value ?? false);
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      visualDensity: VisualDensity.compact,
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: item.isSelected,
+                          onChanged: isInteractionLocked
+                              ? null
+                              : (value) {
+                                  _store.toggleRowSelection(item.id, value ?? false);
+                                },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            item.topic,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF155EEF),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: isInteractionLocked ? null : () {},
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            color: Color(0xFF155EEF),
+                          ),
+                          splashRadius: 20,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
                       child: Text(
-                        item.topic,
+                        item.alias,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFF155EEF),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
+                          fontSize: 13,
+                          color: Color(0xFF667085),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: Color(0xFF155EEF),
-                      ),
-                      splashRadius: 20,
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Text(
-                    item.alias,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF667085),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  item.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF667085),
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOut,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: item.isMonitoring
-                            ? const Color(0xFFE9F8EE)
-                            : const Color(0xFFF4F4F5),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Switch(
-                        value: item.isMonitoring,
-                        activeColor: Colors.white,
-                        activeTrackColor: const Color(0xFF16A34A),
-                        inactiveThumbColor: Colors.white,
-                        inactiveTrackColor: const Color(0xFF98A2B3),
-                        onChanged: (value) {
-                          _store.toggleMonitoring(item.id, value);
-                        },
-                      ),
-                    ),
-                    const Spacer(),
+                    const SizedBox(height: 8),
                     Text(
-                      '${item.activePrompts} prompts',
+                      item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFF344054),
-                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF667085),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOut,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: item.isMonitoring
+                                ? const Color(0xFFE9F8EE)
+                                : const Color(0xFFF4F4F5),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Switch(
+                            value: item.isMonitoring,
+                            activeThumbColor: Colors.white,
+                            activeTrackColor: const Color(0xFF16A34A),
+                            inactiveThumbColor: Colors.white,
+                            inactiveTrackColor: const Color(0xFF98A2B3),
+                            onChanged: isInteractionLocked
+                                ? null
+                                : (value) {
+                                    _store.toggleMonitoring(item.id, value);
+                                  },
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${item.activePrompts} prompts',
+                          style: const TextStyle(
+                            color: Color(0xFF344054),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _formatDateTime(item.createdAt),
+                      style: const TextStyle(
+                        color: Color(0xFF98A2B3),
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  _formatDateTime(item.createdAt),
-                  style: const TextStyle(
-                    color: Color(0xFF98A2B3),
-                    fontSize: 12,
+                if (isRowDeleting)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -478,6 +568,10 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
   }
 
   Future<void> _showDeleteSelectedDialog(BuildContext context) async {
+    if (_store.isDeletingTopics) {
+      return;
+    }
+
     final selectedCount = _store.selectedCount;
     if (selectedCount == 0) {
       return;
@@ -490,7 +584,16 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
     );
 
     if (deleted) {
-      _store.deleteSelectedTopics();
+      final success = await _store.deleteSelectedTopics();
+      if (!context.mounted || success) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to delete selected topics. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -614,8 +717,8 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
 
     final content = _AddTopicsModalContent(
       onCancel: () => Navigator.of(context).pop(),
-      onSave: (topics) {
-        _store.addTopics(
+      onSave: (topics) async {
+        final success = await _store.addTopics(
           topics
               .map(
                 (topic) => (
@@ -626,7 +729,21 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
               )
               .toList(growable: false),
         );
-        Navigator.of(context).pop();
+
+        if (!context.mounted) {
+          return;
+        }
+
+        if (success) {
+          Navigator.of(context).pop();
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to add topics. Please try again.'),
+          ),
+        );
       },
     );
 
@@ -689,7 +806,7 @@ class _TopicsKeywordsScreenState extends State<TopicsKeywordsScreen> {
 
 class _AddTopicsModalContent extends StatefulWidget {
   final VoidCallback onCancel;
-  final ValueChanged<List<Topic>> onSave;
+  final Future<void> Function(List<Topic>) onSave;
 
   const _AddTopicsModalContent({
     required this.onCancel,
@@ -705,6 +822,7 @@ class _AddTopicsModalContentState extends State<_AddTopicsModalContent>
   final List<_TopicEditingRow> _rows = [_TopicEditingRow()];
 
   bool _showValidationError = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -732,7 +850,11 @@ class _AddTopicsModalContentState extends State<_AddTopicsModalContent>
     });
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_isSaving) {
+      return;
+    }
+
     final topics = _rows.map((row) => row.toTopic()).where((topic) {
       return topic.name.isNotEmpty ||
           topic.alias.isNotEmpty ||
@@ -755,7 +877,19 @@ class _AddTopicsModalContentState extends State<_AddTopicsModalContent>
       return;
     }
 
-    widget.onSave(topics);
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await widget.onSave(topics);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   @override
@@ -908,7 +1042,7 @@ class _AddTopicsModalContentState extends State<_AddTopicsModalContent>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 OutlinedButton(
-                  onPressed: widget.onCancel,
+                  onPressed: _isSaving ? null : widget.onCancel,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF344054),
                     side: const BorderSide(color: Color(0xFFD0D5DD)),
@@ -927,7 +1061,7 @@ class _AddTopicsModalContentState extends State<_AddTopicsModalContent>
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: _save,
+                  onPressed: _isSaving ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF6A00),
                     foregroundColor: Colors.white,
@@ -940,10 +1074,20 @@ class _AddTopicsModalContentState extends State<_AddTopicsModalContent>
                       vertical: 14,
                     ),
                   ),
-                  child: const Text(
-                    'Save Topics',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Save Topics',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ],
             ),
