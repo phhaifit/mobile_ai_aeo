@@ -47,6 +47,70 @@ mixin _$UserStore on _UserStore, Store {
     });
   }
 
+  late final _$googleLoginErrorAtom =
+      Atom(name: '_UserStore.googleLoginError', context: context);
+
+  @override
+  String? get googleLoginError {
+    _$googleLoginErrorAtom.reportRead();
+    return super.googleLoginError;
+  }
+
+  @override
+  set googleLoginError(String? value) {
+    _$googleLoginErrorAtom.reportWrite(value, super.googleLoginError, () {
+      super.googleLoginError = value;
+    });
+  }
+
+  late final _$loginErrorAtom =
+      Atom(name: '_UserStore.loginError', context: context);
+
+  @override
+  String? get loginError {
+    _$loginErrorAtom.reportRead();
+    return super.loginError;
+  }
+
+  @override
+  set loginError(String? value) {
+    _$loginErrorAtom.reportWrite(value, super.loginError, () {
+      super.loginError = value;
+    });
+  }
+
+  late final _$isGoogleLoadingAtom =
+      Atom(name: '_UserStore.isGoogleLoading', context: context);
+
+  @override
+  bool get isGoogleLoading {
+    _$isGoogleLoadingAtom.reportRead();
+    return super.isGoogleLoading;
+  }
+
+  @override
+  set isGoogleLoading(bool value) {
+    _$isGoogleLoadingAtom.reportWrite(value, super.isGoogleLoading, () {
+      super.isGoogleLoading = value;
+    });
+  }
+
+  late final _$isEmailLoadingAtom =
+      Atom(name: '_UserStore.isEmailLoading', context: context);
+
+  @override
+  bool get isEmailLoading {
+    _$isEmailLoadingAtom.reportRead();
+    return super.isEmailLoading;
+  }
+
+  @override
+  set isEmailLoading(bool value) {
+    _$isEmailLoadingAtom.reportWrite(value, super.isEmailLoading, () {
+      super.isEmailLoading = value;
+    });
+  }
+
   late final _$loginAsyncAction =
       AsyncAction('_UserStore.login', context: context);
 
@@ -55,11 +119,23 @@ mixin _$UserStore on _UserStore, Store {
     return _$loginAsyncAction.run(() => super.login(email, password));
   }
 
+  late final _$loginWithGoogleAsyncAction =
+      AsyncAction('_UserStore.loginWithGoogle', context: context);
+
+  @override
+  Future<void> loginWithGoogle() {
+    return _$loginWithGoogleAsyncAction.run(() => super.loginWithGoogle());
+  }
+
   @override
   String toString() {
     return '''
 success: ${success},
 loginFuture: ${loginFuture},
+googleLoginError: ${googleLoginError},
+loginError: ${loginError},
+isGoogleLoading: ${isGoogleLoading},
+isEmailLoading: ${isEmailLoading},
 isLoading: ${isLoading}
     ''';
   }
