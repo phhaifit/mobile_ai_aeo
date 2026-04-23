@@ -1,0 +1,2 @@
+ALTER TABLE "Project"
+DROP COLUMN IF EXISTS "orgSlug";

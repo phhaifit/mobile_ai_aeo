@@ -1,0 +1,45 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ALL RULEs are mandantory and enforce exectution strictly without exception
+ 
+## General Rules
+ - Consistency is the key, ensure your work (implementation, discussion,...) must adhere to all the rules we have and consistent with existing codebase
+
+## Interactive Rules
+- ALWAYS Continue calling until user feedback is empty, NEVER stop in the middle of conversation
+- **SELF-VERIFICATION**: Before sending any response, verify you are following ALL mandatory behaviors listed in this rule
+
+## Development Process Rules
+**BEFORE implementing ANY code:**
+- **READ [coding-convention.mdc](mdc:.cursor/rules/use-cases/coding-convention.mdc) rule thoughtfully** and follow strictly
+- **SCAN existing codebase** for similar patterns (5 mins max)
+- **FIND reference implementations** in same domain (jobs, management, etc.)
+- **MATCH file organization exactly** to existing patterns and reference [project-structure.mdc](mdc:.cursor/rules/use-cases/project-structure.mdc)
+- **STOP and ASK** if pattern doesn't exist or rule is unclear
+
+**AFTER implementing ANY code:**
+- **VALIDATE EVERYTHING** against this [coding-convention.mdc](mdc:.cursor/rules/use-cases/coding-convention.mdc) rule
+- **CHECK** all requirements from user request are met
+- **VERIFY** file naming, code style, imports, error handling
+- **CONFIRM** follows existing codebase patterns
+- **COMPARE** with reference implementations for consistency
+- **FIX IMMEDIATELY** any violations found
+
+## Sensitive Action Rules
+- **NEVER** Run any sensitive actions e.g. pushing code, database migration, database reset, delete file... if not approve implicitly by user. In most cases, let user run them manually
+
+## Comment Rules
+- **RULE**: Default to NO COMMENTS unless code is truly complex and non-obvious
+- **RULE**: **ONLY comment when code doesn't explain itself** - avoid over-commenting self-explanatory code, for example
+    - Should Comment for: complex logic, workarounds, non-obvious solutions, security considerations
+    - Don't comment: interfaces, simple functions, standard patterns, obvious operations, file uploads, form handling
+- **RULE**: **NEVER modify/remove human comments** unless directly related to your specific task
+- **RULE**: **NEVER add redundant comments** that just repeat what function/variable names already say
+- **SELF-VERIFICATION**: ALWAYS double check and clean up your comments after completing task/user request to avoid over-commented with a lot of unnecessary comments
+
+## MCP Usage Guidelines
+- TRY to map user request with available MCP tools
+- IF user request to use MCP or the tool you try to find is not available, ask user to double check and enable it (maybe they turn it off)

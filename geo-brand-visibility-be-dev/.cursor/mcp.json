@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "Figma": {
+      "url": "http://127.0.0.1:3845/mcp",
+      "headers": {}
+    },
+    "atlassian": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"]
+    },
+    "gdrive": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-gdrive"],
+      "env": {
+        "GDRIVE_CREDENTIALS_PATH": "C:/Users/Admin/Desktop/servers-archived/.gdrive-server-credentials.json"
+      }
+    }
+  }
+}

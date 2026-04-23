@@ -1,0 +1,34 @@
+---
+description: USE WHEN understanding project structure to organize files/directories
+globs:
+alwaysApply: false
+---
+## Project Structure
+
+```shell
+    ├── README.md                       # README file
+    ├── .github                         # GitHub folder
+    │   └── workflows                   # GitHub Actions workflows
+    ├── prisma                          # Prisma folder 
+    │   ├── migrations                  # Prisma migrations
+    │   └── schema.prisma               # Prisma schema file
+    ├── src
+    │   ├── prisma                      # Prisma related files
+    │   │   ├── prisma.module.ts        # Prisma module
+    │   │   └── prisma.service.ts       # Prisma service
+    │   ├── users                       # Users module
+    │   │   ├── dto                     # Data Transfer Objects for users
+    │   │   ├── entities                # User entities
+    │   │   ├── users.controller.ts     # Users controller
+    │   │   ├── users.module.ts         # Users module
+    │   │   └── users.service.ts        # Users service
+    │   ├── app.module.ts               # Main application module
+    │   └── main.ts                     # Main application entry point
+    ├── tests
+    │   ├── e2e                         # E2E tests, also includes Monitoring as Code (not implemented yet)
+    │   └── integration                 # Integration tests (not implemented yet)
+    ├── .prettierrc.json                # Prettier configuration
+    ├── .eslint.config.js               # ESLint configuration
+    ├── .env                            # Local environment variables
+    └── tsconfig.json                   # TypeScript configuration
+```

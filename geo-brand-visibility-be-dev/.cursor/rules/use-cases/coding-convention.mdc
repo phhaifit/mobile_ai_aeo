@@ -1,0 +1,85 @@
+---
+description: 
+globs: src/**/*.ts
+alwaysApply: true
+---
+
+# Rules for Codebase
+
+## 1. Core Requirements
+
+- **ALWAYS** use `pnpm` as package manager, read the package.json before running any related script
+- **NEVER** expose service role keys and other private/sensitive keys to client-side code
+- **RULE**: **NEVER set system environment variables** for values managed in `.env` files
+- **RULE**: Don't need to rerun the application for each change, we already have hot reload
+
+## 2. File Rules
+
+### File Naming & Structure
+- **RULE**: Use kebab-case for ALL filenames and directories
+  - ✅ `user-profile.tsx`, `api-client.ts`
+  - ❌ `UserProfile.tsx`, `userProfile.tsx`, `user_profile.tsx`
+
+## 3. TypeScript Rules
+
+### Type vs Interface
+- **RULE**: **ALWAYS prefer `interface`** over `type` for object shapes
+- **RULE**: Use `type` ONLY for: unions, primitives, Zod inference, database inference, complex mapped types
+
+### Type Definitions
+```typescript
+// ✅ Use interface for objects and props
+interface UserProfileProps {
+  user: User;
+  onUpdate: (data: Partial<User>) => void;
+}
+
+// ✅ Use type for specific cases
+type Status = 'loading' | 'success' | 'error';
+type ApiResponse<T> = { status: 'success'; data: T } | { status: 'error'; message: string };
+type CreateUserRequest = z.infer<typeof createUserSchema>;
+type UserProfile = Tables<'user_profiles'>;
+```
+
+### Constants & Enums
+- **RULE**: **NEVER use `enum`** - use `as const` instead
+```typescript
+// ✅ Use as const
+const USER_ROLES = {
+  ADMIN: 'admin',
+  USER: 'user',
+  SYSTEM_ADMIN: 'system_admin'  // snake_case value
+} as const;
+type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
+```
+
+### Naming Conventions
+- **RULE**: PascalCase for interfaces and types
+- **RULE**: SCREAMING_SNAKE_CASE for ALL constants
+- **RULE**: camelCase for variables and functions
+- **RULE**: Event handlers start with `handle`, callback props start with `on`
+
+### Code Style
+- **RULE**: **ALWAYS use curly braces `{` `}` for every block statements** (if, else, while, for, etc.) even if single line
+- **RULE**: Arrow functions can skip braces for simple expressions
+```typescript
+// ✅ Conditional statements - always use braces
+if (condition) { doSomething(); }
+for (let i = 0; i < arr.length; i++) { process(arr[i]); }
+while (isRunning) { update(); }
+
+// ✅ Arrow functions - can skip braces for simple expressions
+const fn = () => value;
+array.map(item => item.name);
+array.filter(item => item.active);
+
+// ✅ Arrow functions - still okay with braces
+const fn = () => { return complexLogic(); };
+```
+
+### Imports
+- **RULE**: Use `type` keyword for type-only imports
+```typescript
+import type { User } from './types';
+import { someFunction, type SomeType } from './module';
+```

@@ -1,0 +1,56 @@
+---
+description: USE WHEN create commit message
+globs:
+alwaysApply: false
+---
+
+# Commit Message Generation Rules
+
+- Follow conventional commit message rule
+- Commit message structure
+    ```
+    <Jira-ticket-ID>: <description>
+    ```
+
+- ALL message MUST be lower case
+- MUST using `git status --porcelain` and `git diff --staged` to see what were changed
+- SKIP exploring unnecessary files e.g. pnpm-lock.yaml, package-lock.json,...
+- FOCUS on main file to understand what changes
+- `description` MUST BE concise within 60 character (No more) but MUST cover all changes rather than only small part of changes
+- MUST NOT add any notes or content beyond the structure above
+- Give commit message in a code block so that user can easy to copy
+
+# Check list
+- Using `git status --porcelain` to see all files change, you can see the file names to understand the overview of what we did
+- Using `git diff --staged` to understand the detail
+- Summarize these changes about scope, what we did
+- Generate commit message conver these changes
+
+Examples:
+✅ Good commit messages
+
+```
+geo-71: initialize project structure and config
+```
+```
+geo-59: implement create new account functionality
+```
+```
+geo-61: add login using email and password
+```
+
+❌ Bad commit messages
+```
+GEO-71: This commit initializes the project by setting up all the necessary configurations including tailwind, eslint, prettier, typescript, and other dependencies.
+```
+```
+add login function and create user account
+```
+fix some stuff
+```
+```
+geo-61: modified login.ts, added auth service, updated ui
+```
+```
+geo-59: done
+```
