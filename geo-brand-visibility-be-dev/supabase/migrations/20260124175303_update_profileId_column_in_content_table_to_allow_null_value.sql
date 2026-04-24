@@ -1,2 +1,0 @@
-ALTER TABLE "Content" 
-ALTER COLUMN "profileId" DROP NOT NULL;

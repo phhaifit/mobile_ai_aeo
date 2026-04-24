@@ -1,2 +1,0 @@
-ALTER TABLE "Prompt"
-  ALTER COLUMN "isMonitored" SET DEFAULT FALSE;

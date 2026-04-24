@@ -1,1 +1,0 @@
-ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "featuredImageUrl" TEXT;

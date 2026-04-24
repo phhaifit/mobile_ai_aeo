@@ -1,1 +1,0 @@
-ALTER TABLE "Project" ADD COLUMN "autoGenerate" BOOLEAN DEFAULT FALSE;

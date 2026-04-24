@@ -1,1 +1,0 @@
-ALTER TABLE "SocialPost" ALTER COLUMN "createdByUserId" DROP NOT NULL;
