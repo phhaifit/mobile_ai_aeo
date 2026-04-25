@@ -157,6 +157,38 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
     });
   }
 
+  late final _$isRefreshingAtom =
+      Atom(name: '_PerformanceMonitoringStore.isRefreshing', context: context);
+
+  @override
+  bool get isRefreshing {
+    _$isRefreshingAtom.reportRead();
+    return super.isRefreshing;
+  }
+
+  @override
+  set isRefreshing(bool value) {
+    _$isRefreshingAtom.reportWrite(value, super.isRefreshing, () {
+      super.isRefreshing = value;
+    });
+  }
+
+  late final _$projectIdAtom =
+      Atom(name: '_PerformanceMonitoringStore.projectId', context: context);
+
+  @override
+  String? get projectId {
+    _$projectIdAtom.reportRead();
+    return super.projectId;
+  }
+
+  @override
+  set projectId(String? value) {
+    _$projectIdAtom.reportWrite(value, super.projectId, () {
+      super.projectId = value;
+    });
+  }
+
   late final _$loadAllDataAsyncAction =
       AsyncAction('_PerformanceMonitoringStore.loadAllData', context: context);
 
@@ -171,6 +203,14 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
   @override
   Future<void> selectPeriod(TrendPeriod period) {
     return _$selectPeriodAsyncAction.run(() => super.selectPeriod(period));
+  }
+
+  late final _$refreshDataAsyncAction =
+      AsyncAction('_PerformanceMonitoringStore.refreshData', context: context);
+
+  @override
+  Future<void> refreshData() {
+    return _$refreshDataAsyncAction.run(() => super.refreshData());
   }
 
   late final _$_PerformanceMonitoringStoreActionController =
@@ -208,6 +248,8 @@ suggestions: ${suggestions},
 selectedPeriod: ${selectedPeriod},
 selectedMetric: ${selectedMetric},
 isLoading: ${isLoading},
+isRefreshing: ${isRefreshing},
+projectId: ${projectId},
 averageScore: ${averageScore},
 isImproving: ${isImproving},
 trendDirection: ${trendDirection},

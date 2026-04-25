@@ -52,6 +52,9 @@ import 'package:boilerplate/domain/usecase/trend/get_weekly_report_usecase.dart'
 import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_performance_comparisons_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_improvement_suggestions_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/trigger_analysis_usecase.dart';
+import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
+import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/presentation/brand_setup/store/brand_setup_store.dart';
 
 import '../../../di/service_locator.dart';
@@ -194,6 +197,9 @@ class StoreModule {
         getIt<GetTrendDataUseCase>(),
         getIt<GetPerformanceComparisonsUseCase>(),
         getIt<GetImprovementSuggestionsUseCase>(),
+        getIt<TriggerAnalysisUseCase>(),
+        getIt<SharedPreferenceHelper>(),
+        getIt<PerformanceApi>(),
       ),
     );
 

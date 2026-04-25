@@ -7,6 +7,7 @@ import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
+import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/data/service/google_auth_service.dart';
 import 'package:boilerplate/data/repository/content/content_repository_impl.dart';
 import 'package:boilerplate/data/repository/cronjob_repository_impl.dart';
@@ -63,6 +64,8 @@ class RepositoryModule {
     ));
 
     // trend repository:---------------------------------------------------------
-    getIt.registerSingleton<TrendRepository>(TrendRepositoryImpl());
+    getIt.registerSingleton<TrendRepository>(
+      TrendRepositoryImpl(getIt<PerformanceApi>()),
+    );
   }
 }

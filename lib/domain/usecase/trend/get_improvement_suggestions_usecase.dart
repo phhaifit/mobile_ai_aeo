@@ -6,7 +6,7 @@ class GetImprovementSuggestionsUseCase {
 
   GetImprovementSuggestionsUseCase({required this.repository});
 
-  Future<List<ImprovementSuggestion>> call() async {
-    return await repository.getImprovementSuggestions();
+  Future<List<ImprovementSuggestion>> call(String projectId) async {
+    return await repository.getImprovementSuggestions(projectId);
   }
 }

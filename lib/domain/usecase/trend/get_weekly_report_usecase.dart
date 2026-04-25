@@ -6,7 +6,7 @@ class GetWeeklyReportUseCase {
 
   GetWeeklyReportUseCase({required this.repository});
 
-  Future<WeeklyReport> call() async {
-    return await repository.getWeeklyReport();
+  Future<WeeklyReport> call(String projectId) async {
+    return await repository.getWeeklyReport(projectId);
   }
 }
