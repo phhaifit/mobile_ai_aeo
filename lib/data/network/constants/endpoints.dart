@@ -26,6 +26,20 @@ class Endpoints {
   static String seoCrawler(String url) =>
       "/api/v1/seo/crawler?url=${Uri.encodeComponent(url)}";
 
+  // Performance monitoring endpoints (geo-brand-visibility-be)
+  static String metricsOverview(String projectId) =>
+      '/api/projects/$projectId/metrics/overview';
+  static String metricsAnalytics(String projectId) =>
+      '/api/projects/$projectId/metrics/analytics';
+  static String gaTrend(String projectId) =>
+      '/api/ga/analytics/$projectId/trend';
+  static String gscTrend(String projectId) =>
+      '/api/gsc/analytics/$projectId/trend';
+  static String triggerAnalysis(String projectId) =>
+      '/api/projects/$projectId/test-analyze';
+  static const String projectsMe = '/api/projects/me';
+  static const String projectsList = '/api/projects';
+
   // ─── Feature 9: SEO Content Optimization endpoints ───────────────────────
 
   // On-page SEO Checker & Content Structure

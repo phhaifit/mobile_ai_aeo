@@ -45,6 +45,30 @@ class _PerformanceMonitoringScreenState extends State<PerformanceMonitoringScree
           ),
         ),
         actions: [
+          Observer(
+            builder: (_) => _store.isRefreshing
+                ? Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.blue),
+                    tooltip: 'Refresh Data',
+                    onPressed: () {
+                      _store.refreshData();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Triggering analysis & refreshing data...'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+          ),
           IconButton(
             icon: Icon(Icons.help_outline, color: Colors.grey),
             onPressed: () {

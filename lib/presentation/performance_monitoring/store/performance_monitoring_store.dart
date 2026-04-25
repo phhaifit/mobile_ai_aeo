@@ -1,5 +1,7 @@
 import 'package:mobx/mobx.dart';
 import 'package:boilerplate/core/stores/error/error_store.dart';
+import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
+import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import '../../../domain/entity/trend/trend_data_point.dart';
 import '../../../domain/entity/trend/trend_period.dart';
 import '../../../domain/entity/trend/performance_comparison.dart';
@@ -9,6 +11,7 @@ import '../../../domain/usecase/trend/get_weekly_report_usecase.dart';
 import '../../../domain/usecase/trend/get_trend_data_usecase.dart';
 import '../../../domain/usecase/trend/get_performance_comparisons_usecase.dart';
 import '../../../domain/usecase/trend/get_improvement_suggestions_usecase.dart';
+import '../../../domain/usecase/trend/trigger_analysis_usecase.dart';
 
 part 'performance_monitoring_store.g.dart';
 
@@ -23,6 +26,9 @@ abstract class _PerformanceMonitoringStore with Store {
   final GetTrendDataUseCase getTrendDataUseCase;
   final GetPerformanceComparisonsUseCase getPerformanceComparisonsUseCase;
   final GetImprovementSuggestionsUseCase getImprovementSuggestionsUseCase;
+  final TriggerAnalysisUseCase triggerAnalysisUseCase;
+  final SharedPreferenceHelper preferenceHelper;
+  final PerformanceApi performanceApi;
 
   // ─── Observables ─────────────────────────────────────────────────────────
   @observable
@@ -45,6 +51,12 @@ abstract class _PerformanceMonitoringStore with Store {
 
   @observable
   bool isLoading = false;
+
+  @observable
+  bool isRefreshing = false;
+
+  @observable
+  String? projectId;
 
   // ─── Computed ────────────────────────────────────────────────────────────
   @computed
@@ -99,21 +111,51 @@ abstract class _PerformanceMonitoringStore with Store {
     this.getTrendDataUseCase,
     this.getPerformanceComparisonsUseCase,
     this.getImprovementSuggestionsUseCase,
+    this.triggerAnalysisUseCase,
+    this.preferenceHelper,
+    this.performanceApi,
   );
+
+  // ─── Project ID Resolution ──────────────────────────────────────────────
+  Future<String> _resolveProjectId() async {
+    // Return cached projectId if available
+    if (projectId != null && projectId!.isNotEmpty) {
+      return projectId!;
+    }
+
+    // Try SharedPreferences
+    final savedId = (await preferenceHelper.currentProjectId)?.trim();
+    if (savedId != null && savedId.isNotEmpty) {
+      projectId = savedId;
+      return savedId;
+    }
+
+    // Fetch from backend
+    final fetchedId = await performanceApi.resolveProjectId();
+    if (fetchedId == null || fetchedId.isEmpty) {
+      throw Exception('No accessible project found for current user.');
+    }
+
+    await preferenceHelper.saveCurrentProjectId(fetchedId);
+    projectId = fetchedId;
+    return fetchedId;
+  }
 
   // ─── Actions ─────────────────────────────────────────────────────────────
   @action
   Future<void> loadAllData() async {
     isLoading = true;
     try {
-      final report = await getWeeklyReportUseCase.call();
+      final pid = await _resolveProjectId();
+
+      final report = await getWeeklyReportUseCase.call(pid);
       weeklyReport = report;
       trendData = report.trendData;
       comparisons = report.comparisons;
       suggestions = report.suggestions;
 
       // Apply period filter
-      final filteredData = await getTrendDataUseCase.call(selectedPeriod);
+      final filteredData = await getTrendDataUseCase.call(pid, selectedPeriod);
       trendData = filteredData;
 
       errorStore.setErrorMessage('');
@@ -129,7 +171,8 @@ abstract class _PerformanceMonitoringStore with Store {
   Future<void> selectPeriod(TrendPeriod period) async {
     selectedPeriod = period;
     try {
-      final filteredData = await getTrendDataUseCase.call(period);
+      final pid = await _resolveProjectId();
+      final filteredData = await getTrendDataUseCase.call(pid, period);
       trendData = filteredData;
     } catch (error) {
       errorStore.setErrorMessage(
@@ -140,6 +183,25 @@ abstract class _PerformanceMonitoringStore with Store {
   @action
   void selectMetric(String metric) {
     selectedMetric = metric;
+  }
+
+  @action
+  Future<void> refreshData() async {
+    isRefreshing = true;
+    try {
+      final pid = await _resolveProjectId();
+
+      // Trigger analysis on the backend
+      await triggerAnalysisUseCase.call(pid);
+
+      // Reload all data
+      await loadAllData();
+    } catch (error) {
+      errorStore.setErrorMessage(
+          'Failed to refresh data: ${error.toString()}');
+    } finally {
+      isRefreshing = false;
+    }
   }
 
   // ─── Dispose ─────────────────────────────────────────────────────────────

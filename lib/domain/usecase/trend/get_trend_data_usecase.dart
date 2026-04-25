@@ -7,7 +7,7 @@ class GetTrendDataUseCase {
 
   GetTrendDataUseCase({required this.repository});
 
-  Future<List<TrendDataPoint>> call(TrendPeriod period) async {
-    return await repository.getTrendData(period);
+  Future<List<TrendDataPoint>> call(String projectId, TrendPeriod period) async {
+    return await repository.getTrendData(projectId, period);
   }
 }

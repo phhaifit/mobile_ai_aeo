@@ -6,7 +6,7 @@ class GetPerformanceComparisonsUseCase {
 
   GetPerformanceComparisonsUseCase({required this.repository});
 
-  Future<List<PerformanceComparison>> call() async {
-    return await repository.getPerformanceComparisons();
+  Future<List<PerformanceComparison>> call(String projectId) async {
+    return await repository.getPerformanceComparisons(projectId);
   }
 }
