@@ -32,32 +32,38 @@ class PerformanceComparison {
       ));
     }
 
+    double parseSafeDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
     _add(
       'Brand Visibility',
-      (current['brandMentionsRate'] as num?)?.toDouble() ?? 0,
-      (previous['brandMentionsRate'] as num?)?.toDouble() ?? 0,
+      parseSafeDouble(current['brandMentionsRate']),
+      parseSafeDouble(previous['brandMentionsRate']),
     );
     _add(
       'Brand Mentions',
-      (current['brandMentions'] as num?)?.toDouble() ?? 0,
-      (previous['brandMentions'] as num?)?.toDouble() ?? 0,
+      parseSafeDouble(current['brandMentions']),
+      parseSafeDouble(previous['brandMentions']),
     );
     _add(
       'Link Visibility',
-      (current['linkReferencesRate'] as num?)?.toDouble() ?? 0,
-      (previous['linkReferencesRate'] as num?)?.toDouble() ?? 0,
+      parseSafeDouble(current['linkReferencesRate']),
+      parseSafeDouble(previous['linkReferencesRate']),
     );
     _add(
       'Link References',
-      (current['linkReferences'] as num?)?.toDouble() ?? 0,
-      (previous['linkReferences'] as num?)?.toDouble() ?? 0,
+      parseSafeDouble(current['linkReferences']),
+      parseSafeDouble(previous['linkReferences']),
     );
 
     // Visibility score
     _add(
       'Visibility Score',
-      (current['brandVisibilityScore'] as num?)?.toDouble() ?? 0,
-      (previous['brandVisibilityScore'] as num?)?.toDouble() ?? 0,
+      parseSafeDouble(current['brandVisibilityScore']),
+      parseSafeDouble(previous['brandVisibilityScore']),
     );
 
     return comparisons;

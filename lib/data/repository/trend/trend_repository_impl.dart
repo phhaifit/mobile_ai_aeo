@@ -98,8 +98,13 @@ class TrendRepositoryImpl implements TrendRepository {
       start: range.start,
       end: range.end,
     );
-    final overallScore =
-        (overview['brandVisibilityScore'] as num?)?.toDouble() ?? 0.0;
+    double parseSafeDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
+    final overallScore = parseSafeDouble(overview['brandVisibilityScore']);
 
     final analyticsByDate =
         (analytics['analyticsByDate'] as List<dynamic>?) ?? [];
@@ -176,16 +181,21 @@ class TrendRepositoryImpl implements TrendRepository {
     Map<String, dynamic> overview,
     Map<String, dynamic> analytics,
   ) {
+    double parseSafeDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
     final suggestions = <ImprovementSuggestion>[];
-    final brandRate =
-        (overview['brandMentionsRate'] as num?)?.toDouble() ?? 0;
-    final linkRate =
-        (overview['linkReferencesRate'] as num?)?.toDouble() ?? 0;
+    final brandRate = parseSafeDouble(overview['brandMentionsRate']);
+    final linkRate = parseSafeDouble(overview['linkReferencesRate']);
+    
     final sentimentStats =
         (analytics['sentimentStats'] as Map<String, dynamic>?) ?? {};
-    final positive = (sentimentStats['positive'] as num?)?.toDouble() ?? 0;
-    final negative = (sentimentStats['negative'] as num?)?.toDouble() ?? 0;
-    final neutral = (sentimentStats['neutral'] as num?)?.toDouble() ?? 0;
+    final positive = parseSafeDouble(sentimentStats['positive']);
+    final negative = parseSafeDouble(sentimentStats['negative']);
+    final neutral = parseSafeDouble(sentimentStats['neutral']);
     final totalSentiment = positive + negative + neutral;
     final positiveRate =
         totalSentiment > 0 ? (positive / totalSentiment * 100) : 0.0;
