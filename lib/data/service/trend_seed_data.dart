@@ -102,6 +102,10 @@ class TrendSeedData {
   static List<TrendDataPoint> getTrendDataForPeriod(TrendPeriod period) {
     final allData = getAllTrendData();
     switch (period) {
+      case TrendPeriod.last3Days:
+      case TrendPeriod.thisWeek:
+        return allData.length > 1 ? allData.sublist(allData.length - 1) : allData;
+      case TrendPeriod.thisMonth:
       case TrendPeriod.last4Weeks:
         return allData.length > 4 ? allData.sublist(allData.length - 4) : allData;
       case TrendPeriod.last8Weeks:
@@ -110,6 +114,8 @@ class TrendSeedData {
         return allData; // Only 8 weeks of mock data available
       case TrendPeriod.last24Weeks:
         return allData; // Only 8 weeks of mock data available
+      case TrendPeriod.custom:
+        return allData; // Return all for custom in mock
     }
   }
 

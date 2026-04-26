@@ -8,7 +8,7 @@ class WeeklyTrendChartWidget extends StatelessWidget {
   final String selectedMetric;
   final TrendPeriod selectedPeriod;
   final Function(String) onMetricChanged;
-  final Function(TrendPeriod) onPeriodChanged;
+  final void Function(TrendPeriod, {DateTime? customStart, DateTime? customEnd}) onPeriodChanged;
   final bool isLoading;
 
   const WeeklyTrendChartWidget({
@@ -60,34 +60,53 @@ class WeeklyTrendChartWidget extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Weekly Trend',
-          style: TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        DropdownButton<TrendPeriod>(
-          value: selectedPeriod,
-          icon: Icon(Icons.arrow_drop_down),
-          underline: SizedBox(),
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
-          onChanged: (TrendPeriod? newValue) {
-            if (newValue != null) {
-              onPeriodChanged(newValue);
-            }
-          },
-          items: [
-            DropdownMenuItem(value: TrendPeriod.last4Weeks, child: Text('Last 4 Weeks')),
-            DropdownMenuItem(value: TrendPeriod.last8Weeks, child: Text('Last 8 Weeks')),
-            DropdownMenuItem(value: TrendPeriod.last12Weeks, child: Text('Last 12 Weeks')),
-            DropdownMenuItem(value: TrendPeriod.last24Weeks, child: Text('Last 24 Weeks')),
+    return Builder(
+      builder: (BuildContext context) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Weekly Trend',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            DropdownButton<TrendPeriod>(
+              value: selectedPeriod,
+              icon: Icon(Icons.arrow_drop_down),
+              underline: SizedBox(),
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+              onChanged: (TrendPeriod? newValue) async {
+                if (newValue != null) {
+                  if (newValue == TrendPeriod.custom) {
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      onPeriodChanged(newValue, customStart: picked.start, customEnd: picked.end);
+                    }
+                  } else {
+                    onPeriodChanged(newValue);
+                  }
+                }
+              },
+              items: [
+                DropdownMenuItem(value: TrendPeriod.last3Days, child: Text('3 Days')),
+                DropdownMenuItem(value: TrendPeriod.thisWeek, child: Text('This Week')),
+                DropdownMenuItem(value: TrendPeriod.thisMonth, child: Text('This Month')),
+                DropdownMenuItem(value: TrendPeriod.last4Weeks, child: Text('Last 4 Weeks')),
+                DropdownMenuItem(value: TrendPeriod.last8Weeks, child: Text('Last 8 Weeks')),
+                DropdownMenuItem(value: TrendPeriod.last12Weeks, child: Text('Last 12 Weeks')),
+                DropdownMenuItem(value: TrendPeriod.last24Weeks, child: Text('Last 24 Weeks')),
+                DropdownMenuItem(value: TrendPeriod.custom, child: Text('Custom Range')),
+              ],
+            )
           ],
-        )
-      ],
+        );
+      }
     );
   }
 

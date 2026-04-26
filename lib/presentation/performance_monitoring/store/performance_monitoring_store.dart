@@ -47,6 +47,12 @@ abstract class _PerformanceMonitoringStore with Store {
   TrendPeriod selectedPeriod = TrendPeriod.last4Weeks;
 
   @observable
+  DateTime? customStartDate;
+
+  @observable
+  DateTime? customEndDate;
+
+  @observable
   String selectedMetric = 'overallScore';
 
   @observable
@@ -155,7 +161,7 @@ abstract class _PerformanceMonitoringStore with Store {
       suggestions = report.suggestions;
 
       // Apply period filter
-      final filteredData = await getTrendDataUseCase.call(pid, selectedPeriod);
+      final filteredData = await getTrendDataUseCase.call(pid, selectedPeriod, customStartDate: customStartDate, customEndDate: customEndDate);
       trendData = filteredData;
 
       errorStore.setErrorMessage('');
@@ -168,11 +174,15 @@ abstract class _PerformanceMonitoringStore with Store {
   }
 
   @action
-  Future<void> selectPeriod(TrendPeriod period) async {
+  Future<void> selectPeriod(TrendPeriod period, {DateTime? customStart, DateTime? customEnd}) async {
     selectedPeriod = period;
+    if (period == TrendPeriod.custom) {
+      if (customStart != null) customStartDate = customStart;
+      if (customEnd != null) customEndDate = customEnd;
+    }
     try {
       final pid = await _resolveProjectId();
-      final filteredData = await getTrendDataUseCase.call(pid, period);
+      final filteredData = await getTrendDataUseCase.call(pid, period, customStartDate: customStartDate, customEndDate: customEndDate);
       trendData = filteredData;
     } catch (error) {
       errorStore.setErrorMessage(

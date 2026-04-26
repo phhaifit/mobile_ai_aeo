@@ -7,7 +7,7 @@ class GetTrendDataUseCase {
 
   GetTrendDataUseCase({required this.repository});
 
-  Future<List<TrendDataPoint>> call(String projectId, TrendPeriod period) async {
-    return await repository.getTrendData(projectId, period);
+  Future<List<TrendDataPoint>> call(String projectId, TrendPeriod period, {DateTime? customStartDate, DateTime? customEndDate}) async {
+    return await repository.getTrendData(projectId, period, customStartDate: customStartDate, customEndDate: customEndDate);
   }
 }

@@ -16,12 +16,21 @@ class TrendRepositoryImpl implements TrendRepository {
   // ── Date helpers ───────────────────────────────────────────────────────────
 
   /// Returns (startDate, endDate) as ISO strings for the given [TrendPeriod].
-  ({String start, String end}) _dateRangeForPeriod(TrendPeriod period) {
+  ({String start, String end}) _dateRangeForPeriod(TrendPeriod period, {DateTime? customStart, DateTime? customEnd}) {
     final now = DateTime.now();
     final end = DateTime(now.year, now.month, now.day);
     late final DateTime start;
 
     switch (period) {
+      case TrendPeriod.last3Days:
+        start = end.subtract(const Duration(days: 3));
+        break;
+      case TrendPeriod.thisWeek:
+        start = end.subtract(const Duration(days: 7));
+        break;
+      case TrendPeriod.thisMonth:
+        start = end.subtract(const Duration(days: 30));
+        break;
       case TrendPeriod.last4Weeks:
         start = end.subtract(const Duration(days: 28));
         break;
@@ -34,6 +43,12 @@ class TrendRepositoryImpl implements TrendRepository {
       case TrendPeriod.last24Weeks:
         start = end.subtract(const Duration(days: 168));
         break;
+      case TrendPeriod.custom:
+        start = customStart ?? end.subtract(const Duration(days: 7));
+        return (
+          start: DateFormat('yyyy-MM-dd').format(start),
+          end: DateFormat('yyyy-MM-dd').format(customEnd ?? end),
+        );
     }
 
     final fmt = DateFormat('yyyy-MM-dd');
@@ -82,9 +97,15 @@ class TrendRepositoryImpl implements TrendRepository {
   @override
   Future<List<TrendDataPoint>> getTrendData(
     String projectId,
-    TrendPeriod period,
-  ) async {
-    final range = _dateRangeForPeriod(period);
+    TrendPeriod period, {
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  }) async {
+    final range = _dateRangeForPeriod(
+      period,
+      customStart: customStartDate,
+      customEnd: customEndDate,
+    );
 
     final analytics = await _api.getMetricsAnalytics(
       projectId,
