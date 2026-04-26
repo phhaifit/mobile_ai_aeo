@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
+import 'package:boilerplate/utils/routes/routes.dart';
+import 'package:boilerplate/core/data/network/dio/dio_client.dart';
+import 'package:boilerplate/di/service_locator.dart';
 
 class AllPostsScreen extends StatefulWidget {
   @override
@@ -8,29 +12,56 @@ class AllPostsScreen extends StatefulWidget {
 class _AllPostsScreenState extends State<AllPostsScreen> {
   final Set<PostItem> _selectedItems = {};
 
-  // Mock Data
-  final List<PostItem> _posts = [
-    PostItem(
-      title: 'Beyond the Logo: How YourBrand.com Builds Authority',
-      description:
-          'Have you ever felt the buzz of a brilliant idea, a product, or a service, only to find it struggles to connect with the right...',
-      date: 'Mar 20, 15:54',
-      publishedDate: 'Mar 20, 15:56',
-      imageUrl: 'assets/images/img_login.jpg', // Placeholder image
-      tags: ['Direct Brand Queries', 'Navigational'],
-      type: 'BLOG',
-    ),
-    PostItem(
-      title: '10 Tips for Effective Remote Work',
-      description:
-          'Remote work is here to stay. Learn how to maximize your productivity and maintain a healthy work-life balance...',
-      date: 'Mar 21, 10:00',
-      publishedDate: 'Mar 21, 10:30',
-      imageUrl: 'assets/images/img_login.jpg', // Placeholder image
-      tags: ['Productivity', 'Work'],
-      type: 'SOCIAL',
-    ),
-  ];
+  List<PostItem> _posts = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPosts();
+  }
+
+  Future<void> _fetchPosts() async {
+    setState(() { _isLoading = true; });
+    try {
+      final dio = getIt<DioClient>().dio;
+      // 1. Fetch user's projects to get a valid projectId
+      final projRes = await dio.get('/api/projects');
+      final dynamic projData = projRes.data['data'] ?? projRes.data;
+      
+      if (projData is List && projData.isNotEmpty) {
+        final projectId = projData.first['id'];
+        
+        // 2. Fetch contents for this specific project
+        final response = await dio.get('/api/projects/$projectId/contents');
+        final dynamic respData = response.data['data'] ?? response.data;
+        final dynamic items = respData['items'] ?? respData; // Handle pagination wrapper if any
+
+        if (items is List) {
+          setState(() {
+            _posts = items.map((e) {
+              final topicObj = e['topic'] ?? {};
+              return PostItem(
+                contentId: e['id']?.toString() ?? '',
+                projectId: projectId.toString(),
+                title: e['title'] ?? 'No title',
+                description: topicObj['name']?.toString() ?? e['description'] ?? '',
+                date: e['createdAt'] != null ? e['createdAt'].toString().substring(0, 10) : '',
+                publishedDate: e['publishedAt'] != null ? e['publishedAt'].toString().substring(0, 10) : 'Not published',
+                imageUrl: 'assets/images/img_login.jpg',
+                tags: [],
+                type: (e['contentType'] ?? 'BLOG').toString(),
+              );
+            }).toList();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Fetch posts error: $e');
+    } finally {
+      if (mounted) setState(() { _isLoading = false; });
+    }
+  }
 
   String _selectedFilter = 'All Content';
   List<int> _itemsPerPageOptions = [10, 25, 50, 100];
@@ -128,7 +159,9 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
           child: _buildActionRow(),
         ),
         Expanded(
-          child: _isListView ? _buildListWithStickyHeader() : _buildGridView(),
+          child: _isLoading 
+            ? Center(child: CircularProgressIndicator()) 
+            : (_isListView ? _buildListWithStickyHeader() : _buildGridView()),
         ),
         _buildPagination(),
       ],
@@ -834,6 +867,12 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
               children: [
                 Icon(Icons.edit_outlined, size: 20, color: Colors.grey[600]),
                 SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () => _openSeoOptimization(post),
+                  child: Icon(Icons.analytics_outlined,
+                      size: 20, color: Colors.blueGrey[700]),
+                ),
+                SizedBox(width: 12),
                 Icon(Icons.visibility_off_outlined,
                     size: 20, color: Colors.grey[600]),
                 SizedBox(width: 12),
@@ -930,6 +969,12 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
               ),
               Spacer(),
               Icon(Icons.edit, size: 18, color: Colors.grey[400]),
+              SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _openSeoOptimization(post),
+                child: Icon(Icons.analytics_outlined,
+                    size: 18, color: Colors.blueGrey[700]),
+              ),
               SizedBox(width: 8),
               Icon(Icons.visibility_off, size: 18, color: Colors.grey[400]),
               SizedBox(width: 8),
@@ -1042,9 +1087,22 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       ),
     );
   }
+
+  void _openSeoOptimization(PostItem post) {
+    Navigator.of(context).pushNamed(
+      Routes.seoOptimization,
+      arguments: SeoRouteArgs(
+        contentId: post.contentId,
+        projectId: post.projectId,
+        contentTitle: post.title,
+      ),
+    );
+  }
 }
 
 class PostItem {
+  final String contentId;
+  final String projectId;
   final String title;
   final String description;
   final String date;
@@ -1054,6 +1112,8 @@ class PostItem {
   final String type;
 
   PostItem({
+    required this.contentId,
+    required this.projectId,
     required this.title,
     required this.description,
     required this.date,

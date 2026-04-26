@@ -8,6 +8,11 @@ import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/generate_cluster_articles_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/generate_cluster_plan_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_content_insights_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/optimize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/publish_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
@@ -133,6 +138,21 @@ class UseCaseModule {
     // seo optimization:--------------------------------------------------------
     getIt.registerSingleton<GetSeoDataUseCase>(
       GetSeoDataUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<GetContentInsightsUseCase>(
+      GetContentInsightsUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<GenerateClusterPlanUseCase>(
+      GenerateClusterPlanUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<GenerateClusterArticlesUseCase>(
+      GenerateClusterArticlesUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<OptimizeContentUseCase>(
+      OptimizeContentUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<PublishContentUseCase>(
+      PublishContentUseCase(repository: getIt<seo_opt.SeoRepository>()),
     );
 
     // trend:-------------------------------------------------------------------
