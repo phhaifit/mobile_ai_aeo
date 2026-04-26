@@ -45,6 +45,10 @@ void main() {
       expect(request.options, options);
     });
 
+    // Operation lives in the URL path now (`/api/contents/<op>`), not the
+    // request body. Options are flattened so optional hints (tone, length)
+    // map directly to BE DTO fields.
+
     test('toMap converts request without options to map', () {
       final request = ContentRequest(
         text: 'Sample text',
@@ -54,12 +58,12 @@ void main() {
       final map = request.toMap();
 
       expect(map['text'], 'Sample text');
-      expect(map['operation'], 'humanize');
+      expect(map.containsKey('operation'), false);
       expect(map.containsKey('options'), false);
     });
 
-    test('toMap converts request with options to map', () {
-      final options = {'level': 'advanced'};
+    test('toMap flattens options into the body', () {
+      final options = {'tone': 'formal', 'length': 'short'};
       final request = ContentRequest(
         text: 'Complex text',
         operation: ContentOperation.summarize,
@@ -69,11 +73,13 @@ void main() {
       final map = request.toMap();
 
       expect(map['text'], 'Complex text');
-      expect(map['operation'], 'summarize');
-      expect(map['options'], options);
+      expect(map['tone'], 'formal');
+      expect(map['length'], 'short');
+      expect(map.containsKey('options'), false);
+      expect(map.containsKey('operation'), false);
     });
 
-    test('toMap includes all operation types correctly', () {
+    test('toMap omits operation key for every operation type', () {
       final operations = [
         ContentOperation.enhance,
         ContentOperation.rewrite,
@@ -84,7 +90,9 @@ void main() {
       for (final op in operations) {
         final request = ContentRequest(text: 'text', operation: op);
         final map = request.toMap();
-        expect(map['operation'], op.apiPath);
+        expect(map.containsKey('operation'), false,
+            reason: 'operation $op should not appear in body');
+        expect(map['text'], 'text');
       }
     });
   });
