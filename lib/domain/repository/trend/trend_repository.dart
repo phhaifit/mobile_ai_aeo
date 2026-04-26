@@ -6,7 +6,7 @@ import '../../entity/trend/improvement_suggestion.dart';
 
 abstract class TrendRepository {
   Future<WeeklyReport> getWeeklyReport(String projectId);
-  Future<List<TrendDataPoint>> getTrendData(String projectId, TrendPeriod period);
+  Future<List<TrendDataPoint>> getTrendData(String projectId, TrendPeriod period, {DateTime? customStartDate, DateTime? customEndDate});
   Future<List<PerformanceComparison>> getPerformanceComparisons(String projectId);
   Future<List<ImprovementSuggestion>> getImprovementSuggestions(String projectId);
   Future<void> triggerAnalysisRun(String projectId);

@@ -125,6 +125,38 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
     });
   }
 
+  late final _$customStartDateAtom = Atom(
+      name: '_PerformanceMonitoringStore.customStartDate', context: context);
+
+  @override
+  DateTime? get customStartDate {
+    _$customStartDateAtom.reportRead();
+    return super.customStartDate;
+  }
+
+  @override
+  set customStartDate(DateTime? value) {
+    _$customStartDateAtom.reportWrite(value, super.customStartDate, () {
+      super.customStartDate = value;
+    });
+  }
+
+  late final _$customEndDateAtom =
+      Atom(name: '_PerformanceMonitoringStore.customEndDate', context: context);
+
+  @override
+  DateTime? get customEndDate {
+    _$customEndDateAtom.reportRead();
+    return super.customEndDate;
+  }
+
+  @override
+  set customEndDate(DateTime? value) {
+    _$customEndDateAtom.reportWrite(value, super.customEndDate, () {
+      super.customEndDate = value;
+    });
+  }
+
   late final _$selectedMetricAtom = Atom(
       name: '_PerformanceMonitoringStore.selectedMetric', context: context);
 
@@ -201,8 +233,10 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
       AsyncAction('_PerformanceMonitoringStore.selectPeriod', context: context);
 
   @override
-  Future<void> selectPeriod(TrendPeriod period) {
-    return _$selectPeriodAsyncAction.run(() => super.selectPeriod(period));
+  Future<void> selectPeriod(TrendPeriod period,
+      {DateTime? customStart, DateTime? customEnd}) {
+    return _$selectPeriodAsyncAction.run(() => super
+        .selectPeriod(period, customStart: customStart, customEnd: customEnd));
   }
 
   late final _$refreshDataAsyncAction =
@@ -246,6 +280,8 @@ trendData: ${trendData},
 comparisons: ${comparisons},
 suggestions: ${suggestions},
 selectedPeriod: ${selectedPeriod},
+customStartDate: ${customStartDate},
+customEndDate: ${customEndDate},
 selectedMetric: ${selectedMetric},
 isLoading: ${isLoading},
 isRefreshing: ${isRefreshing},
