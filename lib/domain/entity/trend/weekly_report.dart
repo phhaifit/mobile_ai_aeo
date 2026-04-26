@@ -32,8 +32,13 @@ class WeeklyReport {
     required DateTime endDate,
     required List<ImprovementSuggestion> suggestions,
   }) {
-    final overallScore =
-        (currentOverview['brandVisibilityScore'] as num?)?.toDouble() ?? 0.0;
+    double parseSafeDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
+    final overallScore = parseSafeDouble(currentOverview['brandVisibilityScore']);
 
     // Parse daily analytics into trend data points
     final analyticsByDate =

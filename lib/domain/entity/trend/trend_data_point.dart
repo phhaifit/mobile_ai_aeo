@@ -35,12 +35,18 @@ class TrendDataPoint {
     final dateStr = (json['date'] ?? '').toString();
     final parsedDate = DateTime.tryParse(dateStr) ?? DateTime.now();
 
-    final totalResponses = (json['totalResponses'] as num?)?.toInt() ?? 0;
-    final brandMentions = (json['brandMentions'] as num?)?.toInt() ?? 0;
-    final linkReferences = (json['linkReferences'] as num?)?.toInt() ?? 0;
-    final positiveCount = (json['positiveCount'] as num?)?.toInt() ?? 0;
-    final neutralCount = (json['neutralCount'] as num?)?.toInt() ?? 0;
-    final negativeCount = (json['negativeCount'] as num?)?.toInt() ?? 0;
+    int parseSafeInt(dynamic val) {
+      if (val == null) return 0;
+      if (val is num) return val.toInt();
+      return int.tryParse(val.toString()) ?? 0;
+    }
+
+    final totalResponses = parseSafeInt(json['totalResponses']);
+    final brandMentions = parseSafeInt(json['brandMentions']);
+    final linkReferences = parseSafeInt(json['linkReferences']);
+    final positiveCount = parseSafeInt(json['positiveCount']);
+    final neutralCount = parseSafeInt(json['neutralCount']);
+    final negativeCount = parseSafeInt(json['negativeCount']);
 
     final total = positiveCount + neutralCount + negativeCount;
     final brandVisibility =
