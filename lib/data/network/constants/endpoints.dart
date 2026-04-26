@@ -16,11 +16,13 @@ class Endpoints {
   // post endpoints
   static const String getPosts = "/posts";
 
-  // content enhancement endpoints (AI service)
-  static const String contentBase = "/api/v1/content";
+  // content enhancement endpoints — match BE PR
+  // GEO-Brand-Visibility/geo-brand-visibility-be#148
+  // Stateless AI text processing under /api/contents/<op>
+  static const String contentBase = "/api/contents";
   static String contentOperation(String op) => "$contentBase/$op";
 
-  // SEO audit endpoints
+  // SEO audit endpoints (Phase 1 placeholders — BE not yet built, see #46)
   static const String seoAudit = "/api/v1/seo/audit";
   static String seoAuditResult(String id) => "/api/v1/seo/audit/$id";
   static String seoCrawler(String url) =>

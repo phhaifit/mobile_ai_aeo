@@ -11,11 +11,12 @@ class ContentRequest {
     this.options,
   });
 
+  /// BE expects only `text` (and optional tone/length flattened, not nested).
+  /// Operation is in the URL path, not the body.
   Map<String, dynamic> toMap() {
     return {
       'text': text,
-      'operation': operation.apiPath,
-      if (options != null) 'options': options,
+      if (options != null) ...options!,
     };
   }
 }
