@@ -100,6 +100,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Post Detail',
+                description: 'View post detail',
+                icon: Icons.article_outlined,
+                color: Colors.deepPurpleAccent,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.postDetail);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Content Enhancement',
                 description: 'Enhance, rewrite, humanize & summarize content',
                 icon: Icons.auto_fix_high,

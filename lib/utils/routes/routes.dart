@@ -17,6 +17,7 @@ import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
 import 'package:boilerplate/presentation/prompt_library/prompt_library.dart';
 import 'package:boilerplate/presentation/brand_setup/brand_setup_screen.dart';
+import 'package:boilerplate/presentation/post_detail/post_detail_screen.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -43,6 +44,7 @@ class Routes {
   static const String integrations = '/integrations';
   static const String promptLibrary = '/prompt-library';
   static const String brandSetup = '/brand-setup';
+  static const String postDetail = '/post-detail';
   // Cronjob routes
   static const String cronjobList = '/cronjob/list';
   static const String cronjobCreate = '/cronjob/create';
@@ -56,7 +58,8 @@ class Routes {
     register: (BuildContext context) => RegisterScreen(),
     forgotPassword: (BuildContext context) => ForgotPasswordScreen(),
     home: (BuildContext context) => HomeScreen(),
-    contentEnhancement: (BuildContext context) => const ContentEnhancementScreen(),
+    contentEnhancement: (BuildContext context) =>
+        const ContentEnhancementScreen(),
     technicalSeo: (BuildContext context) => const TechnicalSeoScreen(),
     overview: (BuildContext context) => OverviewScreen(),
     performanceMonitoring: (BuildContext context) =>
@@ -70,6 +73,7 @@ class Routes {
     integrations: (BuildContext context) => IntegrationsScreen(),
     promptLibrary: (BuildContext context) => PromptLibraryScreen(),
     brandSetup: (BuildContext context) => const BrandSetupScreen(),
+    postDetail: (BuildContext context) => const PostDetailScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
 
