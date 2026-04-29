@@ -1,3 +1,7 @@
+import 'package:boilerplate/core/data/network/dio/dio_client.dart';
+import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 class TopicKeywordItem {
@@ -49,74 +53,147 @@ class TopicsKeywordsStore extends ChangeNotifier {
 
   DateTimeRange? _dateRange;
   String? _selectedTopicFilter;
+  bool _isLoading = false;
+  bool _isDeletingTopics = false;
+  String? _errorMessage;
+  final Set<String> _deletingTopicIds = <String>{};
 
-  final List<String> _topicFilters = const [
-    'All topics',
-    'Higher Education in IT',
-    'IT Career Readiness',
-    'Specialized Research Fields',
-    'University Comparison',
-    'Brand Awareness',
-  ];
+  List<TopicKeywordItem> _items = const [];
 
-  List<TopicKeywordItem> _items = [
-    TopicKeywordItem(
-      id: '1',
-      topic: 'Higher Education in IT',
-      alias: 'Higher Education in IT',
-      description:
-          'Exploration of top-tier academic institutions for pursuing undergraduate and graduate degrees in information technology.',
-      activePrompts: 5,
-      createdAt: DateTime(2026, 3, 17, 14, 22, 6),
-      isMonitoring: true,
-    ),
-    TopicKeywordItem(
-      id: '2',
-      topic: 'IT Career Readiness',
-      alias: 'IT Career Readiness',
-      description:
-          'Seeking educational paths that provide both theoretical knowledge and practical technical skills for real-world careers.',
-      activePrompts: 5,
-      createdAt: DateTime(2026, 3, 17, 14, 22, 6),
-      isMonitoring: true,
-    ),
-    TopicKeywordItem(
-      id: '3',
-      topic: 'Specialized Research Fields',
-      alias: 'Specialized Research Fields',
-      description:
-          'Discovery of academic hubs leading research in Artificial Intelligence, Machine Learning, and Big Data technologies.',
-      activePrompts: 5,
-      createdAt: DateTime(2026, 3, 17, 14, 22, 6),
-      isMonitoring: true,
-    ),
-    TopicKeywordItem(
-      id: '4',
-      topic: 'University Comparison',
-      alias: 'University Comparison',
-      description:
-          'Evaluating top universities in Southeast Asia for information technology and advanced software engineering programs.',
-      activePrompts: 5,
-      createdAt: DateTime(2026, 3, 17, 14, 22, 6),
-      isMonitoring: true,
-    ),
-    TopicKeywordItem(
-      id: '5',
-      topic: 'Brand Awareness',
-      alias: 'Brand Awareness',
-      description:
-          'Direct inquiries regarding the academic programs and research reputation of the Faculty of IT at leading institutions.',
-      activePrompts: 5,
-      createdAt: DateTime(2026, 3, 17, 14, 22, 6),
-      isMonitoring: true,
-    ),
-  ];
+  TopicsKeywordsStore() {
+    fetchTopics();
+  }
 
   DateTimeRange? get dateRange => _dateRange;
 
   String? get selectedTopicFilter => _selectedTopicFilter;
 
-  List<String> get topicFilters => _topicFilters;
+  bool get isLoading => _isLoading;
+
+  bool get isDeletingTopics => _isDeletingTopics;
+
+  String? get errorMessage => _errorMessage;
+
+  Set<String> get deletingTopicIds => Set.unmodifiable(_deletingTopicIds);
+
+  List<String> get topicFilters {
+    final filters = _items.map((item) => item.topic).toSet().toList(growable: false)
+      ..sort();
+    return ['All topics', ...filters];
+  }
+  Future<void> fetchTopics() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final projectId = await _resolveProjectId();
+
+      final response = await getIt<DioClient>().dio.get(
+        '/api/projects/$projectId/topics',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      final payload = response.data;
+      if (payload is! List) {
+        throw Exception('Invalid topics response payload');
+      }
+
+      _items = payload.whereType<Map>().map((raw) {
+        final json = Map<String, dynamic>.from(raw);
+        return TopicKeywordItem(
+          id: (json['id'] ?? '').toString(),
+          topic: (json['name'] ?? '').toString(),
+          alias: (json['alias'] ?? '').toString(),
+          description: (json['description'] ?? '').toString(),
+          activePrompts: (json['active_prompt_count'] as num?)?.toInt() ??
+              (json['promptCount'] as num?)?.toInt() ??
+              0,
+          createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
+              DateTime.now(),
+          isMonitoring: json['isMonitored'] == true,
+        );
+      }).toList(growable: false);
+
+      if (_selectedTopicFilter != null &&
+          _selectedTopicFilter != 'All topics' &&
+          !_items.any((item) => item.topic == _selectedTopicFilter)) {
+        _selectedTopicFilter = null;
+      }
+    } catch (_) {
+      _errorMessage = 'Unable to load topics. Please try again.';
+      _items = const [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String> _resolveProjectId() async {
+    final preferenceHelper = getIt<SharedPreferenceHelper>();
+    final savedProjectId = (await preferenceHelper.currentProjectId)?.trim();
+    if (savedProjectId != null && savedProjectId.isNotEmpty) {
+      return savedProjectId;
+    }
+
+    final projectId = await _fetchProjectIdFromBackend();
+    if (projectId == null || projectId.isEmpty) {
+      throw Exception('No accessible project found for current user.');
+    }
+
+    await preferenceHelper.saveCurrentProjectId(projectId);
+    return projectId;
+  }
+
+  Future<String?> _fetchProjectIdFromBackend() async {
+    final dio = getIt<DioClient>().dio;
+
+    final activeProjectsResponse = await dio.get(
+      '/api/projects',
+      queryParameters: {'status': 'ACTIVE'},
+      options: Options(headers: {'Accept': 'application/json'}),
+    );
+    final activeProjectId = _extractFirstProjectId(activeProjectsResponse.data);
+    if (activeProjectId != null) {
+      return activeProjectId;
+    }
+
+    final meProjectsResponse = await dio.get(
+      '/api/projects/me',
+      options: Options(headers: {'Accept': 'application/json'}),
+    );
+    final meProjectId = _extractFirstProjectId(meProjectsResponse.data);
+    if (meProjectId != null) {
+      return meProjectId;
+    }
+
+    final allProjectsResponse = await dio.get(
+      '/api/projects',
+      options: Options(headers: {'Accept': 'application/json'}),
+    );
+    return _extractFirstProjectId(allProjectsResponse.data);
+  }
+
+  String? _extractFirstProjectId(dynamic payload) {
+    if (payload is! List) {
+      return null;
+    }
+
+    for (final raw in payload.whereType<Map>()) {
+      final json = Map<String, dynamic>.from(raw);
+      final id = (json['id'] ?? '').toString().trim();
+      if (id.isNotEmpty) {
+        return id;
+      }
+    }
+
+    return null;
+  }
+
 
   List<TopicKeywordItem> get items => List.unmodifiable(_items);
 
@@ -164,42 +241,133 @@ class TopicsKeywordsStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteSelectedTopics() {
-    _items = _items.where((item) => !item.isSelected).toList(growable: false);
-    notifyListeners();
-  }
-
-  void deleteTopicById(String id) {
-    _items = _items.where((item) => item.id != id).toList(growable: false);
-    notifyListeners();
-  }
-
-  void addTopics(
-    List<({String topic, String alias, String description})> topics,
-  ) {
-    if (topics.isEmpty) {
-      return;
-    }
-
-    final now = DateTime.now();
-    final newItems = topics
-        .asMap()
-        .entries
-        .map(
-          (entry) => TopicKeywordItem(
-            id: '${now.microsecondsSinceEpoch}_${entry.key}_${_items.length}',
-            topic: entry.value.topic,
-            alias: entry.value.alias,
-            description: entry.value.description,
-            activePrompts: 0,
-            createdAt: now,
-            isMonitoring: false,
-          ),
-        )
+  Future<bool> deleteSelectedTopics() async {
+    final ids = _items
+        .where((item) => item.isSelected)
+        .map((item) => item.id)
+        .where((id) => id.trim().isNotEmpty)
         .toList(growable: false);
 
-    _items = [...newItems, ..._items];
+    if (ids.isEmpty) {
+      return true;
+    }
+
+    return deleteTopicsByIds(ids);
+  }
+
+  Future<bool> deleteTopicById(String id) async {
+    final normalizedId = id.trim();
+    if (normalizedId.isEmpty) {
+      return false;
+    }
+
+    return deleteTopicsByIds([normalizedId]);
+  }
+
+  Future<bool> deleteTopicsByIds(List<String> ids) async {
+    if (_isDeletingTopics) {
+      return false;
+    }
+
+    final normalizedIds = ids
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (normalizedIds.isEmpty) {
+      return true;
+    }
+
+    _isDeletingTopics = true;
+    _deletingTopicIds.addAll(normalizedIds);
     notifyListeners();
+
+    try {
+      await getIt<DioClient>().dio.delete(
+        '/api/topics/delete-many',
+        data: {'ids': normalizedIds},
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      _items = _items
+          .where((item) => !normalizedIds.contains(item.id.trim()))
+          .toList(growable: false);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      _deletingTopicIds.removeAll(normalizedIds);
+      _isDeletingTopics = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> addTopics(
+    List<({String topic, String alias, String description})> topics,
+  ) async {
+    if (topics.isEmpty) {
+      return true;
+    }
+
+    final payloadTopicData = topics
+        .map(
+          (topic) => {
+            'name': topic.topic.trim(),
+            'alias': topic.alias.trim(),
+            'description': topic.description.trim(),
+          },
+        )
+        .where((topic) => (topic['name'] ?? '').toString().isNotEmpty)
+        .toList(growable: false);
+
+    if (payloadTopicData.isEmpty) {
+      return false;
+    }
+
+    try {
+      final projectId = await _resolveProjectId();
+      final response = await getIt<DioClient>().dio.post(
+        '/api/topics',
+        data: {
+          'projectId': projectId,
+          'topicData': payloadTopicData,
+        },
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      final payload = response.data;
+      if (payload is! List) {
+        throw Exception('Invalid add topics response payload');
+      }
+
+      final newItems = payload.whereType<Map>().map((raw) {
+        final json = Map<String, dynamic>.from(raw);
+        return TopicKeywordItem(
+          id: (json['id'] ?? '').toString(),
+          topic: (json['name'] ?? '').toString(),
+          alias: (json['alias'] ?? '').toString(),
+          description: (json['description'] ?? '').toString(),
+          activePrompts: (json['active_prompt_count'] as num?)?.toInt() ??
+              (json['promptCount'] as num?)?.toInt() ??
+              0,
+          createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
+              DateTime.now(),
+          isMonitoring: json['isMonitored'] == true,
+        );
+      }).toList(growable: false);
+
+      if (newItems.isEmpty) {
+        return false;
+      }
+
+      _items = [...newItems, ..._items];
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   List<TopicKeywordItem> get filteredItems {

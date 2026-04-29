@@ -10,7 +10,8 @@ class DioClient {
       : _dio = Dio()
     ..options.baseUrl = dioConfigs.baseUrl
     ..options.connectTimeout = Duration(milliseconds: dioConfigs.connectionTimeout)
-    ..options.receiveTimeout = Duration(milliseconds: dioConfigs.receiveTimeout);
+    ..options.receiveTimeout = Duration(milliseconds: dioConfigs.receiveTimeout)
+    ..options.extra['withCredentials'] = true;
 
   Dio get dio => _dio;
 

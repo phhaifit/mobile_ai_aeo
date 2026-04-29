@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
+import 'package:boilerplate/utils/routes/routes.dart';
+import 'package:boilerplate/core/data/network/dio/dio_client.dart';
+import 'package:boilerplate/di/service_locator.dart';
 
 class PostItem {
   final String id;
+  final String contentId;
+  final String projectId;
   final String title;
   final String description;
   final String date;
@@ -14,6 +20,8 @@ class PostItem {
 
   PostItem({
     required this.id,
+    required this.contentId,
+    required this.projectId,
     required this.title,
     required this.description,
     required this.date,
@@ -49,8 +57,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       "ca6a7019-5e93-431f-b2d8-8deabc82a8af"; // Same mock ID as ai_writer
 
   Future<String?> _getToken() async {
-    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
-  }
+    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';                 }
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _getToken();
@@ -66,6 +73,14 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
     });
 
     try {
+      final dio = getIt<DioClient>().dio;
+      final projRes = await dio.get('/api/projects');
+      final dynamic projData = projRes.data['data'] ?? projRes.data;
+
+      if (projData is List && projData.isNotEmpty) {
+        _projectId = projData.first['id'].toString();
+      }
+
       final headers = await _getHeaders();
 
       // Build query parameters
@@ -75,10 +90,10 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       };
 
       if (_searchQuery.isNotEmpty) queryParams['search'] = _searchQuery;
-      if (_selectedStatus.isNotEmpty) queryParams['status'] = _selectedStatus;
+      if (_selectedStatus.isNotEmpty) queryParams['status'] = _selectedStatus;        
       if (_selectedContentType.isNotEmpty)
         queryParams['contentType'] = _selectedContentType;
-      if (_selectedTopic.isNotEmpty) queryParams['topicName'] = _selectedTopic;
+      if (_selectedTopic.isNotEmpty) queryParams['topicName'] = _selectedTopic;       
       if (_startDate != null)
         queryParams['startDate'] = _startDate!.toIso8601String();
       if (_endDate != null)
@@ -132,7 +147,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
             if (type == 'SOCIAL_MEDIA_POST') type = 'SOCIAL';
 
             String? imgUrl;
-            if (json['thumbnail'] != null && json['thumbnail']['url'] != null) {
+            if (json['thumbnail'] != null && json['thumbnail']['url'] != null) {      
               imgUrl = json['thumbnail']['url']?.toString();
             } else if (json['featuredImageUrl'] != null) {
               imgUrl = json['featuredImageUrl']?.toString();
@@ -140,6 +155,8 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
 
             return PostItem(
               id: json['id'] ?? '',
+              contentId: json['id']?.toString() ?? '',
+              projectId: _projectId,
               title: json['title'] ?? 'Untitled',
               description: json['body'] ?? 'No content',
               date: formattedDate,
@@ -203,6 +220,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error deleting items: $e')),
+
         );
       }
     } finally {
@@ -846,14 +864,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                           colorFilter: ColorFilter.mode(
                               Colors.black.withOpacity(0.1),
                               BlendMode.darken))),
-              child: Center(
-                child: Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                        color: Color(0xFFFF6600),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Icon(Icons.check, color: Colors.white, size: 32)),
-              ),
+
             ),
             SizedBox(height: 16),
 
@@ -1029,6 +1040,17 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _openSeoOptimization(PostItem post) {
+    Navigator.of(context).pushNamed(
+      Routes.seoOptimization,
+      arguments: SeoRouteArgs(
+        contentId: post.contentId,
+        projectId: post.projectId,
+        contentTitle: post.title,
       ),
     );
   }

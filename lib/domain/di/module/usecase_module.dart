@@ -8,6 +8,11 @@ import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/generate_cluster_articles_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/generate_cluster_plan_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_content_insights_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/optimize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/publish_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
@@ -20,6 +25,8 @@ import 'package:boilerplate/domain/usecase/post/udpate_post_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/google_login_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/signup_usecase.dart';
 import 'package:boilerplate/domain/usecase/cronjob/get_all_cronjobs_usecase.dart';
 import 'package:boilerplate/domain/usecase/cronjob/get_cronjob_by_id_usecase.dart';
 import 'package:boilerplate/domain/usecase/cronjob/create_cronjob_usecase.dart';
@@ -50,6 +57,12 @@ class UseCaseModule {
     );
     getIt.registerSingleton<LoginUseCase>(
       LoginUseCase(getIt<UserRepository>()),
+    );
+    getIt.registerSingleton<GoogleLoginUseCase>(
+      GoogleLoginUseCase(getIt<UserRepository>()),
+    );
+    getIt.registerSingleton<SignupUseCase>(
+      SignupUseCase(getIt<UserRepository>()),
     );
 
     // post:--------------------------------------------------------------------
@@ -125,6 +138,21 @@ class UseCaseModule {
     // seo optimization:--------------------------------------------------------
     getIt.registerSingleton<GetSeoDataUseCase>(
       GetSeoDataUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<GetContentInsightsUseCase>(
+      GetContentInsightsUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<GenerateClusterPlanUseCase>(
+      GenerateClusterPlanUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<GenerateClusterArticlesUseCase>(
+      GenerateClusterArticlesUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<OptimizeContentUseCase>(
+      OptimizeContentUseCase(repository: getIt<seo_opt.SeoRepository>()),
+    );
+    getIt.registerSingleton<PublishContentUseCase>(
+      PublishContentUseCase(repository: getIt<seo_opt.SeoRepository>()),
     );
 
     // trend:-------------------------------------------------------------------

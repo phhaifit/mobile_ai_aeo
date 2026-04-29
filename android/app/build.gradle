@@ -40,6 +40,11 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // flutter_appauth: redirect scheme for Google OAuth PKCE
+        manifestPlaceholders += [
+            'appAuthRedirectScheme': 'com.googleusercontent.apps.195844443608-p6dmp9ail6prnpaqvrqhjf21lsjhm841'
+        ]
     }
 
     buildTypes {
