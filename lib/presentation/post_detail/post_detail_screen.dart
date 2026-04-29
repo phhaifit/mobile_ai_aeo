@@ -1,6 +1,13 @@
+import 'dart:async';
+
+import 'package:boilerplate/data/network/apis/content_management/content_management_api.dart';
+import 'package:boilerplate/di/service_locator.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:boilerplate/presentation/post_detail/store/post_detail_store.dart';
+import 'package:boilerplate/utils/routes/routes.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
+
+// ignore_for_file: unused_element
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({super.key});
@@ -10,148 +17,155 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
-  bool _isLoading = true;
-  Map<String, dynamic>? _postData;
+  late final PostDetailStore _store;
+  StreamSubscription<String>? _jobStreamSubscription;
 
-  // Controllers for editing
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _slugController = TextEditingController();
-  final TextEditingController _bodyController = TextEditingController();
-  bool _isEditing = false;
+  bool get _isLoading => _store.isLoading;
+  set _isLoading(bool value) => _store.isLoading = value;
 
-  // Trạng thái mở rộng của các mục Generation Input
-  bool _isContentProfileExpanded = false;
-  bool _isTopicExpanded = false;
-  bool _isPromptExpanded = false;
+  Map<String, dynamic>? get _postData => _store.postData;
+  set _postData(Map<String, dynamic>? value) => _store.postData = value;
+
+  TextEditingController get _titleController => _store.titleController;
+  TextEditingController get _slugController => _store.slugController;
+  TextEditingController get _bodyController => _store.bodyController;
+
+  bool get _isEditing => _store.isEditing;
+  set _isEditing(bool value) => _store.isEditing = value;
+
+  bool get _isContentProfileExpanded => _store.isContentProfileExpanded;
+  set _isContentProfileExpanded(bool value) =>
+      _store.isContentProfileExpanded = value;
+
+  bool get _isTopicExpanded => _store.isTopicExpanded;
+  set _isTopicExpanded(bool value) => _store.isTopicExpanded = value;
+
+  bool get _isPromptExpanded => _store.isPromptExpanded;
+  set _isPromptExpanded(bool value) => _store.isPromptExpanded = value;
+
+  @override
+  void initState() {
+    super.initState();
+    _store = getIt.isRegistered<PostDetailStore>()
+        ? getIt<PostDetailStore>()
+        : PostDetailStore(
+            ContentManagementApi(getIt(), getIt()),
+          );
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
-      _fetchPostDetail(args);
+      _store.loadPostDetail(args);
     } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _fetchPostDetail(String id) async {
-    try {
-      final token =
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
-      final response = await http.get(
-        Uri.parse('https://api.aeo.how/api/contents/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          _postData = jsonDecode(response.body);
-          _titleController.text = _postData!['title'] ?? '';
-          _slugController.text = _postData!['slug'] ?? '';
-          _bodyController.text = _postData!['body'] ?? '';
-          _isLoading = false;
-        });
-      } else {
-        setState(() => _isLoading = false);
-        debugPrint('Failed to load post detail: ${response.statusCode}');
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      debugPrint('Error fetching post detail: $e');
+      _store.isLoading = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          leading: const BackButton(color: Colors.black),
-          title: const Text(
-            'Loading...',
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    return Observer(
+      builder: (_) {
+        if (_isLoading && _postData == null) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              leading: const BackButton(color: Colors.black),
+              title: const Text(
+                'Loading...',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    if (_postData == null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          leading: const BackButton(color: Colors.black),
-          title: const Text('Error', style: TextStyle(color: Colors.black)),
-        ),
-        body: const Center(child: Text('Could not load post details')),
-      );
-    }
+        if (_postData == null) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              leading: const BackButton(color: Colors.black),
+              title: const Text('Error', style: TextStyle(color: Colors.black)),
+            ),
+            body: Center(
+              child: Text(
+                _store.errorMessage ?? 'Could not load post details',
+              ),
+            ),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/all-posts',
-              (Route<dynamic> route) => false,
-            );
-          },
-        ),
-        title: const Text(
-          'Content Details',
-          style: TextStyle(color: Colors.black, fontSize: 16),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.black54),
-            onPressed: () {},
+        return Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  Routes.allPosts,
+                  (Route<dynamic> route) => false,
+                );
+              },
+            ),
+            title: const Text(
+              'Content Details',
+              style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.help_outline, color: Colors.black54),
+                onPressed: () {},
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1.0),
+              child: Container(color: Colors.grey[300], height: 1.0),
+            ),
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: Colors.grey[300], height: 1.0),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 16),
-            _buildActionButtons(),
-            const SizedBox(height: 16),
-            _buildRegenerateSection(),
-            const SizedBox(height: 16),
-            _buildContentEditor(),
-            const SizedBox(height: 16),
-            _buildGeneralInsights(),
-            const SizedBox(height: 16),
-            _buildThumbnailSection(),
-            const SizedBox(height: 16),
-            _buildGenerationInput(),
-            const SizedBox(height: 16),
-            if (_postData!['targetKeywords'] != null) ...[
-              _buildTargetKeywords(),
-              const SizedBox(height: 16),
-            ],
-            if (_postData!['retrievedPages'] != null) ...[
-              _buildRetrievedPages(),
-              const SizedBox(height: 32),
-            ],
-          ],
-        ),
-      ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 16),
+                _buildActionButtons(),
+                const SizedBox(height: 16),
+                _buildRegenerateSection(),
+                const SizedBox(height: 16),
+                _buildContentEditor(),
+                const SizedBox(height: 16),
+                _buildGeneralInsights(),
+                const SizedBox(height: 16),
+                _buildThumbnailSection(),
+                const SizedBox(height: 16),
+                _buildGenerationInput(),
+                const SizedBox(height: 16),
+                if (_postData!['targetKeywords'] != null) ...[
+                  _buildTargetKeywords(),
+                  const SizedBox(height: 16),
+                ],
+                if (_postData!['retrievedPages'] != null) ...[
+                  _buildRetrievedPages(),
+                  const SizedBox(height: 32),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  @override
+  void dispose() {
+    _jobStreamSubscription?.cancel();
+    _store.dispose();
+    super.dispose();
   }
 
   Widget _buildHeader() {
@@ -292,45 +306,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _updateStatus(String action) async {
-    final id = _postData!['id'];
-    final token =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
-
-    // Map action to API endpoint
-    String endpoint;
-    if (action == 'UNPUBLISHED') {
-      endpoint = 'unpublish';
-    } else if (action == 'PUBLISHED') {
-      endpoint = 'publish';
-    } else {
-      endpoint = 'republish';
-    }
-
-    setState(() => _isLoading = true);
-
     try {
-      final response = await http.post(
-        Uri.parse('https://api.aeo.how/api/contents/$id/$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      await _store.updateStatus(action);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Successfully $action content.')),
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Re-fetch post data to get updated status and dates
-        await _fetchPostDetail(id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Successfully ${endpoint}ed content.')),
-        );
-      } else {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: ${response.statusCode}')),
-        );
-      }
     } catch (e) {
-      setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -338,47 +319,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _regenerateContent() async {
-    setState(() => _isLoading = true);
     try {
-      final token =
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
-      final id = _postData!['id'];
-
-      final response = await http.post(
-        Uri.parse('https://api.aeo.how/api/contents/$id/regenerate'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({}),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final String jobId = data['jobId'];
-
+      final jobId = await _store.regenerateContent();
+      if (jobId == null || jobId.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Regenerating the post. Please wait....'),
-            ),
+            const SnackBar(content: Text('Regenerate failed: missing jobId')),
           );
         }
-
-        // Connect to SSE stream to wait for completion
-        _listenToJobStream(jobId, token);
-      } else {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Regenerate failed: ${response.statusCode}'),
-            ),
-          );
-        }
+        return;
       }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Regenerating the post. Please wait....'),
+          ),
+        );
+      }
+
+      _listenToJobStream(jobId);
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -387,31 +348,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  void _listenToJobStream(String jobId, String token) async {
-    final client = http.Client();
+  void _listenToJobStream(String jobId) async {
     try {
-      final request = http.Request(
-        'GET',
-        Uri.parse('https://api.aeo.how/api/contents/jobs/$jobId/stream'),
-      );
-      request.headers['Authorization'] = 'Bearer $token';
-
-      final response = await client.send(request);
-
-      response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen(
-        (line) {
+      _jobStreamSubscription = await _store.listenToJobStream(
+        jobId: jobId,
+        onLine: (line) {
           if (line.startsWith('data: ')) {
             try {
               final jsonString = line.substring(6); // remove 'data: '
               if (jsonString.trim().isNotEmpty) {
-                final payload = jsonDecode(jsonString);
+                final payload = _store.decodeEvent(jsonString);
 
                 // Check if event is 'result' which contains the final generated post
                 if (payload['event'] == 'result' || payload['id'] != null) {
-                  client.close();
+                  _jobStreamSubscription?.cancel();
                   final newId = payload['data'] != null
                       ? payload['data']['id']
                       : payload['id'];
@@ -419,19 +369,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   if (newId != null && newId != _postData!['id']) {
                     if (mounted) {
                       Navigator.of(context).pushReplacementNamed(
-                        '/post-detail',
+                        Routes.postDetail,
                         arguments: newId,
                       );
                     }
                   } else {
                     // Same ID (e.g. was Drafting/Failed before rerun)
-                    _fetchPostDetail(_postData!['id']);
+                    _store.loadPostDetail(_postData!['id'].toString());
                   }
                 } else if (payload['event'] == 'failed' ||
                     payload['error'] != null) {
-                  client.close();
+                  _jobStreamSubscription?.cancel();
                   if (mounted) {
-                    setState(() => _isLoading = false);
+                    _store.setActionLoading(false);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -447,17 +397,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             }
           }
         },
-        onDone: () {
-          client.close();
-        },
         onError: (err) {
-          client.close();
-          if (mounted) setState(() => _isLoading = false);
+          if (mounted) _store.setActionLoading(false);
         },
       );
     } catch (e) {
-      client.close();
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) _store.setActionLoading(false);
     }
   }
 
@@ -504,13 +449,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 icon: Icon(_isEditing ? Icons.close : Icons.edit, size: 20),
                 onPressed: () {
                   setState(() {
-                    if (_isEditing) {
-                      // Cancel editing - revert changes
-                      _titleController.text = _postData!['title'] ?? '';
-                      _slugController.text = _postData!['slug'] ?? '';
-                      _bodyController.text = _postData!['body'] ?? '';
-                    }
-                    _isEditing = !_isEditing;
+                    _store.toggleEditing();
                   });
                 },
               ),
@@ -614,54 +553,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _saveContent() async {
-    final id = _postData!['id'];
-    final token =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
-
-    setState(() => _isLoading = true);
-
     try {
-      String? thumbnailKey;
-      if (_postData!['thumbnail'] != null &&
-          _postData!['thumbnail']['key'] != null) {
-        thumbnailKey = _postData!['thumbnail']['key'];
+      final success = await _store.saveContent();
+      if (success) {
+        _isEditing = false;
       }
-
-      final bodyData = jsonEncode({
-        "body": _bodyController.text,
-        "title": _titleController.text,
-        "slug": _slugController.text,
-        "completionStatus": _postData!['completionStatus'] == 'PUBLISHED'
-            ? 'COMPLETE'
-            : (_postData!['completionStatus'] ?? "COMPLETE"),
-        if (thumbnailKey != null) "thumbnailKey": thumbnailKey,
-      });
-
-      final response = await http.patch(
-        Uri.parse('https://api.aeo.how/api/contents/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: bodyData,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Content saved successfully.')),
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        await _fetchPostDetail(id);
-        setState(() {
-          _isEditing = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Content saved successfully.')),
-        );
-      } else {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Save failed: ${response.statusCode}')),
-        );
-      }
     } catch (e) {
-      setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error saving: $e')));
@@ -829,7 +729,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           InkWell(
             onTap: () {
               setState(() {
-                _isContentProfileExpanded = !_isContentProfileExpanded;
+                _store.setContentProfileExpanded(!_isContentProfileExpanded);
               });
             },
             child: Padding(
@@ -946,7 +846,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           InkWell(
             onTap: () {
               setState(() {
-                _isTopicExpanded = !_isTopicExpanded;
+                _store.setTopicExpanded(!_isTopicExpanded);
               });
             },
             child: Padding(
@@ -993,7 +893,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           InkWell(
             onTap: () {
               setState(() {
-                _isPromptExpanded = !_isPromptExpanded;
+                _store.setPromptExpanded(!_isPromptExpanded);
               });
             },
             child: Padding(

@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:boilerplate/data/network/apis/content_management/content_management_api.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
+import 'package:flutter/material.dart';
 
 // --- Bổ sung các Model tương ứng với dữ liệu trả về từ Backend ---
 
@@ -103,40 +106,17 @@ class AiWriterScreen extends StatefulWidget {
 }
 
 class _AiWriterScreenState extends State<AiWriterScreen> {
+  late final AiWriterStore _store;
+  late final ContentManagementApi _contentApi;
+  StreamSubscription<String>? _jobStreamSubscription;
+
   // --- Mock Data đại diện cho API response ---
-  String _projectId = "ca6a7019-5e93-431f-b2d8-8deabc82a8af";
-  String _brandId = "28514d02-a6d4-436c-bb92-b84cc844ee6c"; // Added brandId
-
-  // --- Real API Data properties ---
-  List<Prompt> _prompts = [];
-  List<ContentProfile> _contentProfiles = [];
-  List<CustomerPersona> _personas = [];
-  List<WebSearchResponseDto> _topPages = [];
-
-  bool _isLoadingMetaData = false;
-  bool _isSearching = false;
-  bool _isGeneratingContent = false;
-  String? _selectedPromptId;
-  String _referenceType = "search";
-  String? _selectedTopPageUrl;
-  String? _selectedSearchUrl;
-  String? _selectedProfileId;
-  String? _selectedPersonaId;
-  String _selectedContentType = "blog_post";
-  String? _selectedPlatform;
-
-  final TextEditingController _customReferenceUrlController =
-      TextEditingController();
-  final TextEditingController _customUrlController = TextEditingController();
-  final TextEditingController _keywordsController = TextEditingController();
-  final TextEditingController _improvementController = TextEditingController();
-  final TextEditingController _modificationInstructionController =
-      TextEditingController();
+  final String _projectId = 'ca6a7019-5e93-431f-b2d8-8deabc82a8af';
+  final String _brandId = '28514d02-a6d4-436c-bb92-b84cc844ee6c';
 
   final List<Map<String, String>> _contentTypes = [
     {"label": "Blog Post", "value": "blog_post"},
     {"label": "Social Media Post", "value": "social_media_post"},
-    {"label": "Email", "value": "email"},
   ];
 
   final List<Map<String, String>> _socialPlatforms = [
@@ -148,22 +128,65 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
   @override
   void initState() {
     super.initState();
+    _store = getIt<AiWriterStore>();
+    _contentApi = ContentManagementApi(getIt(), getIt());
     _fetchMetaData();
   }
 
-  Future<String?> _getToken() async {
-    // final prefs = await SharedPreferences.getInstance();
-    // return prefs.getString('jwt_token');
-    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
-  }
+  bool get _isLoadingMetaData => _store.isLoadingMetaData;
+  set _isLoadingMetaData(bool value) => _store.isLoadingMetaData = value;
 
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await _getToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
+  bool get _isSearching => _store.isSearching;
+  set _isSearching(bool value) => _store.isSearching = value;
+
+  bool get _isGeneratingContent => _store.isGeneratingContent;
+  set _isGeneratingContent(bool value) => _store.isGeneratingContent = value;
+
+  List<Prompt> get _prompts => _store.prompts.cast<Prompt>();
+  set _prompts(List<Prompt> value) => _store.prompts = value;
+
+  List<ContentProfile> get _contentProfiles =>
+      _store.contentProfiles.cast<ContentProfile>();
+  set _contentProfiles(List<ContentProfile> value) =>
+      _store.contentProfiles = value;
+
+  List<CustomerPersona> get _personas =>
+      _store.personas.cast<CustomerPersona>();
+  set _personas(List<CustomerPersona> value) => _store.personas = value;
+
+  List<WebSearchResponseDto> get _topPages =>
+      _store.topPages.cast<WebSearchResponseDto>();
+  set _topPages(List<WebSearchResponseDto> value) => _store.topPages = value;
+
+  set _selectedTopPageUrl(String? value) => _store.selectedTopPageUrl = value;
+
+  String? get _selectedPromptId => _store.selectedPromptId;
+  set _selectedPromptId(String? value) => _store.selectedPromptId = value;
+
+  String get _referenceType => _store.referenceType;
+  set _referenceType(String value) => _store.referenceType = value;
+
+  String? get _selectedSearchUrl => _store.selectedSearchUrl;
+  set _selectedSearchUrl(String? value) => _store.selectedSearchUrl = value;
+
+  String? get _selectedProfileId => _store.selectedProfileId;
+  set _selectedProfileId(String? value) => _store.selectedProfileId = value;
+
+  String? get _selectedPersonaId => _store.selectedPersonaId;
+  set _selectedPersonaId(String? value) => _store.selectedPersonaId = value;
+
+  String get _selectedContentType => _store.selectedContentType;
+  set _selectedContentType(String value) => _store.selectedContentType = value;
+
+  String? get _selectedPlatform => _store.selectedPlatform;
+  set _selectedPlatform(String? value) => _store.selectedPlatform = value;
+
+  TextEditingController get _customUrlController => _store.customUrlController;
+  TextEditingController get _keywordsController => _store.keywordsController;
+  TextEditingController get _improvementController =>
+      _store.improvementController;
+  TextEditingController get _modificationInstructionController =>
+      _store.modificationInstructionController;
 
   Future<void> _fetchMetaData() async {
     setState(() {
@@ -171,53 +194,23 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     });
 
     try {
-      final headers = await _getHeaders();
+      final promptsData = await _contentApi.getPrompts(_projectId);
+      _prompts = promptsData
+          .map(
+            (e) => Prompt(
+              id: e['id']?.toString() ?? '',
+              title: e['content']?.toString() ?? '',
+              content: e['content']?.toString() ?? '',
+            ),
+          )
+          .toList();
 
-      // Fetch Prompts
-      final promptsResponse = await http.get(
-        Uri.parse('https://api.aeo.how/api/projects/$_projectId/prompts'),
-        headers: headers,
-      );
-      if (promptsResponse.statusCode == 200) {
-        // Adjust this if response is paginated (e.g. { data: [...] })
-        final body = jsonDecode(promptsResponse.body);
-        final List<dynamic> promptsData =
-            body['data'] ?? body; // assumption based on standard pagination
-        _prompts = promptsData
-            .map(
-              (e) => Prompt(
-                id: e['id'],
-                title: e['content'] ??
-                    '', // Sử dụng trường 'content' làm title hiển thị trên dropdown
-                content: e['content'] ?? '',
-              ),
-            )
-            .toList();
-      }
+      final profilesData = await _contentApi.getProfiles(_projectId);
+      _contentProfiles =
+          profilesData.map((e) => ContentProfile.fromJson(e)).toList();
 
-      // Fetch Profiles
-      final profilesResponse = await http.get(
-        Uri.parse(
-          'https://api.aeo.how/api/projects/$_projectId/content-profiles',
-        ),
-        headers: headers,
-      );
-      if (profilesResponse.statusCode == 200) {
-        final List<dynamic> profilesData = jsonDecode(profilesResponse.body);
-        _contentProfiles =
-            profilesData.map((e) => ContentProfile.fromJson(e)).toList();
-      }
-
-      // Fetch Personas
-      final personasResponse = await http.get(
-        Uri.parse('https://api.aeo.how/api/brands/$_brandId/customer-personas'),
-        headers: headers,
-      );
-      if (personasResponse.statusCode == 200) {
-        final List<dynamic> personasData = jsonDecode(personasResponse.body);
-        _personas =
-            personasData.map((e) => CustomerPersona.fromJson(e)).toList();
-      }
+      final personasData = await _contentApi.getPersonas(_brandId);
+      _personas = personasData.map((e) => CustomerPersona.fromJson(e)).toList();
     } catch (e) {
       debugPrint('Error fetching metadata: $e');
     } finally {
@@ -235,30 +228,23 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     });
 
     try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('https://api.aeo.how/api/prompts/$promptId/top-pages'),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _topPages = data
-              .map(
-                (e) => WebSearchResponseDto(
-                  title: e['title'],
-                  url: e['url'],
-                  description: e['description'],
-                  relevanceDescription: e['relevanceDescription'] ?? '',
-                  relevanceScore:
-                      (e['relevanceScore'] as num?)?.toDouble() ?? 0.0,
-                  relevanceLabel: e['relevanceLabel'] ?? '',
-                ),
-              )
-              .toList();
-        });
-      }
+      final data = await _contentApi.getTopPages(promptId);
+      setState(() {
+        _topPages = data
+            .map(
+              (e) => WebSearchResponseDto(
+                title: e['title']?.toString() ?? '',
+                url: e['url']?.toString() ?? '',
+                description: e['description']?.toString() ?? '',
+                relevanceDescription:
+                    e['relevanceDescription']?.toString() ?? '',
+                relevanceScore:
+                    (e['relevanceScore'] as num?)?.toDouble() ?? 0.0,
+                relevanceLabel: e['relevanceLabel']?.toString() ?? '',
+              ),
+            )
+            .toList();
+      });
     } catch (e) {
       debugPrint('Error fetching top pages: $e');
     } finally {
@@ -268,25 +254,11 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     }
   }
 
-  // ...existing code...
-  void _addNewProfile(ContentProfile profile) {
-    setState(() {
-      _contentProfiles.add(profile);
-      _selectedProfileId = profile.id;
-    });
-  }
-
   Future<void> _onProfileSelected(String? id) async {
     setState(() => _selectedProfileId = id);
     if (id != null) {
       try {
-        final headers = await _getHeaders();
-        http.get(
-          Uri.parse(
-            'https://api.aeo.how/api/projects/$_projectId/content-profiles/$id',
-          ),
-          headers: headers,
-        );
+        unawaited(_contentApi.getProfileDetail(_projectId, id));
       } catch (e) {
         debugPrint("Get profile details error: $e");
       }
@@ -314,25 +286,17 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
 
     if (confirm == true) {
       try {
-        final headers = await _getHeaders();
-        final response = await http.delete(
-          Uri.parse(
-            'https://api.aeo.how/api/projects/$_projectId/content-profiles/${p.id}',
-          ),
-          headers: headers,
-        );
-        if (response.statusCode == 200 || response.statusCode == 204) {
-          setState(() {
-            _contentProfiles.removeWhere((e) => e.id == p.id);
-            if (_selectedProfileId == p.id) _selectedProfileId = null;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Xóa Content Profile ${p.name} thành công'),
-              ),
-            );
-          }
+        await _contentApi.deleteProfile(_projectId, p.id);
+        setState(() {
+          _contentProfiles.removeWhere((e) => e.id == p.id);
+          if (_selectedProfileId == p.id) _selectedProfileId = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Xóa Content Profile ${p.name} thành công'),
+            ),
+          );
         }
       } catch (e) {
         debugPrint('Error deleting profile: $e');
@@ -347,7 +311,7 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
       builder: (context) => AddWritingStyleDialog(
         projectId: _projectId,
         profile: profile,
-        getHeaders: _getHeaders,
+        contentApi: _contentApi,
         onStyleCreatedOrUpdated: (savedProfile) => setState(() {
           if (profile == null) {
             _contentProfiles.add(savedProfile);
@@ -367,14 +331,7 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     setState(() => _selectedPersonaId = id);
     if (id != null) {
       try {
-        final headers = await _getHeaders();
-        // Fire and forget GET per requirement
-        http.get(
-          Uri.parse(
-            'https://api.aeo.how/api/brands/$_brandId/customer-personas/$id',
-          ),
-          headers: headers,
-        );
+        unawaited(_contentApi.getPersonaDetail(_brandId, id));
       } catch (e) {
         debugPrint("Get persona details error: $e");
       }
@@ -402,25 +359,17 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
 
     if (confirm == true) {
       try {
-        final headers = await _getHeaders();
-        final response = await http.delete(
-          Uri.parse(
-            'https://api.aeo.how/api/brands/$_brandId/customer-personas/${p.id}',
-          ),
-          headers: headers,
-        );
-        if (response.statusCode == 200 || response.statusCode == 204) {
-          setState(() {
-            _personas.removeWhere((e) => e.id == p.id);
-            if (_selectedPersonaId == p.id) _selectedPersonaId = null;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Xóa Customer Persona ${p.name} thành công'),
-              ),
-            );
-          }
+        await _contentApi.deletePersona(_brandId, p.id);
+        setState(() {
+          _personas.removeWhere((e) => e.id == p.id);
+          if (_selectedPersonaId == p.id) _selectedPersonaId = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Xóa Customer Persona ${p.name} thành công'),
+            ),
+          );
         }
       } catch (e) {
         debugPrint('Error deleting persona: $e');
@@ -435,7 +384,7 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
       builder: (context) => CustomerPersonaDialog(
         brandId: _brandId,
         persona: persona,
-        getHeaders: _getHeaders,
+        contentApi: _contentApi,
         onSaved: (savedPersona) => setState(() {
           if (persona == null) {
             _personas.add(savedPersona);
@@ -539,8 +488,6 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     };
 
     try {
-      final headers = await _getHeaders();
-
       // 1. Validate Reference API
       final validatePayload = {
         "projectId": _projectId,
@@ -548,66 +495,44 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
         "referenceType": _referenceType,
       };
 
-      final validateResponse = await http.post(
-        Uri.parse(
-          'https://api.aeo.how/api/prompts/$_selectedPromptId/validate-reference',
-        ),
-        headers: headers,
-        body: jsonEncode(validatePayload),
-      );
-
-      if (validateResponse.statusCode != 200 &&
-          validateResponse.statusCode != 201) {
-        String errorMsg = "Reference URL không hợp lệ";
-        try {
-          final errBody = jsonDecode(validateResponse.body);
-          if (errBody['message'] != null)
-            errorMsg = errBody['message'].toString();
-        } catch (_) {}
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMsg)));
+      try {
+        await _contentApi.validateReference(
+            _selectedPromptId!, validatePayload);
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reference URL không hợp lệ')),
+        );
         setState(() {
           _isGeneratingContent = false;
         });
-        return; // Dừng nếu validate thất bại
+        return;
       }
 
       // 2. Nếu validate thành công, gọi API generate
       debugPrint("Payload (GenerateContentDto): ${jsonEncode(payload)}");
-      final response = await http.post(
-        Uri.parse(
-          'https://api.aeo.how/api/prompts/$_selectedPromptId/generations',
-        ),
-        headers: headers,
-        body: jsonEncode(payload),
-      );
+      final body =
+          await _contentApi.generateContent(_selectedPromptId!, payload);
+      final jobId = body['jobId']?.toString();
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final body = jsonDecode(response.body);
-        final jobId = body['jobId']; // Asynchronous endpoint returns jobId
-
+      if (jobId == null || jobId.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Workflow started. Waiting for completion...')),
-          );
-
-          // Listen to SSE to wait for completion
-          _listenToJobStream(jobId, await _getToken() ?? '');
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'Failed to generate: ${response.statusCode} - ${response.body}'),
-            ),
+            const SnackBar(content: Text('Failed to generate: missing jobId')),
           );
           setState(() {
             _isGeneratingContent = false;
           });
         }
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Workflow started. Waiting for completion...')),
+        );
+
+        _listenToJobStream(jobId);
       }
     } catch (e) {
       if (mounted) {
@@ -623,30 +548,19 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     // because we need to keep loading true while SSE is streaming
   }
 
-  void _listenToJobStream(String jobId, String token) async {
-    final client = http.Client();
+  void _listenToJobStream(String jobId) async {
     try {
-      final request = http.Request(
-        'GET',
-        Uri.parse('https://api.aeo.how/api/contents/jobs/$jobId/stream'),
-      );
-      request.headers['Authorization'] = 'Bearer $token';
-
-      final response = await client.send(request);
-
-      response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen(
-        (line) {
+      _jobStreamSubscription = await _contentApi.listenToJobStream(
+        jobId: jobId,
+        onLine: (line) {
           if (line.startsWith('data: ')) {
             try {
               final jsonString = line.substring(6); // remove 'data: '
               if (jsonString.trim().isNotEmpty) {
-                final payload = jsonDecode(jsonString);
+                final payload = _contentApi.decodeEvent(jsonString);
 
                 if (payload['event'] == 'result' || payload['id'] != null) {
-                  client.close();
+                  _jobStreamSubscription?.cancel();
                   final contentId = payload['data'] != null
                       ? payload['data']['id']
                       : payload['id'];
@@ -659,7 +573,7 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
                   }
                 } else if (payload['event'] == 'failed' ||
                     payload['error'] != null) {
-                  client.close();
+                  _jobStreamSubscription?.cancel();
                   if (mounted) {
                     setState(() => _isGeneratingContent = false);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -675,16 +589,11 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
             }
           }
         },
-        onDone: () {
-          client.close();
-        },
         onError: (err) {
-          client.close();
           if (mounted) setState(() => _isGeneratingContent = false);
         },
       );
     } catch (e) {
-      client.close();
       if (mounted) setState(() => _isGeneratingContent = false);
     }
   }
@@ -1161,7 +1070,9 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
         margin: EdgeInsets.only(bottom: 12),
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orange.withOpacity(0.05) : Colors.white,
+          color: isSelected
+              ? const Color.fromRGBO(255, 165, 0, 0.05)
+              : Colors.white,
           border: Border.all(
             color: isSelected ? Colors.orange : Colors.grey[300]!,
             width: isSelected ? 2 : 1,
@@ -1367,19 +1278,26 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
       ],
     );
   }
+
+  @override
+  void dispose() {
+    _jobStreamSubscription?.cancel();
+    _store.dispose();
+    super.dispose();
+  }
 }
 
 class AddWritingStyleDialog extends StatefulWidget {
   final String projectId;
   final ContentProfile? profile;
-  final Future<Map<String, String>> Function() getHeaders;
+  final ContentManagementApi contentApi;
   final Function(ContentProfile) onStyleCreatedOrUpdated;
 
   const AddWritingStyleDialog({
     Key? key,
     required this.projectId,
     this.profile,
-    required this.getHeaders,
+    required this.contentApi,
     required this.onStyleCreatedOrUpdated,
   }) : super(key: key);
 
@@ -1443,9 +1361,6 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
       setState(() => _isLoading = true);
       try {
         final isUpdating = widget.profile != null;
-        final url = isUpdating
-            ? 'https://api.aeo.how/api/projects/${widget.projectId}/content-profiles/${widget.profile!.id}'
-            : 'https://api.aeo.how/api/projects/${widget.projectId}/content-profiles';
 
         final payload = {
           "name": _styleNameController.text,
@@ -1454,31 +1369,19 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
           "audience": _audienceController.text,
         };
 
-        final headers = await widget.getHeaders();
-        final response = isUpdating
-            ? await http.patch(
-                Uri.parse(url),
-                headers: headers,
-                body: jsonEncode(payload),
+        final data = isUpdating
+            ? await widget.contentApi.updateProfile(
+                widget.projectId,
+                widget.profile!.id,
+                payload,
               )
-            : await http.post(
-                Uri.parse(url),
-                headers: headers,
-                body: jsonEncode(payload),
-              );
+            : await widget.contentApi.createProfile(widget.projectId, payload);
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final data = jsonDecode(response.body);
-          widget.onStyleCreatedOrUpdated(ContentProfile.fromJson(data));
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Saved successfully!')));
-          Navigator.of(context).pop();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed: ${response.statusCode}')),
-          );
-        }
+        widget.onStyleCreatedOrUpdated(ContentProfile.fromJson(data));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Saved successfully!')));
+        Navigator.of(context).pop();
       } catch (e) {
         ScaffoldMessenger.of(
           context,
@@ -1769,7 +1672,7 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
                 Set<WidgetState> states,
               ) {
                 if (states.contains(WidgetState.disabled)) {
-                  return Color(0xFFFCAA80).withOpacity(0.5);
+                  return const Color.fromRGBO(252, 170, 128, 0.5);
                 }
                 return Color(0xFFE69138); // Darker orange/brown when active
               }),
@@ -1806,7 +1709,7 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
                 Set<WidgetState> states,
               ) {
                 if (states.contains(WidgetState.disabled)) {
-                  return Color(0xFFFCAA80).withOpacity(0.5);
+                  return const Color.fromRGBO(252, 170, 128, 0.5);
                 }
                 return Color(0xFFE69138); // Darker orange/brown when active
               }),
@@ -1875,7 +1778,7 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
 class CustomerPersonaDialog extends StatefulWidget {
   final String brandId;
   final CustomerPersona? persona;
-  final Future<Map<String, String>> Function() getHeaders;
+  final ContentManagementApi contentApi;
   final Function(CustomerPersona) onSaved;
   final Function(List<CustomerPersona>) onAIGenerated;
 
@@ -1883,7 +1786,7 @@ class CustomerPersonaDialog extends StatefulWidget {
     Key? key,
     required this.brandId,
     this.persona,
-    required this.getHeaders,
+    required this.contentApi,
     required this.onSaved,
     required this.onAIGenerated,
   }) : super(key: key);
@@ -2028,9 +1931,6 @@ class _CustomerPersonaDialogState extends State<CustomerPersonaDialog> {
 
     try {
       final isUpdating = widget.persona != null;
-      final url = isUpdating
-          ? 'https://api.aeo.how/api/brands/${widget.brandId}/customer-personas/${widget.persona!.id}'
-          : 'https://api.aeo.how/api/brands/${widget.brandId}/customer-personas';
 
       final payload = {
         "name": _nameController.text,
@@ -2083,30 +1983,18 @@ class _CustomerPersonaDialogState extends State<CustomerPersonaDialog> {
         "isPrimary": _isPrimary,
       };
 
-      final headers = await widget.getHeaders();
-      final response = isUpdating
-          ? await http.patch(
-              Uri.parse(url),
-              headers: headers,
-              body: jsonEncode(payload),
+      final data = isUpdating
+          ? await widget.contentApi.updatePersona(
+              widget.brandId,
+              widget.persona!.id,
+              payload,
             )
-          : await http.post(
-              Uri.parse(url),
-              headers: headers,
-              body: jsonEncode(payload),
-            );
+          : await widget.contentApi.createPersona(widget.brandId, payload);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        widget.onSaved(CustomerPersona.fromJson(data));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Saved successfully!')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: ${response.statusCode}')),
-        );
-      }
+      widget.onSaved(CustomerPersona.fromJson(data));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Saved successfully!')));
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -2119,47 +2007,25 @@ class _CustomerPersonaDialogState extends State<CustomerPersonaDialog> {
   Future<void> _generatePersona() async {
     setState(() => _isGenerating = true);
     try {
-      final headers = await widget.getHeaders();
-      final response = await http.post(
-        Uri.parse(
-          'https://api.aeo.how/api/brands/${widget.brandId}/customer-personas/generate',
-        ),
-        headers: headers,
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final List<dynamic> generatedData = jsonDecode(response.body);
-        List<CustomerPersona> newPersonas = [];
-        for (var item in generatedData) {
-          final creatingRes = await http.post(
-            Uri.parse(
-              'https://api.aeo.how/api/brands/${widget.brandId}/customer-personas',
-            ),
-            headers: headers,
-            body: jsonEncode(item),
-          );
-          if (creatingRes.statusCode == 200 || creatingRes.statusCode == 201) {
-            newPersonas.add(
-              CustomerPersona.fromJson(jsonDecode(creatingRes.body)),
-            );
-          }
-        }
+      final generatedData =
+          await widget.contentApi.generatePersonas(widget.brandId);
+      List<CustomerPersona> newPersonas = [];
+      for (final item in generatedData) {
+        final created = await widget.contentApi
+            .createPersona(widget.brandId, Map<String, dynamic>.from(item));
+        newPersonas.add(CustomerPersona.fromJson(created));
+      }
 
-        if (newPersonas.isNotEmpty) {
-          widget.onAIGenerated(newPersonas);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Added AI Personas: ${newPersonas.map((e) => e.name).join(", ")}',
-              ),
+      if (newPersonas.isNotEmpty) {
+        widget.onAIGenerated(newPersonas);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Added AI Personas: ${newPersonas.map((e) => e.name).join(", ")}',
             ),
-          );
-          Navigator.pop(context);
-        }
-      } else {
-        final err = jsonDecode(response.body)['message'] ?? 'Generation failed';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(err.toString())));
+          ),
+        );
+        Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(
