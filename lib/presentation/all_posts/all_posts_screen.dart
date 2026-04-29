@@ -57,7 +57,8 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       "ca6a7019-5e93-431f-b2d8-8deabc82a8af"; // Same mock ID as ai_writer
 
   Future<String?> _getToken() async {
-    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';                 }
+    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWY3YTBkZi1iZGFkLTQ0ZWYtYTU4NC01Y2IxZmRlZTQyNjciLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzc3MTIyNTgxLCJleHAiOjE3Nzk3MTQ1ODF9._y_3WDNiqsdRjunEzR0IJkA1rR8tv6YGnylsuG2V3PU';
+  }
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _getToken();
@@ -73,12 +74,16 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
     });
 
     try {
-      final dio = getIt<DioClient>().dio;
-      final projRes = await dio.get('/api/projects');
-      final dynamic projData = projRes.data['data'] ?? projRes.data;
+      try {
+        final dio = getIt<DioClient>().dio;
+        final projRes = await dio.get('/api/projects');
+        final dynamic projData = projRes.data['data'] ?? projRes.data;
 
-      if (projData is List && projData.isNotEmpty) {
-        _projectId = projData.first['id'].toString();
+        if (projData is List && projData.isNotEmpty) {
+          _projectId = projData.first['id'].toString();
+        }
+      } catch (e) {
+        debugPrint('Could not fetch projects dynamically: $e');
       }
 
       final headers = await _getHeaders();
@@ -90,10 +95,17 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       };
 
       if (_searchQuery.isNotEmpty) queryParams['search'] = _searchQuery;
-      if (_selectedStatus.isNotEmpty) queryParams['status'] = _selectedStatus;        
+      if (_selectedStatus.isNotEmpty) {
+        // Map UNPUBLISHED to COMPLETE before sending to API
+        if (_selectedStatus == 'UNPUBLISHED') {
+          queryParams['status'] = 'COMPLETE';
+        } else {
+          queryParams['status'] = _selectedStatus;
+        }
+      }
       if (_selectedContentType.isNotEmpty)
         queryParams['contentType'] = _selectedContentType;
-      if (_selectedTopic.isNotEmpty) queryParams['topicName'] = _selectedTopic;       
+      if (_selectedTopic.isNotEmpty) queryParams['topicName'] = _selectedTopic;
       if (_startDate != null)
         queryParams['startDate'] = _startDate!.toIso8601String();
       if (_endDate != null)
@@ -147,7 +159,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
             if (type == 'SOCIAL_MEDIA_POST') type = 'SOCIAL';
 
             String? imgUrl;
-            if (json['thumbnail'] != null && json['thumbnail']['url'] != null) {      
+            if (json['thumbnail'] != null && json['thumbnail']['url'] != null) {
               imgUrl = json['thumbnail']['url']?.toString();
             } else if (json['featuredImageUrl'] != null) {
               imgUrl = json['featuredImageUrl']?.toString();
@@ -220,7 +232,6 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error deleting items: $e')),
-
         );
       }
     } finally {
@@ -864,7 +875,6 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                           colorFilter: ColorFilter.mode(
                               Colors.black.withOpacity(0.1),
                               BlendMode.darken))),
-
             ),
             SizedBox(height: 16),
 
@@ -959,6 +969,23 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                             fontWeight: FontWeight.bold)),
                   ],
                 ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(Icons.edit, size: 18, color: Colors.grey[400]),
+                SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _openSeoOptimization(post),
+                  child: Icon(Icons.analytics_outlined,
+                      size: 18, color: Colors.blueGrey[700]),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.visibility_off, size: 18, color: Colors.grey[400]),
+                SizedBox(width: 8),
+                Icon(Icons.open_in_new, size: 18, color: Colors.grey[400]),
               ],
             )
           ],
