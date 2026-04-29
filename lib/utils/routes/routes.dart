@@ -16,6 +16,7 @@ import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
 import 'package:boilerplate/presentation/brand_setup/brand_setup_screen.dart';
+import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -59,7 +60,7 @@ class Routes {
     overview: (BuildContext context) => OverviewScreen(),
     performanceMonitoring: (BuildContext context) =>
         PerformanceMonitoringScreen(),
-    seoOptimization: (BuildContext context) => SeoOptimizationScreen(),
+    seoOptimization: (BuildContext context) => const SeoOptimizationScreen(),
     topicsKeywords: (BuildContext context) => TopicsKeywordsScreen(),
     allPosts: (BuildContext context) => AllPostsScreen(),
     aiWriter: (BuildContext context) => AiWriterScreen(),
@@ -75,6 +76,17 @@ class Routes {
     // Handle cronjob routes with arguments
     if (settings.name?.startsWith('/cronjob/') ?? false) {
       return CronjobRouteGenerator.generateRoute(settings);
+    }
+
+    if (settings.name == seoOptimization) {
+      final args = settings.arguments;
+      final seoArgs = args is SeoRouteArgs
+          ? args
+          : const SeoRouteArgs(contentId: '', projectId: '');
+      return MaterialPageRoute(
+        builder: (_) => SeoOptimizationScreen(args: seoArgs),
+        settings: settings,
+      );
     }
 
     // Handle standard routes
