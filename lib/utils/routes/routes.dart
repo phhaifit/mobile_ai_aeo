@@ -16,6 +16,7 @@ import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
 import 'package:boilerplate/presentation/brand_setup/brand_setup_screen.dart';
+import 'package:boilerplate/presentation/post_detail/post_detail_screen.dart';
 import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
 import 'package:flutter/material.dart';
 
@@ -42,6 +43,7 @@ class Routes {
   static const String autoGeneration = '/auto-generation';
   static const String integrations = '/integrations';
   static const String brandSetup = '/brand-setup';
+  static const String postDetail = '/post-detail';
   // Cronjob routes
   static const String cronjobList = '/cronjob/list';
   static const String cronjobCreate = '/cronjob/create';
@@ -55,7 +57,8 @@ class Routes {
     register: (BuildContext context) => RegisterScreen(),
     forgotPassword: (BuildContext context) => ForgotPasswordScreen(),
     home: (BuildContext context) => HomeScreen(),
-    contentEnhancement: (BuildContext context) => const ContentEnhancementScreen(),
+    contentEnhancement: (BuildContext context) =>
+        const ContentEnhancementScreen(),
     technicalSeo: (BuildContext context) => const TechnicalSeoScreen(),
     overview: (BuildContext context) => OverviewScreen(),
     performanceMonitoring: (BuildContext context) =>
@@ -68,6 +71,7 @@ class Routes {
     templateLibrary: (BuildContext context) => TemplateLibraryScreen(),
     integrations: (BuildContext context) => IntegrationsScreen(),
     brandSetup: (BuildContext context) => const BrandSetupScreen(),
+    postDetail: (BuildContext context) => const PostDetailScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
 
