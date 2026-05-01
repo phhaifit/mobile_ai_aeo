@@ -12,10 +12,10 @@ class SummarizeContentUseCase extends UseCase<ContentResult, ContentRequest> {
   @override
   Future<ContentResult> call({required ContentRequest params}) {
     final request = ContentRequest(
-      text: params.text,
+      contentId: params.contentId,
       operation: ContentOperation.summarize,
       options: params.options,
     );
-    return _contentRepository.processContent(request);
+    return _contentRepository.startProcess(request);
   }
 }

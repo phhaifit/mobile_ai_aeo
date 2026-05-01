@@ -16,12 +16,12 @@ class ContentInputWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      maxLines: 8,
-      maxLength: 10000,
+      maxLines: 1,
+      maxLength: 64,
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14, height: 1.5),
       decoration: InputDecoration(
-        hintText: 'Paste or type your content here...',
+        hintText: 'Paste the draft content ID (UUID) here',
         hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
         border: InputBorder.none,
         counterText: '',

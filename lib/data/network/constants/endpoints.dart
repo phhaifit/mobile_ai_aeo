@@ -16,11 +16,21 @@ class Endpoints {
   // post endpoints
   static const String getPosts = "/posts";
 
-  // content enhancement endpoints (AI service)
-  static const String contentBase = "/api/v1/content";
-  static String contentOperation(String op) => "$contentBase/$op";
+  // content enhancement endpoints — match BE PR
+  // GEO-Brand-Visibility/geo-brand-visibility-be#148
+  // Reuses the existing regenerate N8N flow: each op operates on an
+  // existing content row identified by `id`. Returns { jobId } async;
+  // poll `contentByJob` for the regenerated body.
+  static const String contentBase = "/api/contents";
+  static String contentOperation(String id, String op) =>
+      "$contentBase/$id/$op";
+  static String contentByJob(String jobId) => "$contentBase/by-job/$jobId";
+  static String projectContents(String projectId) =>
+      "/api/projects/$projectId/contents";
 
-  // SEO audit endpoints (Technical SEO feature)
+  // SEO audit endpoints — Phase 1 placeholders, BE not yet built (see issue #46)
+  // The Technical SEO feature audit/crawler endpoints below are scaffolds; the
+  // active SEO Content Optimization endpoints from PR #52 live further down.
   static const String seoAudit = "/api/v1/seo/audit";
   static String seoAuditResult(String id) => "/api/v1/seo/audit/$id";
   static String seoCrawler(String url) =>
