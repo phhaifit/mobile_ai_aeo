@@ -21,13 +21,17 @@ void main() {
   });
 
   group('ContentRequest', () {
+    // The BE reuses the regenerate N8N flow, so the body only needs
+    // optional tone/length hints — operation is in the URL, contentId
+    // identifies the target draft.
+
     test('constructor sets all fields correctly', () {
       final request = ContentRequest(
-        text: 'Hello world',
+        contentId: 'd6b1aef8-0748-4a32-a2c9-b42f13c6253c',
         operation: ContentOperation.enhance,
       );
 
-      expect(request.text, 'Hello world');
+      expect(request.contentId, 'd6b1aef8-0748-4a32-a2c9-b42f13c6253c');
       expect(request.operation, ContentOperation.enhance);
       expect(request.options, null);
     });
@@ -35,29 +39,27 @@ void main() {
     test('constructor with options', () {
       final options = {'tone': 'formal', 'length': 'short'};
       final request = ContentRequest(
-        text: 'Test text',
+        contentId: 'cid-1',
         operation: ContentOperation.rewrite,
         options: options,
       );
 
-      expect(request.text, 'Test text');
+      expect(request.contentId, 'cid-1');
       expect(request.operation, ContentOperation.rewrite);
       expect(request.options, options);
     });
 
-    // Operation lives in the URL path now (`/api/contents/<op>`), not the
-    // request body. Options are flattened so optional hints (tone, length)
-    // map directly to BE DTO fields.
-
-    test('toMap converts request without options to map', () {
+    test('toMap is empty when no options are provided', () {
       final request = ContentRequest(
-        text: 'Sample text',
+        contentId: 'cid-2',
         operation: ContentOperation.humanize,
       );
 
       final map = request.toMap();
 
-      expect(map['text'], 'Sample text');
+      expect(map.isEmpty, true);
+      expect(map.containsKey('text'), false);
+      expect(map.containsKey('contentId'), false);
       expect(map.containsKey('operation'), false);
       expect(map.containsKey('options'), false);
     });
@@ -65,222 +67,98 @@ void main() {
     test('toMap flattens options into the body', () {
       final options = {'tone': 'formal', 'length': 'short'};
       final request = ContentRequest(
-        text: 'Complex text',
+        contentId: 'cid-3',
         operation: ContentOperation.summarize,
         options: options,
       );
 
       final map = request.toMap();
 
-      expect(map['text'], 'Complex text');
       expect(map['tone'], 'formal');
       expect(map['length'], 'short');
       expect(map.containsKey('options'), false);
       expect(map.containsKey('operation'), false);
+      expect(map.containsKey('contentId'), false);
     });
 
-    test('toMap omits operation key for every operation type', () {
-      final operations = [
-        ContentOperation.enhance,
-        ContentOperation.rewrite,
-        ContentOperation.humanize,
-        ContentOperation.summarize,
-      ];
-
-      for (final op in operations) {
-        final request = ContentRequest(text: 'text', operation: op);
+    test('toMap omits operation + contentId for every operation type', () {
+      for (final op in ContentOperation.values) {
+        final request =
+            ContentRequest(contentId: 'cid-$op', operation: op);
         final map = request.toMap();
         expect(map.containsKey('operation'), false,
             reason: 'operation $op should not appear in body');
-        expect(map['text'], 'text');
+        expect(map.containsKey('contentId'), false);
       }
     });
   });
 
   group('ContentResult', () {
-    test('constructor sets all fields correctly', () {
-      final now = DateTime.now();
-      final result = ContentResult(
-        resultText: 'Enhanced text',
+    test('jobCreated factory builds an ack-only result', () {
+      final result = ContentResult.jobCreated(
+        jobId: 'job-1',
         operation: ContentOperation.enhance,
-        tokensUsed: 50,
-        processedAt: now,
       );
 
-      expect(result.resultText, 'Enhanced text');
+      expect(result.jobId, 'job-1');
       expect(result.operation, ContentOperation.enhance);
-      expect(result.tokensUsed, 50);
-      expect(result.processedAt, now);
-    });
-
-    test('constructor without tokensUsed', () {
-      final now = DateTime.now();
-      final result = ContentResult(
-        resultText: 'Result',
-        operation: ContentOperation.rewrite,
-        processedAt: now,
-      );
-
-      expect(result.resultText, 'Result');
+      expect(result.resultText, '');
       expect(result.tokensUsed, null);
     });
 
-    test('fromMap parses resultText field', () {
+    test('fromMap parses BE content row shape (body field)', () {
       final map = {
-        'result_text': 'Parsed result',
-        'operation': 'enhance',
-        'tokens_used': 100,
-        'processed_at': '2024-01-15T10:00:00.000Z',
-      };
-
-      final result = ContentResult.fromMap(map);
-
-      expect(result.resultText, 'Parsed result');
-    });
-
-    test('fromMap handles resultText without underscore', () {
-      final map = {
-        'resultText': 'Parsed result',
+        'jobId': 'job-2',
         'operation': 'rewrite',
+        'body': 'Regenerated body text',
+        'updatedAt': '2024-01-15T10:00:00.000Z',
       };
 
       final result = ContentResult.fromMap(map);
 
-      expect(result.resultText, 'Parsed result');
+      expect(result.jobId, 'job-2');
+      expect(result.operation, ContentOperation.rewrite);
+      expect(result.resultText, 'Regenerated body text');
+      expect(result.processedAt.year, 2024);
     });
 
-    test('fromMap defaults to empty string when result_text missing', () {
+    test('fromMap accepts result_text fallback', () {
       final map = {
+        'jobId': 'job-3',
         'operation': 'humanize',
-        'processed_at': '2024-01-15T10:00:00.000Z',
+        'result_text': 'Humanized output',
       };
 
       final result = ContentResult.fromMap(map);
 
-      expect(result.resultText, '');
-    });
-
-    test('fromMap parses operation correctly', () {
-      final operations = ['enhance', 'rewrite', 'humanize', 'summarize'];
-
-      for (final opStr in operations) {
-        final map = {
-          'result_text': 'text',
-          'operation': opStr,
-        };
-
-        final result = ContentResult.fromMap(map);
-
-        expect(
-          result.operation.apiPath,
-          opStr,
-          reason: 'Operation $opStr should parse correctly',
-        );
-      }
+      expect(result.resultText, 'Humanized output');
+      expect(result.operation, ContentOperation.humanize);
     });
 
     test('fromMap defaults to enhance for unknown operation', () {
-      final map = {
-        'result_text': 'text',
-        'operation': 'unknown_operation',
-      };
+      final map = {'jobId': 'j', 'operation': 'unknown_op', 'body': 'x'};
 
-      final result = ContentResult.fromMap(map);
-
-      expect(result.operation, ContentOperation.enhance);
+      expect(ContentResult.fromMap(map).operation, ContentOperation.enhance);
     });
 
-    test('fromMap defaults to enhance when operation missing', () {
-      final map = {'result_text': 'text'};
+    test('fromMap keeps empty resultText when body missing', () {
+      final map = {'jobId': 'j', 'operation': 'summarize'};
 
-      final result = ContentResult.fromMap(map);
-
-      expect(result.operation, ContentOperation.enhance);
+      expect(ContentResult.fromMap(map).resultText, '');
     });
 
-    test('fromMap parses tokensUsed correctly', () {
-      final map = {
-        'result_text': 'text',
-        'operation': 'enhance',
-        'tokens_used': 250,
-      };
-
-      final result = ContentResult.fromMap(map);
-
-      expect(result.tokensUsed, 250);
-    });
-
-    test('fromMap handles missing tokensUsed', () {
-      final map = {
-        'result_text': 'text',
-        'operation': 'rewrite',
-      };
-
-      final result = ContentResult.fromMap(map);
-
-      expect(result.tokensUsed, null);
-    });
-
-    test('fromMap parses ISO8601 datetime string', () {
-      final dateStr = '2024-01-15T10:30:45.000Z';
-      final map = {
-        'result_text': 'text',
-        'operation': 'humanize',
-        'processed_at': dateStr,
-      };
-
-      final result = ContentResult.fromMap(map);
-
-      expect(result.processedAt.year, 2024);
-      expect(result.processedAt.month, 1);
-      expect(result.processedAt.day, 15);
-    });
-
-    test('fromMap uses current time when processed_at missing', () {
-      final beforeTime = DateTime.now();
-      final map = {
-        'result_text': 'text',
-        'operation': 'summarize',
-      };
-
-      final result = ContentResult.fromMap(map);
-      final afterTime = DateTime.now();
-
-      expect(
-        result.processedAt.isAfter(beforeTime.subtract(Duration(seconds: 1))),
-        true,
-      );
-      expect(
-        result.processedAt.isBefore(afterTime.add(Duration(seconds: 1))),
-        true,
-      );
-    });
-
-    test('fromMap round-trip with full data', () {
-      final now = DateTime.now();
-      final original = ContentResult(
-        resultText: 'Full result',
+    test('copyWith only overrides supplied fields', () {
+      final base = ContentResult.jobCreated(
+        jobId: 'j',
         operation: ContentOperation.enhance,
-        tokensUsed: 150,
-        processedAt: now,
       );
 
-      final map = {
-        'result_text': original.resultText,
-        'operation': original.operation.apiPath,
-        'tokens_used': original.tokensUsed,
-        'processed_at': original.processedAt.toIso8601String(),
-      };
+      final updated = base.copyWith(resultText: 'final', tokensUsed: 42);
 
-      final result = ContentResult.fromMap(map);
-
-      expect(result.resultText, original.resultText);
-      expect(result.operation, original.operation);
-      expect(result.tokensUsed, original.tokensUsed);
-      expect(
-        result.processedAt.difference(original.processedAt).inMilliseconds,
-        lessThan(100),
-      );
+      expect(updated.jobId, 'j');
+      expect(updated.operation, ContentOperation.enhance);
+      expect(updated.resultText, 'final');
+      expect(updated.tokensUsed, 42);
     });
   });
 }

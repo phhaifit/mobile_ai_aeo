@@ -18,9 +18,15 @@ class Endpoints {
 
   // content enhancement endpoints — match BE PR
   // GEO-Brand-Visibility/geo-brand-visibility-be#148
-  // Stateless AI text processing under /api/contents/<op>
+  // Reuses the existing regenerate N8N flow: each op operates on an
+  // existing content row identified by `id`. Returns { jobId } async;
+  // poll `contentByJob` for the regenerated body.
   static const String contentBase = "/api/contents";
-  static String contentOperation(String op) => "$contentBase/$op";
+  static String contentOperation(String id, String op) =>
+      "$contentBase/$id/$op";
+  static String contentByJob(String jobId) => "$contentBase/by-job/$jobId";
+  static String projectContents(String projectId) =>
+      "/api/projects/$projectId/contents";
 
   // SEO audit endpoints — Phase 1 placeholders, BE not yet built (see issue #46)
   // The Technical SEO feature audit/crawler endpoints below are scaffolds; the
