@@ -76,6 +76,24 @@ class PerformanceApi {
         .toList();
   }
 
+  /// Fetches paginated content list for a project.
+  Future<Map<String, dynamic>> getProjectContents(
+    String projectId, {
+    int page = 1,
+    int limit = 10,
+    String sortOrder = 'asc',
+  }) async {
+    final res = await _dioClient.dio.get(
+      Endpoints.projectContents(projectId),
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        'sortOrder': sortOrder,
+      },
+    );
+    return Map<String, dynamic>.from(res.data as Map);
+  }
+
   /// Triggers an on-demand analysis run on the backend.
   Future<void> triggerAnalysis(String projectId) async {
     await _dioClient.dio.post(Endpoints.triggerAnalysis(projectId));

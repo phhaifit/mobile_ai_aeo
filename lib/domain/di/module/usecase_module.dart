@@ -39,11 +39,8 @@ import 'package:boilerplate/domain/repository/cronjob_repository.dart';
 import 'package:boilerplate/domain/repository/seo_repository.dart' as seo_opt;
 import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
 import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
-import 'package:boilerplate/domain/usecase/trend/get_weekly_report_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/get_performance_comparisons_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/get_improvement_suggestions_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/trigger_analysis_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_brand_analytics_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_content_performance_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -157,20 +154,11 @@ class UseCaseModule {
     );
 
     // trend:-------------------------------------------------------------------
-    getIt.registerSingleton<GetWeeklyReportUseCase>(
-      GetWeeklyReportUseCase(repository: getIt<TrendRepository>()),
+    getIt.registerSingleton<GetBrandAnalyticsUseCase>(
+      GetBrandAnalyticsUseCase(repository: getIt<TrendRepository>()),
     );
-    getIt.registerSingleton<GetTrendDataUseCase>(
-      GetTrendDataUseCase(repository: getIt<TrendRepository>()),
-    );
-    getIt.registerSingleton<GetPerformanceComparisonsUseCase>(
-      GetPerformanceComparisonsUseCase(repository: getIt<TrendRepository>()),
-    );
-    getIt.registerSingleton<GetImprovementSuggestionsUseCase>(
-      GetImprovementSuggestionsUseCase(repository: getIt<TrendRepository>()),
-    );
-    getIt.registerSingleton<TriggerAnalysisUseCase>(
-      TriggerAnalysisUseCase(repository: getIt<TrendRepository>()),
+    getIt.registerSingleton<GetContentPerformanceUseCase>(
+      GetContentPerformanceUseCase(repository: getIt<TrendRepository>()),
     );
   }
 }

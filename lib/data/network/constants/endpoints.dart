@@ -39,6 +39,8 @@ class Endpoints {
       '/api/projects/$projectId/test-analyze';
   static const String projectsMe = '/api/projects/me';
   static const String projectsList = '/api/projects';
+  static String projectContents(String projectId) =>
+      '/api/projects/$projectId/contents';
 
   // ─── Feature 9: SEO Content Optimization endpoints ───────────────────────
 
