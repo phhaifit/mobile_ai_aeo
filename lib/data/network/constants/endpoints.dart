@@ -39,6 +39,22 @@ class Endpoints {
 
   static String contentProfiles(String projectId) =>
       '/api/projects/$projectId/content-profiles';
+  // Performance monitoring endpoints (geo-brand-visibility-be)
+  static String metricsOverview(String projectId) =>
+      '/api/projects/$projectId/metrics/overview';
+  static String metricsAnalytics(String projectId) =>
+      '/api/projects/$projectId/metrics/analytics';
+  static String gaTrend(String projectId) =>
+      '/api/ga/analytics/$projectId/trend';
+  static String gscTrend(String projectId) =>
+      '/api/gsc/analytics/$projectId/trend';
+  static String triggerAnalysis(String projectId) =>
+      '/api/projects/$projectId/test-analyze';
+  static const String projectsMe = '/api/projects/me';
+  static const String projectsList = '/api/projects';
+  static String projectContents(String projectId) =>
+      '/api/projects/$projectId/contents';
+
   // overview metrics endpoints
   static String getOverviewMetrics(String projectId) =>
       "/api/projects/$projectId/metrics/overview";

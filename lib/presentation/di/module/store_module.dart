@@ -60,10 +60,10 @@ import 'package:boilerplate/domain/usecase/seo/get_content_insights_usecase.dart
 import 'package:boilerplate/domain/usecase/seo/optimize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/publish_content_usecase.dart';
 import 'package:boilerplate/presentation/performance_monitoring/store/performance_monitoring_store.dart';
-import 'package:boilerplate/domain/usecase/trend/get_weekly_report_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/get_performance_comparisons_usecase.dart';
-import 'package:boilerplate/domain/usecase/trend/get_improvement_suggestions_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_brand_analytics_usecase.dart';
+import 'package:boilerplate/domain/usecase/trend/get_content_performance_usecase.dart';
+import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
+import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/presentation/brand_setup/store/brand_setup_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/content_agent_store.dart';
 import 'package:boilerplate/data/network/apis/content_agent/content_agent_api.dart';
@@ -233,10 +233,10 @@ class StoreModule {
     getIt.registerSingleton<PerformanceMonitoringStore>(
       PerformanceMonitoringStore(
         getIt<ErrorStore>(),
-        getIt<GetWeeklyReportUseCase>(),
-        getIt<GetTrendDataUseCase>(),
-        getIt<GetPerformanceComparisonsUseCase>(),
-        getIt<GetImprovementSuggestionsUseCase>(),
+        getIt<GetBrandAnalyticsUseCase>(),
+        getIt<GetContentPerformanceUseCase>(),
+        getIt<SharedPreferenceHelper>(),
+        getIt<PerformanceApi>(),
       ),
     );
 
