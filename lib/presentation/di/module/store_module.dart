@@ -30,6 +30,8 @@ import 'package:boilerplate/domain/usecase/cronjob/create_execution_usecase.dart
 import 'package:boilerplate/data/service/mock_execution_service.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
+import 'package:boilerplate/presentation/post_detail/store/post_detail_store.dart';
+import 'package:boilerplate/data/network/apis/content_management/content_management_api.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
@@ -151,10 +153,18 @@ class StoreModule {
     );
 
     getIt.registerSingleton<AllPostsStore>(
-      AllPostsStore(getIt<ErrorStore>()),
+      AllPostsStore(
+        ContentManagementApi(getIt(), getIt()),
+        getIt<ErrorStore>(),
+      ),
     );
-    getIt.registerSingleton<AiWriterStore>(
-      AiWriterStore(getIt<ErrorStore>()),
+    getIt.registerFactory<PostDetailStore>(
+      () => PostDetailStore(
+        ContentManagementApi(getIt(), getIt()),
+      ),
+    );
+    getIt.registerFactory<AiWriterStore>(
+      () => AiWriterStore(getIt<ErrorStore>()),
     );
     getIt.registerSingleton<AutoGenerationStore>(
       AutoGenerationStore(getIt<ErrorStore>()),

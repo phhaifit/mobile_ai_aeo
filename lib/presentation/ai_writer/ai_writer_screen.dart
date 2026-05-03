@@ -1,17 +1,103 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:boilerplate/data/network/apis/content_management/content_management_api.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:flutter/material.dart';
 
-class WritingStyle {
+// --- Bổ sung các Model tương ứng với dữ liệu trả về từ Backend ---
+
+class ContentProfile {
+  final String id;
   final String name;
   final String audience;
-  final String voiceTone;
+  final String voiceAndTone;
   final String description;
 
-  WritingStyle({
+  ContentProfile({
+    required this.id,
     required this.name,
     required this.audience,
-    required this.voiceTone,
+    required this.voiceAndTone,
     required this.description,
   });
+
+  factory ContentProfile.fromJson(Map<String, dynamic> json) {
+    return ContentProfile(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      audience: json['audience'] ?? '',
+      voiceAndTone: json['voiceAndTone'] ?? '',
+      description: json['description'] ?? '',
+    );
+  }
+}
+
+class WebSearchResponseDto {
+  final String title;
+  final String url;
+  final String description;
+  final String relevanceDescription;
+  final double relevanceScore;
+  final String relevanceLabel;
+
+  WebSearchResponseDto({
+    required this.title,
+    required this.url,
+    required this.description,
+    this.relevanceDescription = '',
+    this.relevanceScore = 0.0,
+    this.relevanceLabel = '',
+  });
+}
+
+class Prompt {
+  final String id;
+  final String title;
+  final String content;
+  Prompt({required this.id, required this.title, required this.content});
+}
+
+class CustomerPersona {
+  final String id;
+  final String name;
+  final dynamic description;
+  final Map<String, dynamic>? demographics;
+  final Map<String, dynamic>? professional;
+  final dynamic goalsAndMotivations;
+  final dynamic painPoints;
+  final Map<String, dynamic>? contentPreferences;
+  final Map<String, dynamic>? buyingBehavior;
+  final bool isPrimary;
+
+  CustomerPersona({
+    required this.id,
+    required this.name,
+    this.description,
+    this.demographics,
+    this.professional,
+    this.goalsAndMotivations,
+    this.painPoints,
+    this.contentPreferences,
+    this.buyingBehavior,
+    this.isPrimary = false,
+  });
+
+  factory CustomerPersona.fromJson(Map<String, dynamic> json) {
+    return CustomerPersona(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'],
+      demographics: json['demographics'] as Map<String, dynamic>?,
+      professional: json['professional'] as Map<String, dynamic>?,
+      goalsAndMotivations: json['goalsAndMotivations'],
+      painPoints: json['painPoints'],
+      contentPreferences: json['contentPreferences'] as Map<String, dynamic>?,
+      buyingBehavior: json['buyingBehavior'] as Map<String, dynamic>?,
+      isPrimary: json['isPrimary'] == true,
+    );
+  }
 }
 
 class AiWriterScreen extends StatefulWidget {
@@ -20,153 +106,506 @@ class AiWriterScreen extends StatefulWidget {
 }
 
 class _AiWriterScreenState extends State<AiWriterScreen> {
-  // Mock Data
-  final List<String> _topics = [
-    'Technology',
-    'Health',
-    'Finance',
-    'Education',
-    'Travel',
-    'Lifestyle',
+  late final AiWriterStore _store;
+  late final ContentManagementApi _contentApi;
+  StreamSubscription<String>? _jobStreamSubscription;
+
+  // --- Mock Data đại diện cho API response ---
+  final String _projectId = 'ca6a7019-5e93-431f-b2d8-8deabc82a8af';
+  final String _brandId = '28514d02-a6d4-436c-bb92-b84cc844ee6c';
+
+  final List<Map<String, String>> _contentTypes = [
+    {"label": "Blog Post", "value": "blog_post"},
+    {"label": "Social Media Post", "value": "social_media_post"},
   ];
 
-  final Map<String, List<String>> _promptsByTopic = {
-    'Technology': [
-      'The Future of AI',
-      'Blockchain Explained',
-      'Cybersecurity Tips',
-      'Latest Gadget Reviews'
-    ],
-    'Health': [
-      'Benefits of Meditation',
-      'Healthy Eating Habits',
-      'Workout Routines for Beginners',
-      'Mental Health Awareness'
-    ],
-    'Finance': [
-      'Investing for Beginners',
-      'How to Save Money',
-      'Cryptocurrency Trends',
-      'Retirement Planning'
-    ],
-    'Education': [
-      'Online Learning Pros and Cons',
-      'Study Tips for Students',
-      'The Importance of Reading',
-      'Learning a New Language'
-    ],
-    'Travel': [
-      'Top Travel Destinations 2024',
-      'Budget Travel Tips',
-      'Solo Travel Guide',
-      'Packing Checklist'
-    ],
-    'Lifestyle': [
-      'Minimalist Living',
-      'Work-Life Balance',
-      'Sustainable Fashion',
-      'Home Decor Ideas'
-    ],
-  };
-
-  final List<WritingStyle> _writingStyles = [
-    WritingStyle(
-      name: 'Professional',
-      audience: 'Business professionals, corporate clients, and stakeholders.',
-      voiceTone:
-          'Formal, objective, authoritative, and respectful. Avoids slang and overly emotional language.',
-      description:
-          'A standard style for business communications, reports, and official documentation.',
-    ),
-    WritingStyle(
-      name: 'Casual',
-      audience: 'Friends, family, and social media followers.',
-      voiceTone:
-          'Relaxed, friendly, and conversational. Uses everyday language and contractions.',
-      description:
-          'Great for personal blog posts, social media updates, and informal emails.',
-    ),
-    WritingStyle(
-      name: 'Enthusiastic',
-      audience: 'Potential customers, fans, and community members.',
-      voiceTone:
-          'Energetic, positive, and inspiring. Uses exclamation points and strong adjectives.',
-      description:
-          'Perfect for marketing copy, announcements, and motivational content.',
-    ),
-    WritingStyle(
-      name: 'Informative',
-      audience: 'Students, researchers, and people seeking knowledge.',
-      voiceTone:
-          'Clear, concise, and educational. Focuses on facts and logical explanations.',
-      description:
-          'Ideal for tutorials, how-to guides, and educational articles.',
-    ),
-    WritingStyle(
-      name: 'Witty',
-      audience: 'A younger or more culturally aware audience who enjoys humor.',
-      voiceTone: 'Humorous, clever, and playful. Uses wordplay and irony.',
-      description:
-          'Suitable for entertainment blogs, creative writing, and engaging social media posts.',
-    ),
-    WritingStyle(
-      name: 'Conversational Educator',
-      audience:
-          'Small business owners, marketers, and entrepreneurs aged 25-45. People looking to learn who prefer practical, actionable content over theory.',
-      voiceTone:
-          'Friendly, relatable, and encouraging. Casual but informative tone that is warm and enthusiastic. Uses analogies, examples, and questions to engage readers. Breaks down complex ideas into digestible pieces.',
-      description:
-          'A friendly, engaging writing style that simplifies complex topics into easy-to-understand content. Combines education with storytelling to keep readers engaged while delivering practical value.',
-    ),
+  final List<Map<String, String>> _socialPlatforms = [
+    {"label": "Facebook", "value": "facebook"},
+    {"label": "Twitter", "value": "twitter"},
+    {"label": "LinkedIn", "value": "linkedin"},
   ];
 
-  void _addNewWritingStyle(WritingStyle newStyle) {
+  @override
+  void initState() {
+    super.initState();
+    _store = getIt<AiWriterStore>();
+    _contentApi = ContentManagementApi(getIt(), getIt());
+    _fetchMetaData();
+  }
+
+  bool get _isLoadingMetaData => _store.isLoadingMetaData;
+  set _isLoadingMetaData(bool value) => _store.isLoadingMetaData = value;
+
+  bool get _isSearching => _store.isSearching;
+  set _isSearching(bool value) => _store.isSearching = value;
+
+  bool get _isGeneratingContent => _store.isGeneratingContent;
+  set _isGeneratingContent(bool value) => _store.isGeneratingContent = value;
+
+  List<Prompt> get _prompts => _store.prompts.cast<Prompt>();
+  set _prompts(List<Prompt> value) => _store.prompts = value;
+
+  List<ContentProfile> get _contentProfiles =>
+      _store.contentProfiles.cast<ContentProfile>();
+  set _contentProfiles(List<ContentProfile> value) =>
+      _store.contentProfiles = value;
+
+  List<CustomerPersona> get _personas =>
+      _store.personas.cast<CustomerPersona>();
+  set _personas(List<CustomerPersona> value) => _store.personas = value;
+
+  List<WebSearchResponseDto> get _topPages =>
+      _store.topPages.cast<WebSearchResponseDto>();
+  set _topPages(List<WebSearchResponseDto> value) => _store.topPages = value;
+
+  set _selectedTopPageUrl(String? value) => _store.selectedTopPageUrl = value;
+
+  String? get _selectedPromptId => _store.selectedPromptId;
+  set _selectedPromptId(String? value) => _store.selectedPromptId = value;
+
+  String get _referenceType => _store.referenceType;
+  set _referenceType(String value) => _store.referenceType = value;
+
+  String? get _selectedSearchUrl => _store.selectedSearchUrl;
+  set _selectedSearchUrl(String? value) => _store.selectedSearchUrl = value;
+
+  String? get _selectedProfileId => _store.selectedProfileId;
+  set _selectedProfileId(String? value) => _store.selectedProfileId = value;
+
+  String? get _selectedPersonaId => _store.selectedPersonaId;
+  set _selectedPersonaId(String? value) => _store.selectedPersonaId = value;
+
+  String get _selectedContentType => _store.selectedContentType;
+  set _selectedContentType(String value) => _store.selectedContentType = value;
+
+  String? get _selectedPlatform => _store.selectedPlatform;
+  set _selectedPlatform(String? value) => _store.selectedPlatform = value;
+
+  TextEditingController get _customUrlController => _store.customUrlController;
+  TextEditingController get _keywordsController => _store.keywordsController;
+  TextEditingController get _improvementController =>
+      _store.improvementController;
+  TextEditingController get _modificationInstructionController =>
+      _store.modificationInstructionController;
+
+  Future<void> _fetchMetaData() async {
     setState(() {
-      _writingStyles.add(newStyle);
-      _selectedWritingStyle = newStyle.name;
+      _isLoadingMetaData = true;
+    });
+
+    try {
+      final promptsData = await _contentApi.getPrompts(_projectId);
+      _prompts = promptsData
+          .map(
+            (e) => Prompt(
+              id: e['id']?.toString() ?? '',
+              title: e['content']?.toString() ?? '',
+              content: e['content']?.toString() ?? '',
+            ),
+          )
+          .toList();
+
+      final profilesData = await _contentApi.getProfiles(_projectId);
+      _contentProfiles =
+          profilesData.map((e) => ContentProfile.fromJson(e)).toList();
+
+      final personasData = await _contentApi.getPersonas(_brandId);
+      _personas = personasData.map((e) => CustomerPersona.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint('Error fetching metadata: $e');
+    } finally {
+      setState(() {
+        _isLoadingMetaData = false;
+      });
+    }
+  }
+
+  Future<void> _fetchTopPages(String promptId) async {
+    setState(() {
+      _isSearching = true;
+      _topPages = [];
+      _selectedTopPageUrl = null;
+    });
+
+    try {
+      final data = await _contentApi.getTopPages(promptId);
+      setState(() {
+        _topPages = data
+            .map(
+              (e) => WebSearchResponseDto(
+                title: e['title']?.toString() ?? '',
+                url: e['url']?.toString() ?? '',
+                description: e['description']?.toString() ?? '',
+                relevanceDescription:
+                    e['relevanceDescription']?.toString() ?? '',
+                relevanceScore:
+                    (e['relevanceScore'] as num?)?.toDouble() ?? 0.0,
+                relevanceLabel: e['relevanceLabel']?.toString() ?? '',
+              ),
+            )
+            .toList();
+      });
+    } catch (e) {
+      debugPrint('Error fetching top pages: $e');
+    } finally {
+      setState(() {
+        _isSearching = false;
+      });
+    }
+  }
+
+  Future<void> _onProfileSelected(String? id) async {
+    setState(() => _selectedProfileId = id);
+    if (id != null) {
+      try {
+        unawaited(_contentApi.getProfileDetail(_projectId, id));
+      } catch (e) {
+        debugPrint("Get profile details error: $e");
+      }
+    }
+  }
+
+  Future<void> _deleteProfile(ContentProfile p) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirm"),
+        content: Text("Are you sure you want to delete this content profile?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _contentApi.deleteProfile(_projectId, p.id);
+        setState(() {
+          _contentProfiles.removeWhere((e) => e.id == p.id);
+          if (_selectedProfileId == p.id) _selectedProfileId = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Xóa Content Profile ${p.name} thành công'),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error deleting profile: $e');
+      }
+    }
+  }
+
+  void _openProfileDialog([ContentProfile? profile]) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AddWritingStyleDialog(
+        projectId: _projectId,
+        profile: profile,
+        contentApi: _contentApi,
+        onStyleCreatedOrUpdated: (savedProfile) => setState(() {
+          if (profile == null) {
+            _contentProfiles.add(savedProfile);
+            _selectedProfileId = savedProfile.id;
+          } else {
+            final idx = _contentProfiles.indexWhere(
+              (e) => e.id == savedProfile.id,
+            );
+            if (idx != -1) _contentProfiles[idx] = savedProfile;
+          }
+        }),
+      ),
+    );
+  }
+
+  Future<void> _onPersonaSelected(String? id) async {
+    setState(() => _selectedPersonaId = id);
+    if (id != null) {
+      try {
+        unawaited(_contentApi.getPersonaDetail(_brandId, id));
+      } catch (e) {
+        debugPrint("Get persona details error: $e");
+      }
+    }
+  }
+
+  Future<void> _deletePersona(CustomerPersona p) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirm"),
+        content: Text("Are you sure you want to delete this persona?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _contentApi.deletePersona(_brandId, p.id);
+        setState(() {
+          _personas.removeWhere((e) => e.id == p.id);
+          if (_selectedPersonaId == p.id) _selectedPersonaId = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Xóa Customer Persona ${p.name} thành công'),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error deleting persona: $e');
+      }
+    }
+  }
+
+  void _openPersonaDialog([CustomerPersona? persona]) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CustomerPersonaDialog(
+        brandId: _brandId,
+        persona: persona,
+        contentApi: _contentApi,
+        onSaved: (savedPersona) => setState(() {
+          if (persona == null) {
+            _personas.add(savedPersona);
+            _selectedPersonaId = savedPersona.id;
+          } else {
+            final idx = _personas.indexWhere((e) => e.id == savedPersona.id);
+            if (idx != -1) _personas[idx] = savedPersona;
+          }
+        }),
+        onAIGenerated: (newPersonas) => setState(() {
+          _personas.addAll(newPersonas);
+          if (newPersonas.isNotEmpty) _selectedPersonaId = newPersonas.first.id;
+        }),
+      ),
+    );
+  }
+
+  void _onPromptChanged(String? newPromptId) {
+    setState(() {
+      _selectedPromptId = newPromptId;
+      if (newPromptId != null && _referenceType == "search") {
+        _fetchTopPages(newPromptId);
+      }
     });
   }
 
-  final List<String> _targetMarkets = [
-    'Global',
-    'USA',
-    'Vietnam',
-    'Japan',
-    'UK',
-    'Canada'
-  ];
+  void _onReferenceTypeChanged(String? newType) {
+    setState(() {
+      _referenceType = newType ?? "search";
+      if (_referenceType == "search" &&
+          _selectedPromptId != null &&
+          _topPages.isEmpty) {
+        _fetchTopPages(_selectedPromptId!);
+      }
+    });
+  }
 
-  final List<String> _languages = [
-    'English',
-    'Vietnamese',
-    'Japanese',
-    'Spanish',
-    'French'
-  ];
+  // ...existing code...
+  Future<void> _submitContentGeneration() async {
+    // Basic validations
+    if (_selectedPromptId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Hãy chọn Prompt")));
+      return;
+    }
+    if (_selectedProfileId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Hãy chọn Content Profile")));
+      return;
+    }
+    if (_referenceType == "search" && _selectedSearchUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Hãy chọn một trang tham khảo từ kết quả tìm kiếm"),
+        ),
+      );
+      return;
+    }
+    if (_referenceType == "custom" &&
+        _customUrlController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Hãy nhập URL trang tham khảo")),
+      );
+      return;
+    }
 
-  // Dropdown values
-  String? _selectedTopic;
-  String? _selectedPrompt;
-  String? _selectedReferencePage = 'Top 10 Search-Ranking Pages';
-  String? _selectedContentType = 'Blog Post';
-  String? _selectedWritingStyle;
-  String? _selectedTargetMarket = 'Global';
-  String? _selectedLanguage = 'English';
+    setState(() {
+      _isGeneratingContent = true;
+    });
 
-  // Controllers
-  final TextEditingController _customUrlController = TextEditingController();
-  final TextEditingController _keywordsController =
-      TextEditingController(text: 'SEO, content marketing, brand visibility');
+    // Fallback persona to the primary one if not selected
+    String? personaId = _selectedPersonaId;
+    if (personaId == null && _personas.isNotEmpty) {
+      // Trying to find isPrimary is handled at backend, but we can pick first if needed
+      // Currently the backend says the persona ID is optional and falls back to primary.
+    }
 
-  @override
-  void dispose() {
-    _customUrlController.dispose();
-    _keywordsController.dispose();
-    super.dispose();
+    // Chuyển đổi chuỗi keywords thành mảng
+    List<String> parsedKeywords = _keywordsController.text
+        .split(',')
+        .map((k) => k.trim())
+        .where((k) => k.isNotEmpty)
+        .toList();
+
+    final payload = {
+      "projectId": _projectId,
+      "contentType": _selectedContentType,
+      "contentProfileId": _selectedProfileId,
+      "keywords": parsedKeywords,
+      "referencePageUrl": _referenceType == "search"
+          ? _selectedSearchUrl!
+          : _customUrlController.text.trim(),
+      if (_selectedContentType == "social_media_post")
+        "platform": _selectedPlatform,
+      if (_modificationInstructionController.text.isNotEmpty)
+        "improvement": _modificationInstructionController.text,
+      "referenceType": _referenceType,
+      if (personaId != null) "customerPersonaId": personaId,
+    };
+
+    try {
+      // 1. Validate Reference API
+      final validatePayload = {
+        "projectId": _projectId,
+        "referencePageUrl": payload["referencePageUrl"],
+        "referenceType": _referenceType,
+      };
+
+      try {
+        await _contentApi.validateReference(
+            _selectedPromptId!, validatePayload);
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reference URL không hợp lệ')),
+        );
+        setState(() {
+          _isGeneratingContent = false;
+        });
+        return;
+      }
+
+      // 2. Nếu validate thành công, gọi API generate
+      debugPrint("Payload (GenerateContentDto): ${jsonEncode(payload)}");
+      final body =
+          await _contentApi.generateContent(_selectedPromptId!, payload);
+      final jobId = body['jobId']?.toString();
+
+      if (jobId == null || jobId.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to generate: missing jobId')),
+          );
+          setState(() {
+            _isGeneratingContent = false;
+          });
+        }
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Workflow started. Waiting for completion...')),
+        );
+
+        _listenToJobStream(jobId);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error starting workflow: $e')),
+        );
+        setState(() {
+          _isGeneratingContent = false;
+        });
+      }
+    }
+    // Removed finally block that immediately sets _isGeneratingContent = false
+    // because we need to keep loading true while SSE is streaming
+  }
+
+  void _listenToJobStream(String jobId) async {
+    try {
+      _jobStreamSubscription = await _contentApi.listenToJobStream(
+        jobId: jobId,
+        onLine: (line) {
+          if (line.startsWith('data: ')) {
+            try {
+              final jsonString = line.substring(6); // remove 'data: '
+              if (jsonString.trim().isNotEmpty) {
+                final payload = _contentApi.decodeEvent(jsonString);
+
+                if (payload['event'] == 'result' || payload['id'] != null) {
+                  _jobStreamSubscription?.cancel();
+                  final contentId = payload['data'] != null
+                      ? payload['data']['id']
+                      : payload['id'];
+
+                  if (mounted) {
+                    Navigator.of(context).pushReplacementNamed(
+                      '/post-detail',
+                      arguments: contentId,
+                    );
+                  }
+                } else if (payload['event'] == 'failed' ||
+                    payload['error'] != null) {
+                  _jobStreamSubscription?.cancel();
+                  if (mounted) {
+                    setState(() => _isGeneratingContent = false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              'Generation failed: ${payload['message'] ?? 'Unknown'}')),
+                    );
+                  }
+                }
+              }
+            } catch (e) {
+              debugPrint('Error parsing SSE data: $e');
+            }
+          }
+        },
+        onError: (err) {
+          if (mounted) setState(() => _isGeneratingContent = false);
+        },
+      );
+    } catch (e) {
+      if (mounted) setState(() => _isGeneratingContent = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingMetaData) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('AI Writer')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text('AI Writer', style: TextStyle(color: Colors.black)),
@@ -202,7 +641,6 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
             SizedBox(height: 24),
             _buildCreateNewContentCard(),
             SizedBox(height: 24),
-            _buildContentHistoryCard(),
           ],
         ),
       ),
@@ -225,8 +663,11 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
                   color: Color(0xFFFFF0E0),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.lightbulb_outline,
-                    color: Colors.orange, size: 32),
+                child: Icon(
+                  Icons.lightbulb_outline,
+                  color: Colors.orange,
+                  size: 32,
+                ),
               ),
             ),
             SizedBox(height: 16),
@@ -244,114 +685,51 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
               ),
             ),
             SizedBox(height: 24),
-            _buildLabel('Select Topic *'),
-            _buildDropdown(
-              hint: 'Select a topic...',
-              value: _selectedTopic,
-              items: _topics,
-              onChanged: (val) => setState(() {
-                _selectedTopic = val;
-                _selectedPrompt = null; // Reset prompt when topic changes
-              }),
-            ),
-            _buildHelperText('Choose the topic for generation.'),
-            SizedBox(height: 16),
             _buildLabel('Select Prompt *'),
-            IgnorePointer(
-              ignoring: _selectedTopic == null,
-              child: Opacity(
-                opacity: _selectedTopic == null ? 0.5 : 1.0,
-                child: _buildDropdown(
-                  hint: 'Select a prompt...',
-                  value: _selectedPrompt,
-                  items: _selectedTopic != null
-                      ? _promptsByTopic[_selectedTopic]
-                      : [],
-                  onChanged: (val) => setState(() => _selectedPrompt = val),
-                ),
-              ),
+            _buildDropdown(
+              hint: 'Select a prompt...',
+              value: _selectedPromptId,
+              items: _prompts
+                  .map(
+                    (p) => DropdownMenuItem(value: p.id, child: Text(p.title)),
+                  )
+                  .toList(),
+              onChanged: _onPromptChanged,
             ),
             _buildHelperText('Choose the prompt for generation.'),
             SizedBox(height: 16),
+
             _buildLabel('Select Reference Page *'),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   _buildToggleButton(
-                    'Top 10 Search-Ranking Pages',
-                    _selectedReferencePage == 'Top 10 Search-Ranking Pages',
-                    () => setState(() =>
-                        _selectedReferencePage = 'Top 10 Search-Ranking Pages'),
+                    'Search-Ranking Pages',
+                    _referenceType == 'search',
+                    () => _onReferenceTypeChanged('search'),
                   ),
                   SizedBox(width: 8),
                   _buildToggleButton(
                     'Custom URL',
-                    _selectedReferencePage == 'Custom URL',
-                    () => setState(() => _selectedReferencePage = 'Custom URL'),
+                    _referenceType == 'custom',
+                    () => _onReferenceTypeChanged('custom'),
                   ),
                 ],
               ),
             ),
             SizedBox(height: 16),
-            if (_selectedReferencePage == 'Top 10 Search-Ranking Pages') ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel('Target Market'),
-                        _buildDropdown(
-                          hint: 'Select Market',
-                          value: _selectedTargetMarket,
-                          items: _targetMarkets,
-                          onChanged: (val) =>
-                              setState(() => _selectedTargetMarket = val),
-                          icon: Icons.public,
-                        ),
-                        _buildHelperText(
-                            'Choose the target market for search results.',
-                            maxLines: 2),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel('Language'),
-                        _buildDropdown(
-                          hint: 'Select Language',
-                          value: _selectedLanguage,
-                          items: _languages,
-                          onChanged: (val) =>
-                              setState(() => _selectedLanguage = val),
-                          icon: Icons.translate,
-                        ),
-                        _buildHelperText(
-                            'Choose the language for search results.',
-                            maxLines: 2),
-                      ],
-                    ),
-                  ),
-                ],
+
+            if (_referenceType == 'search') ...[
+              _buildHelperText(
+                'The system will automatically crawl keywords on google to fetch top ranking pages as references.',
+                maxLines: 2,
               ),
-              SizedBox(height: 16),
-              Center(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: Icon(Icons.search),
-                  label: Text('Search Ranking Pages'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey[700],
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              _buildNoReferencePagesFound(),
+              SizedBox(height: 12),
+              if (_isSearching)
+                Center(child: CircularProgressIndicator())
+              else
+                ..._topPages.map((page) => _buildTopPageCard(page)),
             ] else ...[
               TextField(
                 controller: _customUrlController,
@@ -366,13 +744,18 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey[300]!),
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                 ),
               ),
-              _buildHelperText('Enter a URL of the page you want to reference.',
-                  maxLines: 2),
-            ], // Close else block
+              _buildHelperText(
+                'Enter a URL of the page you want to reference.',
+                maxLines: 2,
+              ),
+            ],
+
             SizedBox(height: 24),
             _buildLabel('Target Keywords'),
             TextField(
@@ -391,42 +774,261 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
             ),
             _buildHelperText('Separate keywords with commas.'),
             SizedBox(height: 16),
-            _buildLabel('Select content type *'),
-            _buildDropdown(
-                hint: 'Select content type...',
-                value: _selectedContentType,
-                items: ['Blog Post', 'Social Media Post', 'Email'],
-                onChanged: (val) => setState(() => _selectedContentType = val),
-                icon: Icons.article_outlined),
+
+            _buildLabel('Improvement Instructions (Optional)'),
+            TextField(
+              controller: _improvementController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'e.g. Make it shorter and more engaging',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+              ),
+            ),
+            _buildHelperText('Instructions to improve or tweak the content.'),
             SizedBox(height: 16),
+
+            // Select Customer Persona
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildLabel('Select Writing Style *'),
+                _buildLabel('Target Customer Persona'),
                 TextButton.icon(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => AddWritingStyleDialog(
-                          onStyleCreated: _addNewWritingStyle,
-                        ),
-                      );
-                    },
-                    icon: Icon(Icons.add, size: 16, color: Colors.orange),
-                    label: Text('New', style: TextStyle(color: Colors.orange)))
+                  onPressed: () => _openPersonaDialog(),
+                  icon: Icon(Icons.add, size: 16, color: Colors.orange),
+                  label: Text('New', style: TextStyle(color: Colors.orange)),
+                ),
               ],
             ),
-            _buildDropdown(
-              hint: 'Select a style...',
-              value: _selectedWritingStyle,
-              items: _writingStyles.map((e) => e.name).toList(),
-              onChanged: (val) => setState(() => _selectedWritingStyle = val),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  hint: Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 20,
+                        color: Colors.purple.shade300,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Select persona (optional)...',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  value: _selectedPersonaId,
+                  icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                  items: _personas
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  p.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.edit,
+                                      size: 16,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () {
+                                      // If the dropdown is currently open, pop it. Otherwise do not pop.
+                                      // We use a small hack by calling _openPersonaDialog asynchronously.
+                                      // Or if we know it's a dropdown item click, the dropdown itself usually closes automatically.
+                                      // Wait momentarily then open so we don't double pop the screen
+                                      Future.delayed(Duration.zero, () {
+                                        _openPersonaDialog(p);
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.delete,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pop(); // Close the dropdown menu first
+                                      Future.delayed(Duration.zero, () {
+                                        _deletePersona(p);
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => _onPersonaSelected(val),
+                ),
+              ),
             ),
-            if (_selectedWritingStyle != null) ...[
+            _buildHelperText(
+              'Defaults to the brand\'s primary persona if left empty.',
+            ),
+            SizedBox(height: 16),
+
+            _buildLabel('Select Content Type *'),
+            _buildDropdown(
+              hint: 'Select content type...',
+              value: _selectedContentType,
+              items: _contentTypes
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c['value']!,
+                      child: Text(c['label']!),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (val) => setState(() {
+                _selectedContentType = val!;
+                if (_selectedContentType != 'social_media_post') {
+                  _selectedPlatform = null;
+                }
+              }),
+              icon: Icons.article_outlined,
+            ),
+            SizedBox(height: 16),
+
+            if (_selectedContentType == 'social_media_post') ...[
+              _buildLabel('Select Platform *'),
+              _buildDropdown(
+                hint: 'Select Platform...',
+                value: _selectedPlatform,
+                items: _socialPlatforms
+                    .map(
+                      (p) => DropdownMenuItem(
+                        value: p['value']!,
+                        child: Text(p['label']!),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) => setState(() => _selectedPlatform = val),
+                icon: Icons.tag,
+              ),
               SizedBox(height: 16),
-              _buildWritingStyleDetails(_writingStyles
-                  .firstWhere((e) => e.name == _selectedWritingStyle)),
+            ],
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildLabel('Select Content Profile (Style)'),
+                TextButton.icon(
+                  onPressed: () => _openProfileDialog(),
+                  icon: Icon(Icons.add, size: 16, color: Colors.orange),
+                  label: Text('New', style: TextStyle(color: Colors.orange)),
+                ),
+              ],
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  hint: Row(
+                    children: [
+                      Icon(
+                        Icons.style,
+                        size: 20,
+                        color: Colors.purple.shade300,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Select a profile (optional)...',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  value: _selectedProfileId,
+                  icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                  items: _contentProfiles
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  p.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.edit,
+                                      size: 16,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () {
+                                      Future.delayed(Duration.zero, () {
+                                        _openProfileDialog(p);
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.delete,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pop(); // Close the dropdown menu first
+                                      Future.delayed(Duration.zero, () {
+                                        _deleteProfile(p);
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => _onProfileSelected(val),
+                ),
+              ),
+            ),
+            if (_selectedProfileId != null) ...[
+              SizedBox(height: 16),
+              _buildWritingStyleDetails(
+                _contentProfiles.firstWhere((e) => e.id == _selectedProfileId),
+              ),
             ],
 
             SizedBox(height: 24),
@@ -434,18 +1036,23 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {},
-                child: Text('Start Workflow →',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                onPressed:
+                    _isGeneratingContent ? null : _submitContentGeneration,
+                child: _isGeneratingContent
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text('Generate Content',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Color(0xFFFCAA80), // Orange/Salmon color from image
+                  backgroundColor: Color(0xFFFF6600),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
                 ),
               ),
             ),
@@ -455,51 +1062,69 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
     );
   }
 
-  Widget _buildContentHistoryCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
+  Widget _buildTopPageCard(WebSearchResponseDto page) {
+    final isSelected = _selectedSearchUrl == page.url;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedSearchUrl = page.url),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color.fromRGBO(255, 165, 0, 0.05)
+              : Colors.white,
+          border: Border.all(
+            color: isSelected ? Colors.orange : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.history, color: Colors.grey[700]),
+                Icon(
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: isSelected ? Colors.orange : Colors.grey,
+                  size: 20,
+                ),
                 SizedBox(width: 8),
-                Text('Content History',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Text(
+                    page.title,
+                    style: TextStyle(
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
-            Divider(height: 32),
-            SizedBox(height: 40),
-            Center(
+            SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 28.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.description_outlined,
-                        color: Colors.grey[400], size: 32),
-                  ),
-                  SizedBox(height: 16),
-                  Text('No content yet',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
                   Text(
-                    'Select a prompt above to see previously\ngenerated content here.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    page.url,
+                    style: TextStyle(color: Colors.blue[700], fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    page.description,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 40),
           ],
         ),
       ),
@@ -513,22 +1138,29 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
         text: TextSpan(
           text: text.replaceAll('*', ''),
           style: TextStyle(
-              color: Colors.black, fontWeight: FontWeight.w600, fontSize: 14),
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
           children: [
             if (text.contains('*'))
-              TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: Colors.red),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDropdown(
-      {required String hint,
-      String? value,
-      List<String>? items,
-      required Function(String?) onChanged,
-      IconData? icon}) {
+  Widget _buildDropdown({
+    required String hint,
+    String? value,
+    List<DropdownMenuItem<String>>? items,
+    required Function(String?) onChanged,
+    IconData? icon,
+  }) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -542,21 +1174,17 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
             children: [
               if (icon != null) ...[
                 Icon(icon, size: 20, color: Colors.purple.shade300),
-                SizedBox(width: 8)
+                SizedBox(width: 8),
               ],
-              Text(hint,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+              Text(
+                hint,
+                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              ),
             ],
           ),
           value: value,
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-          items: items?.map((String item) {
-                return DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item),
-                );
-              }).toList() ??
-              [], // Empty list if no items provided yet
+          items: items ?? [], // Empty list if no items provided
           onChanged: onChanged,
         ),
       ),
@@ -584,78 +1212,22 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
           color: isSelected ? Colors.grey[200] : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-              color: isSelected ? Colors.grey[400]! : Colors.grey[300]!),
+            color: isSelected ? Colors.grey[400]! : Colors.grey[300]!,
+          ),
         ),
         child: Text(
           text,
           style: TextStyle(
-              color: isSelected ? Colors.black : Colors.grey[600],
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13),
+            color: isSelected ? Colors.black : Colors.grey[600],
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 13,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNoReferencePagesFound() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-          color: Color(0xFFF9FAFB), // Very light grey
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!)),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: Offset(0, 2))
-                ]),
-            child: Icon(Icons.search, size: 32, color: Colors.black),
-          ),
-          SizedBox(height: 16),
-          Text('No reference pages found',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          SizedBox(height: 8),
-          Text(
-            'Start by selecting a topic and a prompt. You can also choose a location or language if needed. When you\'re ready, click Search Ranking Pages to fetch the top 10 ranking pages.',
-            textAlign: TextAlign.center,
-            style:
-                TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.5),
-          ),
-          SizedBox(height: 16),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(16)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
-                SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'Select a page from the search results once loaded.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                  ),
-                )
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWritingStyleDetails(WritingStyle style) {
+  Widget _buildWritingStyleDetails(ContentProfile style) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -670,7 +1242,7 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
           SizedBox(height: 12),
           _buildStyleDetailRow('Audience:', style.audience),
           SizedBox(height: 12),
-          _buildStyleDetailRow('Voice & Tone:', style.voiceTone),
+          _buildStyleDetailRow('Voice & Tone:', style.voiceAndTone),
           SizedBox(height: 12),
           _buildStyleDetailRow('Description:', style.description),
         ],
@@ -706,13 +1278,28 @@ class _AiWriterScreenState extends State<AiWriterScreen> {
       ],
     );
   }
+
+  @override
+  void dispose() {
+    _jobStreamSubscription?.cancel();
+    _store.dispose();
+    super.dispose();
+  }
 }
 
 class AddWritingStyleDialog extends StatefulWidget {
-  final Function(WritingStyle) onStyleCreated;
+  final String projectId;
+  final ContentProfile? profile;
+  final ContentManagementApi contentApi;
+  final Function(ContentProfile) onStyleCreatedOrUpdated;
 
-  const AddWritingStyleDialog({Key? key, required this.onStyleCreated})
-      : super(key: key);
+  const AddWritingStyleDialog({
+    Key? key,
+    required this.projectId,
+    this.profile,
+    required this.contentApi,
+    required this.onStyleCreatedOrUpdated,
+  }) : super(key: key);
 
   @override
   _AddWritingStyleDialogState createState() => _AddWritingStyleDialogState();
@@ -728,6 +1315,19 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
   final _formKey1 = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
   final _formKey3 = GlobalKey<FormState>();
+
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.profile != null) {
+      _styleNameController.text = widget.profile!.name;
+      _descriptionController.text = widget.profile!.description;
+      _voiceToneController.text = widget.profile!.voiceAndTone;
+      _audienceController.text = widget.profile!.audience;
+    }
+  }
 
   @override
   void dispose() {
@@ -756,15 +1356,39 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
     }
   }
 
-  void _createStyle() {
+  Future<void> _saveStyle() async {
     if (_formKey3.currentState!.validate()) {
-      widget.onStyleCreated(WritingStyle(
-        name: _styleNameController.text,
-        description: _descriptionController.text,
-        voiceTone: _voiceToneController.text,
-        audience: _audienceController.text,
-      ));
-      Navigator.of(context).pop();
+      setState(() => _isLoading = true);
+      try {
+        final isUpdating = widget.profile != null;
+
+        final payload = {
+          "name": _styleNameController.text,
+          "description": _descriptionController.text,
+          "voiceAndTone": _voiceToneController.text,
+          "audience": _audienceController.text,
+        };
+
+        final data = isUpdating
+            ? await widget.contentApi.updateProfile(
+                widget.projectId,
+                widget.profile!.id,
+                payload,
+              )
+            : await widget.contentApi.createProfile(widget.projectId, payload);
+
+        widget.onStyleCreatedOrUpdated(ContentProfile.fromJson(data));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Saved successfully!')));
+        Navigator.of(context).pop();
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -784,7 +1408,9 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         padding: EdgeInsets.all(24),
@@ -808,6 +1434,11 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
   }
 
   Widget _buildHeader() {
+    final title =
+        widget.profile == null ? 'Add Writing Style' : 'Edit Writing Style';
+    final subtitle = widget.profile == null
+        ? 'Create a new writing style for your brand'
+        : 'Update the details of your writing style';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -817,12 +1448,12 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Add Writing Style',
+                title,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 4),
               Text(
-                'Create a new writing style for your brand',
+                subtitle,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
             ],
@@ -833,7 +1464,7 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
           icon: Icon(Icons.close, color: Colors.grey),
           padding: EdgeInsets.zero,
           constraints: BoxConstraints(),
-        )
+        ),
       ],
     );
   }
@@ -872,10 +1503,7 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
         Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           child: Center(
             child: Text(
               '$step',
@@ -925,7 +1553,8 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
                 controller: _descriptionController,
                 maxLines: 5,
                 decoration: _inputDecoration(
-                    'e.g. This is a writing style that combines education...'),
+                  'e.g. This is a writing style that combines education...',
+                ),
               ),
               SizedBox(height: 8),
               Row(
@@ -938,9 +1567,9 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
                       'Briefly summarize the purpose of this writing style.',
                       style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
-                  )
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         );
@@ -956,7 +1585,8 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
                 onChanged: (_) => setState(() {}),
                 maxLines: 8,
                 decoration: _inputDecoration(
-                    'e.g., Professional, friendly, informative'),
+                  'e.g., Professional, friendly, informative',
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter Voice & Tone';
@@ -979,7 +1609,8 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
                 onChanged: (_) => setState(() {}),
                 maxLines: 8,
                 decoration: _inputDecoration(
-                    'e.g., Tech-savvy professionals, small business owners'),
+                  'e.g., Tech-savvy professionals, small business owners',
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter Audience';
@@ -1008,8 +1639,9 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
               foregroundColor: Colors.grey[700],
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey[300]!)),
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: Colors.grey[300]!),
+              ),
             ),
           )
         else
@@ -1020,51 +1652,73 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
               foregroundColor: Colors.grey[700],
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey[300]!)),
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: Colors.grey[300]!),
+              ),
             ),
           ),
         if (_currentStep < 3)
           ElevatedButton(
             onPressed: isStepValid ? _nextStep : null,
-            child: Text('Next',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.disabled)) {
-                    return Color(0xFFFCAA80).withOpacity(0.5);
-                  }
-                  return Color(0xFFE69138); // Darker orange/brown when active
-                },
+            child: Text(
+              'Next',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
+            ),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.resolveWith<Color>((
+                Set<WidgetState> states,
+              ) {
+                if (states.contains(WidgetState.disabled)) {
+                  return const Color.fromRGBO(252, 170, 128, 0.5);
+                }
+                return Color(0xFFE69138); // Darker orange/brown when active
+              }),
               padding: WidgetStateProperty.all(
-                  EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
-              shape: WidgetStateProperty.all(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8))),
+                EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              ),
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               elevation: WidgetStateProperty.all(0),
             ),
           )
         else
           ElevatedButton(
-            onPressed: isStepValid ? _createStyle : null,
-            child: Text('Create',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
+            onPressed: isStepValid && !_isLoading ? _saveStyle : null,
+            child: _isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    widget.profile == null ? 'Create' : 'Update',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
             style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.disabled)) {
-                    return Color(0xFFFCAA80).withOpacity(0.5);
-                  }
-                  return Color(0xFFE69138); // Darker orange/brown when active
-                },
-              ),
+              backgroundColor: WidgetStateProperty.resolveWith<Color>((
+                Set<WidgetState> states,
+              ) {
+                if (states.contains(WidgetState.disabled)) {
+                  return const Color.fromRGBO(252, 170, 128, 0.5);
+                }
+                return Color(0xFFE69138); // Darker orange/brown when active
+              }),
               padding: WidgetStateProperty.all(
-                  EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
-              shape: WidgetStateProperty.all(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8))),
+                EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              ),
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               elevation: WidgetStateProperty.all(0),
             ),
           ),
@@ -1079,10 +1733,16 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
         text: TextSpan(
           text: text.replaceAll('*', ''),
           style: TextStyle(
-              color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
           children: [
             if (text.contains('*'))
-              TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: Colors.red),
+              ),
           ],
         ),
       ),
@@ -1092,16 +1752,641 @@ class _AddWritingStyleDialogState extends State<AddWritingStyleDialog> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey[400]),
+      hintStyle: TextStyle(
+        color: Colors.grey[400],
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(
+          color: Colors.grey[300]!,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(
+          color: Colors.grey[300]!,
+        ),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ),
+    );
+  }
+}
+
+class CustomerPersonaDialog extends StatefulWidget {
+  final String brandId;
+  final CustomerPersona? persona;
+  final ContentManagementApi contentApi;
+  final Function(CustomerPersona) onSaved;
+  final Function(List<CustomerPersona>) onAIGenerated;
+
+  const CustomerPersonaDialog({
+    Key? key,
+    required this.brandId,
+    this.persona,
+    required this.contentApi,
+    required this.onSaved,
+    required this.onAIGenerated,
+  }) : super(key: key);
+
+  @override
+  _CustomerPersonaDialogState createState() => _CustomerPersonaDialogState();
+}
+
+class _CustomerPersonaDialogState extends State<CustomerPersonaDialog> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _isGenerating = false;
+
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late TextEditingController _goalsController;
+  late TextEditingController _painPointsController;
+
+  // Add more detailed controllers
+  late TextEditingController _demoAgeController;
+  late TextEditingController _demoGenderController;
+  late TextEditingController _demoLocationController;
+  late TextEditingController _demoEducationController;
+  late TextEditingController _demoIncomeController;
+
+  late TextEditingController _profJobController;
+  late TextEditingController _profIndustryController;
+  late TextEditingController _profCompanySizeController;
+  late TextEditingController _profSeniorityController;
+
+  late TextEditingController _prefChannelsController;
+  late TextEditingController _prefFormatsController;
+  late TextEditingController _prefResearchController;
+
+  late TextEditingController _buyingTriggersController;
+  late TextEditingController _buyingObjectionsController;
+  late TextEditingController _buyingCriteriaController;
+
+  bool _isPrimary = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.persona?.name ?? '');
+    _descController = TextEditingController(
+      text: widget.persona?.description?.toString() ?? '',
+    );
+    _goalsController = TextEditingController(
+      text: widget.persona?.goalsAndMotivations?.toString() ?? '',
+    );
+    _painPointsController = TextEditingController(
+      text: widget.persona?.painPoints?.toString() ?? '',
+    );
+
+    final demo = widget.persona?.demographics ?? {};
+    _demoAgeController = TextEditingController(
+      text: demo['ageRange']?.toString() ?? '',
+    );
+    _demoGenderController = TextEditingController(
+      text: demo['gender']?.toString() ?? '',
+    );
+    _demoLocationController = TextEditingController(
+      text: demo['location']?.toString() ?? '',
+    );
+    _demoEducationController = TextEditingController(
+      text: demo['educationLevel']?.toString() ?? '',
+    );
+    _demoIncomeController = TextEditingController(
+      text: demo['incomeRange']?.toString() ?? '',
+    );
+
+    final prof = widget.persona?.professional ?? {};
+    _profJobController = TextEditingController(
+      text: prof['jobTitle']?.toString() ?? '',
+    );
+    _profIndustryController = TextEditingController(
+      text: prof['industry']?.toString() ?? '',
+    );
+    _profCompanySizeController = TextEditingController(
+      text: prof['companySize']?.toString() ?? '',
+    );
+    _profSeniorityController = TextEditingController(
+      text: prof['seniorityLevel']?.toString() ?? '',
+    );
+
+    final pref = widget.persona?.contentPreferences ?? {};
+    _prefChannelsController = TextEditingController(
+      text: (pref['channels'] as List<dynamic>?)?.join(', ') ?? '',
+    );
+    _prefFormatsController = TextEditingController(
+      text: (pref['formats'] as List<dynamic>?)?.join(', ') ?? '',
+    );
+    _prefResearchController = TextEditingController(
+      text: pref['researchHabits']?.toString() ?? '',
+    );
+
+    final buying = widget.persona?.buyingBehavior ?? {};
+    _buyingTriggersController = TextEditingController(
+      text: (buying['triggers'] as List<dynamic>?)?.join(', ') ?? '',
+    );
+    _buyingObjectionsController = TextEditingController(
+      text: (buying['objections'] as List<dynamic>?)?.join(', ') ?? '',
+    );
+    _buyingCriteriaController = TextEditingController(
+      text: (buying['evaluationCriteria'] as List<dynamic>?)?.join(', ') ?? '',
+    );
+
+    _isPrimary = widget.persona?.isPrimary ?? false;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    _goalsController.dispose();
+    _painPointsController.dispose();
+
+    _demoAgeController.dispose();
+    _demoGenderController.dispose();
+    _demoLocationController.dispose();
+    _demoEducationController.dispose();
+    _demoIncomeController.dispose();
+
+    _profJobController.dispose();
+    _profIndustryController.dispose();
+    _profCompanySizeController.dispose();
+    _profSeniorityController.dispose();
+
+    _prefChannelsController.dispose();
+    _prefFormatsController.dispose();
+    _prefResearchController.dispose();
+
+    _buyingTriggersController.dispose();
+    _buyingObjectionsController.dispose();
+    _buyingCriteriaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _savePersona() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final isUpdating = widget.persona != null;
+
+      final payload = {
+        "name": _nameController.text,
+        "description": _descController.text,
+        "goalsAndMotivations": _goalsController.text,
+        "painPoints": _painPointsController.text,
+        "demographics": {
+          "ageRange": _demoAgeController.text,
+          "gender": _demoGenderController.text,
+          "location": _demoLocationController.text,
+          "educationLevel": _demoEducationController.text,
+          "incomeRange": _demoIncomeController.text,
+        },
+        "professional": {
+          "jobTitle": _profJobController.text,
+          "industry": _profIndustryController.text,
+          "companySize": _profCompanySizeController.text,
+          "seniorityLevel": _profSeniorityController.text,
+        },
+        "contentPreferences": {
+          "channels": _prefChannelsController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          "formats": _prefFormatsController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          "researchHabits": _prefResearchController.text,
+        },
+        "buyingBehavior": {
+          "triggers": _buyingTriggersController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          "objections": _buyingObjectionsController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          "evaluationCriteria": _buyingCriteriaController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+        },
+        "isPrimary": _isPrimary,
+      };
+
+      final data = isUpdating
+          ? await widget.contentApi.updatePersona(
+              widget.brandId,
+              widget.persona!.id,
+              payload,
+            )
+          : await widget.contentApi.createPersona(widget.brandId, payload);
+
+      widget.onSaved(CustomerPersona.fromJson(data));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Saved successfully!')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _generatePersona() async {
+    setState(() => _isGenerating = true);
+    try {
+      final generatedData =
+          await widget.contentApi.generatePersonas(widget.brandId);
+      List<CustomerPersona> newPersonas = [];
+      for (final item in generatedData) {
+        final created = await widget.contentApi
+            .createPersona(widget.brandId, Map<String, dynamic>.from(item));
+        newPersonas.add(CustomerPersona.fromJson(created));
+      }
+
+      if (newPersonas.isNotEmpty) {
+        widget.onAIGenerated(newPersonas);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Added AI Personas: ${newPersonas.map((e) => e.name).join(", ")}',
+            ),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error generating: $e')));
+    } finally {
+      if (mounted) setState(() => _isGenerating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.persona == null
+        ? 'Create Customer Persona'
+        : 'Edit Customer Persona';
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                if (widget.persona == null) ...[
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: _isGenerating ? null : _generatePersona,
+                    icon: _isGenerating
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.auto_awesome,
+                            size: 18,
+                          ),
+                    label: const Text(
+                      "Create AI-generated personas",
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple.shade400,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                _buildSectionTitle('Basic Info'),
+                _buildTextField(
+                  'Name *',
+                  _nameController,
+                  isRequired: true,
+                ),
+                _buildTextField(
+                  'Description',
+                  _descController,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                _buildSectionTitle('Demographics'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        'Age Range',
+                        _demoAgeController,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        'Gender',
+                        _demoGenderController,
+                      ),
+                    ),
+                  ],
+                ),
+                _buildTextField(
+                  'Location',
+                  _demoLocationController,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        'Education Level',
+                        _demoEducationController,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        'Income Range',
+                        _demoIncomeController,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildSectionTitle('Professional'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        'Job Title',
+                        _profJobController,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        'Industry',
+                        _profIndustryController,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        'Company Size',
+                        _profCompanySizeController,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        'Seniority Level',
+                        _profSeniorityController,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildSectionTitle(
+                  'Goals & Pain Points',
+                ),
+                _buildTextField(
+                  'Goals & Motivations',
+                  _goalsController,
+                  maxLines: 2,
+                ),
+                _buildTextField(
+                  'Pain Points',
+                  _painPointsController,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                _buildSectionTitle(
+                  'Content Preferences',
+                ),
+                _buildTextField(
+                  'Channels (comma separated)',
+                  _prefChannelsController,
+                ),
+                _buildTextField(
+                  'Formats (comma separated)',
+                  _prefFormatsController,
+                ),
+                _buildTextField(
+                  'Research Habits',
+                  _prefResearchController,
+                ),
+                const SizedBox(height: 16),
+                _buildSectionTitle(
+                  'Buying Behavior',
+                ),
+                _buildTextField(
+                  'Triggers (comma separated)',
+                  _buyingTriggersController,
+                ),
+                _buildTextField(
+                  'Objections (comma separated)',
+                  _buyingObjectionsController,
+                ),
+                _buildTextField(
+                  'Evaluation Criteria (comma separated)',
+                  _buyingCriteriaController,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _isPrimary,
+                      onChanged: (val) {
+                        setState(() {
+                          _isPrimary = val ?? false;
+                        });
+                      },
+                    ),
+                    const Text(
+                      'Mark as Primary Persona',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _savePersona,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFCAA80),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                widget.persona == null
+                                    ? 'Create Persona'
+                                    : 'Save Changes',
+                                textAlign: TextAlign.center,
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF0D2B5B),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+    bool isRequired = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RichText(
+            text: TextSpan(
+              text: label.replaceAll('*', '').trim(),
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              children: [
+                if (isRequired)
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(height: 6),
+          TextFormField(
+            controller: controller,
+            maxLines: maxLines,
+            validator: isRequired
+                ? (v) => v == null || v.isEmpty ? 'Required' : null
+                : null,
+            decoration: InputDecoration(
+              hintText:
+                  'Enter ${label.replaceAll('*', '').trim().toLowerCase()}',
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.orange),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+            ),
+            style: TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 }

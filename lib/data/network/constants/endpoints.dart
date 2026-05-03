@@ -47,4 +47,3 @@ class Endpoints {
   static String clusterJobStream(String jobId) =>
       '/api/cluster/jobs/$jobId/stream';
 }
-
