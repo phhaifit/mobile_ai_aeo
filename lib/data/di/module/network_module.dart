@@ -86,9 +86,7 @@ class NetworkModule {
     // api's:-------------------------------------------------------------------
     getIt.registerSingleton(AuthApi(getIt<DioClient>()));
     getIt.registerSingleton(PostApi(getIt<DioClient>()));
-    getIt.registerSingleton(ContentApi(getIt<DioClient>(instanceName: 'aiDioClient')));
     getIt.registerSingleton(ContentAgentApi(getIt<DioClient>()));
-    getIt.registerSingleton(SeoApi(getIt<DioClient>(instanceName: 'aiDioClient')));
     getIt.registerSingleton(OverviewApi(getIt<DioClient>()));
     getIt.registerSingleton(AnalyticsApi(getIt<DioClient>()));
     getIt.registerSingleton(ContentProfileApi(getIt<DioClient>()));
