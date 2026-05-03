@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Donut chart for sentiment breakdown.
 class SentimentChart extends StatelessWidget {
@@ -34,9 +35,9 @@ class SentimentChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Sentiment Analysis',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: GoogleFonts.oswald(fontSize: 14.0, fontWeight: FontWeight.w700, color: Colors.black87),
           ),
           const SizedBox(height: 20),
           if (isLoading)
@@ -128,15 +129,15 @@ class SentimentChart extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            style: GoogleFonts.montserrat(fontSize: 12.0, color: Colors.grey[700]),
           ),
         ),
         Text(
           '$count ($pct%)',
-          style: const TextStyle(
-            fontSize: 13,
+          style: GoogleFonts.montserrat(
+            fontSize: 12.0,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1E293B),
+            color: Colors.black87,
           ),
         ),
       ],

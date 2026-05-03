@@ -1,6 +1,7 @@
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'store/performance_monitoring_store.dart';
 import 'widgets/date_range_selector.dart';
 import 'widgets/summary_card.dart';
@@ -37,15 +38,15 @@ class _PerformanceMonitoringScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         elevation: 0.5,
         backgroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'Performance Monitoring',
-          style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontSize: 18,
+          style: GoogleFonts.oswald(
+            color: Colors.black,
+            fontSize: 17.0,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -61,7 +62,7 @@ class _PerformanceMonitoringScreenState
                     ),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.refresh, color: Color(0xFF3B82F6)),
+                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0052CC)),
                     tooltip: 'Refresh Data',
                     onPressed: () {
                       _store.refreshData();
@@ -179,18 +180,18 @@ class _PerformanceMonitoringScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Performance Report',
-                      style: TextStyle(
-                        fontSize: 22,
+                      style: GoogleFonts.oswald(
+                        fontSize: 20.0,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _store.dateRangeLabel,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                      style: GoogleFonts.montserrat(fontSize: 12.0, color: const Color(0xFF888888)),
                     ),
                   ],
                 ),
@@ -217,19 +218,19 @@ class _PerformanceMonitoringScreenState
           width: 4,
           height: 24,
           decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6),
+            color: const Color(0xFF0052CC),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
         const SizedBox(width: 10),
-        Icon(icon, color: const Color(0xFF3B82F6), size: 22),
+        Icon(icon, color: const Color(0xFF0052CC), size: 22),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+          style: GoogleFonts.oswald(
+            fontSize: 16.0,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
           ),
         ),
       ],
@@ -255,7 +256,7 @@ class _PerformanceMonitoringScreenState
               value: ba.brandMentions.toString(),
               subtitle: '${ba.brandMentionsRate.toStringAsFixed(1)}% rate',
               icon: Icons.chat_bubble_outline,
-              color: const Color(0xFF3B82F6),
+              color: const Color(0xFF0052CC),
             ),
             SummaryCard(
               title: 'Link References',
@@ -385,14 +386,14 @@ class _PerformanceMonitoringScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
               child: Text(
                 'Recent Content',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                style: GoogleFonts.oswald(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
                 ),
               ),
             ),

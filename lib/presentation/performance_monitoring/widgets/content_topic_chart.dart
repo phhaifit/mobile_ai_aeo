@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Pie chart showing content distribution by topic.
 class ContentTopicChart extends StatelessWidget {
@@ -9,7 +10,7 @@ class ContentTopicChart extends StatelessWidget {
   const ContentTopicChart({Key? key, required this.topicCounts, this.isLoading = false}) : super(key: key);
 
   static const _colors = [
-    Color(0xFF3B82F6), Color(0xFF10B981), Color(0xFFF59E0B),
+    Color(0xFF0052CC), Color(0xFF10B981), Color(0xFFF59E0B),
     Color(0xFFEF4444), Color(0xFF8B5CF6), Color(0xFFEC4899),
     Color(0xFF06B6D4), Color(0xFF84CC16),
   ];
@@ -26,7 +27,7 @@ class ContentTopicChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Content by Topic', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('Content by Topic', style: GoogleFonts.oswald(fontSize: 14.0, fontWeight: FontWeight.w700, color: Colors.black87)),
           const SizedBox(height: 20),
           if (isLoading)
             const SizedBox(height: 160, child: Center(child: CircularProgressIndicator()))
@@ -70,8 +71,8 @@ class ContentTopicChart extends StatelessWidget {
                   Container(width: 8, height: 8, decoration: BoxDecoration(
                     color: _colors[i % _colors.length], shape: BoxShape.circle)),
                   const SizedBox(width: 6),
-                  Expanded(child: Text(name, style: TextStyle(fontSize: 11, color: Colors.grey[700]), overflow: TextOverflow.ellipsis)),
-                  Text('$pct%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                  Expanded(child: Text(name, style: GoogleFonts.montserrat(fontSize: 10.0, color: Colors.grey[700]), overflow: TextOverflow.ellipsis)),
+                  Text('$pct%', style: GoogleFonts.montserrat(fontSize: 10.0, fontWeight: FontWeight.w600)),
                 ]),
               );
             }),

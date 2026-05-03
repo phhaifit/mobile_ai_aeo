@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../domain/entity/trend/brand_analytics.dart';
 
 class ModelBreakdownChart extends StatelessWidget {
@@ -30,11 +31,11 @@ class ModelBreakdownChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('AI Model Breakdown',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('AI Model Breakdown',
+              style: GoogleFonts.oswald(fontSize: 14.0, fontWeight: FontWeight.w700, color: Colors.black87)),
           const SizedBox(height: 8),
           Text('Total vs brand mentions per AI engine',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              style: GoogleFonts.montserrat(fontSize: 11.0, color: const Color(0xFF888888))),
           const SizedBox(height: 16),
           _buildLegend(),
           const SizedBox(height: 20),
@@ -53,7 +54,7 @@ class ModelBreakdownChart extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _dot('Total', const Color(0xFF3B82F6)),
+        _dot('Total', const Color(0xFF0052CC)),
         const SizedBox(width: 20),
         _dot('Brand', const Color(0xFF10B981)),
       ],
@@ -63,7 +64,7 @@ class ModelBreakdownChart extends StatelessWidget {
   Widget _dot(String l, Color c) => Row(children: [
     Container(width: 10, height: 10, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
     const SizedBox(width: 6),
-    Text(l, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+    Text(l, style: GoogleFonts.montserrat(fontSize: 11.0, color: Colors.grey[700])),
   ]);
 
   Widget _buildChart() {
@@ -92,13 +93,13 @@ class ModelBreakdownChart extends StatelessWidget {
             if (i >= 0 && i < models.length) {
               return Padding(padding: const EdgeInsets.only(top: 8),
                 child: Text(models[i].modelName.replaceAll('AI Overviews', 'AIO'),
-                    style: TextStyle(color: Colors.grey[600], fontSize: 11)));
+                    style: GoogleFonts.montserrat(color: Colors.grey[600], fontSize: 10)));
             }
             return const Text('');
           },
         )),
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36,
-          getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+          getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: GoogleFonts.montserrat(color: Colors.grey[600], fontSize: 10)),
         )),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -107,7 +108,7 @@ class ModelBreakdownChart extends StatelessWidget {
         getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey[200]!, strokeWidth: 1)),
       borderData: FlBorderData(show: false),
       barGroups: List.generate(models.length, (i) => BarChartGroupData(x: i, barRods: [
-        BarChartRodData(toY: models[i].totalMentions.toDouble(), color: const Color(0xFF3B82F6), width: 14,
+        BarChartRodData(toY: models[i].totalMentions.toDouble(), color: const Color(0xFF0052CC), width: 14,
             borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4))),
         BarChartRodData(toY: models[i].brandMentions.toDouble(), color: const Color(0xFF10B981), width: 14,
             borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4))),

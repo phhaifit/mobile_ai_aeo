@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../domain/entity/trend/chart_data_point.dart';
 
 /// Bar chart showing content publish count by date bucket.
@@ -21,9 +22,9 @@ class ContentTrendChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Content Publishing Trend', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('Content Publishing Trend', style: GoogleFonts.oswald(fontSize: 14.0, fontWeight: FontWeight.w700, color: Colors.black87)),
           const SizedBox(height: 8),
-          Text('Number of contents published over time', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text('Number of contents published over time', style: GoogleFonts.montserrat(fontSize: 11.0, color: const Color(0xFF888888))),
           const SizedBox(height: 24),
           if (isLoading)
             const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
@@ -75,7 +76,7 @@ class ContentTrendChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       data[idx].label,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                      style: GoogleFonts.montserrat(color: Colors.grey[600], fontSize: 10),
                     ),
                   );
                 }
@@ -89,7 +90,7 @@ class ContentTrendChart extends StatelessWidget {
               reservedSize: 36,
               getTitlesWidget: (value, meta) => Text(
                 value.toInt().toString(),
-                style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                style: GoogleFonts.montserrat(color: Colors.grey[600], fontSize: 10),
               ),
             ),
           ),

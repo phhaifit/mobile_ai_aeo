@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Reusable small metric card for summary rows.
 class SummaryCard extends StatelessWidget {
@@ -50,9 +51,9 @@ class SummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
+                  style: GoogleFonts.montserrat(
+                    color: const Color(0xFF888888),
+                    fontSize: 11.0,
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -63,19 +64,19 @@ class SummaryCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 22,
+            style: GoogleFonts.oswald(
+              fontSize: 22.0,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: Colors.black87,
             ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
               subtitle!,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
+              style: GoogleFonts.montserrat(
+                fontSize: 11.0,
+                color: const Color(0xFF888888),
               ),
             ),
           ],

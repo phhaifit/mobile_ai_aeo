@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../domain/entity/trend/chart_data_point.dart';
 
 /// Line chart for brand analytics trend with metric toggle.
@@ -41,9 +42,9 @@ class BrandTrendChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Brand Performance Trend',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: GoogleFonts.oswald(fontSize: 14.0, fontWeight: FontWeight.w700, color: Colors.black87),
           ),
           const SizedBox(height: 16),
           _buildMetricTabs(),
@@ -73,24 +74,24 @@ class BrandTrendChart extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF3B82F6).withOpacity(0.1)
+                    ? const Color(0xFF0052CC).withOpacity(0.1)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF3B82F6)
+                      ? const Color(0xFF0052CC)
                       : Colors.grey[300]!,
                 ),
               ),
               child: Text(
                 e.value,
-                style: TextStyle(
+                style: GoogleFonts.montserrat(
                   color: isSelected
-                      ? const Color(0xFF3B82F6)
+                      ? const Color(0xFF0052CC)
                       : Colors.grey[700],
                   fontWeight:
                       isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
+                  fontSize: 12.0,
                 ),
               ),
             ),
@@ -120,7 +121,7 @@ class BrandTrendChart extends StatelessWidget {
         lineColor = const Color(0xFF10B981);
         break;
       default:
-        lineColor = const Color(0xFF3B82F6);
+        lineColor = const Color(0xFF0052CC);
     }
 
     final double maxX = data.length > 1 ? (data.length - 1).toDouble() : 1.0;
@@ -153,8 +154,8 @@ class BrandTrendChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       data[idx].label,
-                      style:
-                          TextStyle(color: Colors.grey[600], fontSize: 10),
+                      style: GoogleFonts.montserrat(
+                          color: Colors.grey[600], fontSize: 10),
                     ),
                   );
                 }
@@ -168,7 +169,7 @@ class BrandTrendChart extends StatelessWidget {
               reservedSize: 36,
               getTitlesWidget: (value, meta) => Text(
                 value.toInt().toString(),
-                style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                style: GoogleFonts.montserrat(color: Colors.grey[600], fontSize: 10),
               ),
             ),
           ),
