@@ -1,3 +1,4 @@
+import 'package:boilerplate/presentation/analytic/analytic.dart';
 import 'package:boilerplate/presentation/content_enhancement/content_enhancement_screen.dart';
 import 'package:boilerplate/presentation/forgot_password/forgot_password.dart';
 import 'package:boilerplate/presentation/home/home.dart';
@@ -33,6 +34,7 @@ class Routes {
   static const String contentEnhancement = '/content-enhancement';
   static const String technicalSeo = '/technical-seo';
   static const String overview = '/overview';
+  static const String analysis = '/analysis';
   static const String performanceMonitoring = '/performance-monitoring';
   static const String topicsKeywords = '/topics-keywords';
   static const String templateLibrary = '/template_library';
@@ -61,6 +63,7 @@ class Routes {
         const ContentEnhancementScreen(),
     technicalSeo: (BuildContext context) => const TechnicalSeoScreen(),
     overview: (BuildContext context) => OverviewScreen(),
+    analysis: (BuildContext context) => AnalyticScreen(),
     performanceMonitoring: (BuildContext context) =>
         PerformanceMonitoringScreen(),
     seoOptimization: (BuildContext context) => const SeoOptimizationScreen(),

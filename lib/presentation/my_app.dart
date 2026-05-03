@@ -2,12 +2,9 @@ import 'package:boilerplate/constants/app_theme.dart';
 import 'package:boilerplate/constants/strings.dart';
 import 'package:boilerplate/core/services/analytics_service.dart';
 import 'package:boilerplate/presentation/dashboard/dashboard.dart';
-import 'package:boilerplate/presentation/home/home.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
-import 'package:boilerplate/presentation/login/login.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
-import 'package:boilerplate/presentation/overview/overview.dart';
 import 'package:boilerplate/utils/locale/app_localization.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
@@ -36,8 +33,7 @@ class MyApp extends StatelessWidget {
               ? AppThemeData.darkThemeData
               : AppThemeData.lightThemeData,
           navigatorObservers: [
-            if (_analyticsService.observer != null)
-              _analyticsService.observer!,
+            if (_analyticsService.observer != null) _analyticsService.observer!,
           ],
           routes: Routes.routes,
           onGenerateRoute: Routes.onGenerateRoute,

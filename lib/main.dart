@@ -2,6 +2,7 @@ import 'package:boilerplate/core/config/environment_config.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/my_app.dart';
 import 'package:boilerplate/firebase_options.dart';
+import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -18,12 +19,14 @@ Future<void> main() async {
 
   // Pass Flutter errors to Crashlytics (not supported on web)
   if (!kIsWeb) {
-    FlutterError.onError =
-        FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   }
 
   // Init DI (loads .env and registers all services)
   await ServiceLocator.configureDependencies();
+
+  // Setup access token for development
+  await _setupAccessToken();
 
   final config = getIt<EnvironmentConfig>();
 
@@ -40,6 +43,19 @@ Future<void> main() async {
   }
 
   runApp(MyApp());
+}
+
+/// Setup access token for API requests
+Future<void> _setupAccessToken() async {
+  try {
+    final prefs = getIt<SharedPreferenceHelper>();
+    const token =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkMjA2NDM5NS01OWE4LTQ5ZTgtYmFiMi1hZmZiN2I0YzgwNTgiLCJlbWFpbCI6ImRpZW50cmFuMTgwMUBnbWFpbC5jb20iLCJpYXQiOjE3NzU0NzU4NTQsImV4cCI6MTc3ODA2Nzg1NH0.g4tcyofWQiiXA4JVoz8RsYE1kotgpZ_G7jn5s7wTQaQ';
+    await prefs.saveAuthToken(token);
+    print('Access token saved successfully');
+  } catch (e) {
+    print('Error setting access token: $e');
+  }
 }
 
 Future<void> setPreferredOrientations() {

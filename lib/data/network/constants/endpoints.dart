@@ -4,7 +4,7 @@ class Endpoints {
   Endpoints._();
 
   // base url (default fallback, overridden by EnvironmentConfig)
-  static const String baseUrl = "http://jsonplaceholder.typicode.com";
+  static const String baseUrl = "https://api.aeo.how";
 
   // timeouts
   static const int receiveTimeout = 15000;
@@ -25,6 +25,14 @@ class Endpoints {
   static String seoAuditResult(String id) => "/api/v1/seo/audit/$id";
   static String seoCrawler(String url) =>
       "/api/v1/seo/crawler?url=${Uri.encodeComponent(url)}";
+
+  // overview metrics endpoints
+  static String getOverviewMetrics(String projectId) =>
+      "/api/projects/$projectId/metrics/overview";
+
+  // analytics metrics endpoints
+  static String getAnalyticsMetrics(String projectId) =>
+      "/api/projects/$projectId/metrics/analytics";
 
   // ─── Feature 9: SEO Content Optimization endpoints ───────────────────────
 
