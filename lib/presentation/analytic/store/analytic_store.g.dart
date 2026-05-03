@@ -167,6 +167,17 @@ mixin _$AnalyticStore on _AnalyticStore, Store {
   }
 
   @override
+  void _applyAnalyticsMetrics(AnalyticsMetrics metrics) {
+    final _$actionInfo = _$_AnalyticStoreActionController.startAction(
+        name: '_AnalyticStore._applyAnalyticsMetrics');
+    try {
+      return super._applyAnalyticsMetrics(metrics);
+    } finally {
+      _$_AnalyticStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 sentimentPositiveCount: ${sentimentPositiveCount},

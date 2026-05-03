@@ -5,6 +5,8 @@ import 'package:boilerplate/domain/entity/prompt/prompt_summary.dart';
 import 'package:boilerplate/domain/usecase/content/get_content_profiles_usecase.dart';
 import 'package:boilerplate/domain/usecase/prompt/create_content_generation_usecase.dart';
 import 'package:boilerplate/domain/usecase/prompt/get_prompts_by_project_usecase.dart';
+import 'package:boilerplate/utils/dio/dio_error_util.dart';
+import 'package:dio/dio.dart';
 import 'package:mobx/mobx.dart';
 
 part 'content_generation_store.g.dart';
@@ -101,7 +103,7 @@ abstract class _ContentGenerationStore with Store {
       return result;
     } catch (e) {
       print('$TAG.generateContent error: $e');
-      errorStore.setErrorMessage(e.toString());
+      errorStore.setErrorMessage(_messageForGenerateError(e));
       return null;
     } finally {
       isGenerating = false;
@@ -112,4 +114,15 @@ abstract class _ContentGenerationStore with Store {
   void clearLastResult() {
     lastResult = null;
   }
+}
+
+String _messageForGenerateError(Object e) {
+  if (e is! DioException) {
+    return e.toString();
+  }
+  final code = e.response?.statusCode;
+  if (code == 500) {
+    return 'The server could not complete this request (500). Please try again in a moment.';
+  }
+  return DioExceptionUtil.handleError(e);
 }

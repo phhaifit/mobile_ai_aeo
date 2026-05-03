@@ -67,20 +67,12 @@ abstract class _AnalyticStore with Store {
 
       final metrics = await _getAnalyticsMetricsUseCase(params: params);
 
-      // Verify data is not null
-      if (metrics == null || metrics.sentimentStats == null) {
-        print('$TAG: API returned null data, loading mock data...');
-        _loadMockData();
-        errorStore.setErrorMessage('');
-        isLoading = false;
-        return;
+      final filled = applyAnalyticsMetricsFallbacks(metrics);
+      if (isEffectivelyEmptyAnalytics(metrics)) {
+        print('$TAG: Empty analytics payload; using display fallback');
       }
 
-      // Map sentiment data
-      _mapSentimentData(metrics.sentimentStats);
-
-      // Map share of voice data
-      _mapShareOfVoiceData(metrics.analyticsByModel ?? []);
+      _applyAnalyticsMetrics(filled);
 
       errorStore.setErrorMessage('');
       isLoading = false;
@@ -98,51 +90,16 @@ abstract class _AnalyticStore with Store {
   @action
   void _loadMockData() {
     print('$TAG: Loading mock analytics data...');
-
-    // Create mock AnalyticsMetrics matching the entity structure
-    final mockMetrics = AnalyticsMetrics(
-      brandMentions: '423',
-      brandMentionsRate: 64.5,
-      linkReferences: '147',
-      linkReferencesRate: 22.3,
-      totalResponses: '657',
-      aiOverviewsCount: '87',
-      aiOverviewsRate: 13.2,
-      sentimentStats: SentimentStats(
-        positive: 423,
-        neutral: 147,
-        negative: 87,
-      ),
-      analyticsByDate: [],
-      analyticsByModel: [
-        AnalyticsByModel(
-          model: 'ChatGPT',
-          totalMentions: 285,
-          brandMentions: 198,
-          competitorMentions: {'Competitor A': 52, 'Competitor B': 35},
-        ),
-        AnalyticsByModel(
-          model: 'Gemini',
-          totalMentions: 156,
-          brandMentions: 112,
-          competitorMentions: {'Competitor A': 28, 'Competitor B': 16},
-        ),
-        AnalyticsByModel(
-          model: 'Perplexity',
-          totalMentions: 216,
-          brandMentions: 135,
-          competitorMentions: {'Competitor A': 56, 'Competitor B': 25},
-        ),
-      ],
-    );
-
-    // Map the mock data
-    _mapSentimentData(mockMetrics.sentimentStats);
-    _mapShareOfVoiceData(mockMetrics.analyticsByModel);
-
+    _applyAnalyticsMetrics(mockAnalyticsMetricsForDisplay());
     print(
         '$TAG: Mock data loaded - Sentiment: ${sentimentPositiveCount} positive, '
         '${sentimentNeutralCount} neutral, ${sentimentNegativeCount} negative');
+  }
+
+  @action
+  void _applyAnalyticsMetrics(AnalyticsMetrics metrics) {
+    _mapSentimentData(metrics.sentimentStats);
+    _mapShareOfVoiceData(metrics.analyticsByModel);
   }
 
   void _mapSentimentData(SentimentStats sentimentStats) {

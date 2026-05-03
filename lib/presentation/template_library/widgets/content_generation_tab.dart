@@ -257,7 +257,13 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
             _ContentGenerationResultDialog(result: generated),
       );
     } else if (_store.errorStore.errorMessage.isNotEmpty) {
-      _toast(_store.errorStore.errorMessage);
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => _ContentGenerationErrorDialog(
+          message: _store.errorStore.errorMessage,
+        ),
+      );
     }
   }
 
@@ -677,6 +683,71 @@ class _ContentGenerationTabState extends State<ContentGenerationTab> {
       onChanged: (v) {
         if (v != null) setState(() => _promptId = v);
       },
+    );
+  }
+}
+
+/// Error state for content generation (e.g. HTTP 500) — same shell as [_ContentGenerationResultDialog].
+class _ContentGenerationErrorDialog extends StatelessWidget {
+  final String message;
+
+  const _ContentGenerationErrorDialog({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Dialog(
+      insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 12, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.error_outline, color: Color(0xFFD32F2F), size: 28),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Couldn\'t generate content',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.45,
+                    color: Color(0xFF444444),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('OK'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
