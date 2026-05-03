@@ -2,19 +2,36 @@ import '../../../domain/entity/seo/content_structure_item.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ContentStructureWidget extends StatelessWidget {
+class ContentStructureWidget extends StatefulWidget {
   final List<ContentStructureItem> items;
   final bool isLoading;
+  final bool isOptimizing;
+  final Future<void> Function(String improvement) onOptimize;
 
   const ContentStructureWidget({
     Key? key,
     required this.items,
     required this.isLoading,
+    required this.isOptimizing,
+    required this.onOptimize,
   }) : super(key: key);
 
   @override
+  State<ContentStructureWidget> createState() => _ContentStructureWidgetState();
+}
+
+class _ContentStructureWidgetState extends State<ContentStructureWidget> {
+  final TextEditingController _improvementController = TextEditingController();
+
+  @override
+  void dispose() {
+    _improvementController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    if (widget.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -25,9 +42,56 @@ class ContentStructureWidget extends StatelessWidget {
         children: [
           _buildHeader(),
           const SizedBox(height: 16.0),
-          ...items.map((item) => _buildRecommendationCard(item)),
+          _buildOptimizeAction(context),
+          const SizedBox(height: 16.0),
+          ...widget.items.map((item) => _buildRecommendationCard(item)),
         ],
       ),
+    );
+  }
+
+  Widget _buildOptimizeAction(BuildContext context) {
+    return Column(
+      children: [
+        TextField(
+          controller: _improvementController,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Optimization Instruction',
+            hintText: 'e.g. Improve intro clarity and add FAQ schema',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10.0),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: widget.isOptimizing
+                ? null
+                : () async {
+                    final improvement = _improvementController.text.trim();
+                    if (improvement.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter optimization instruction.'),
+                        ),
+                      );
+                      return;
+                    }
+                    await widget.onOptimize(improvement);
+                  },
+            icon: widget.isOptimizing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.auto_fix_high),
+            label: const Text('Optimize Content'),
+          ),
+        ),
+      ],
     );
   }
 

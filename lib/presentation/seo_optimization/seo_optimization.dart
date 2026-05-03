@@ -1,4 +1,5 @@
 import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
 import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
 import 'package:boilerplate/presentation/seo_optimization/widgets/onpage_seo_checker_widget.dart';
 import 'package:boilerplate/presentation/seo_optimization/widgets/topic_clustering_widget.dart';
@@ -9,6 +10,13 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SeoOptimizationScreen extends StatefulWidget {
+  final SeoRouteArgs args;
+
+  const SeoOptimizationScreen({
+    super.key,
+    this.args = const SeoRouteArgs(contentId: '', projectId: ''),
+  });
+
   @override
   State<SeoOptimizationScreen> createState() => _SeoOptimizationScreenState();
 }
@@ -42,11 +50,13 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
     super.initState();
     _seoStore = getIt<SeoStore>();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    _seoStore.fetchMockData();
+    _seoStore.setContext(cId: widget.args.contentId, pId: widget.args.projectId);
+    _seoStore.fetchContentInsights();
   }
 
   @override
   void dispose() {
+    _seoStore.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -59,9 +69,49 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
       body: Column(
         children: [
           _buildTabBar(),
+          Observer(
+            builder: (_) {
+              final message = _seoStore.errorMessage;
+              if (message == null || message.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return _buildErrorBanner(message);
+            },
+          ),
           Expanded(
             child: Observer(
               builder: (context) => _buildTabBarView(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner(String message) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 0.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEE2E2),
+        borderRadius: BorderRadius.circular(10.0),
+        border: Border.all(color: const Color(0xFFFCA5A5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, color: Color(0xFFB91C1C), size: 18.0),
+          const SizedBox(width: 8.0),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.montserrat(
+                fontSize: 12.0,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFB91C1C),
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -79,7 +129,9 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        'SEO Content Optimization',
+        widget.args.contentTitle?.isNotEmpty == true
+            ? 'SEO: ${widget.args.contentTitle}'
+            : 'SEO Content Optimization',
         style: GoogleFonts.oswald(
           color: Colors.black,
           fontSize: 17.0,
@@ -91,7 +143,7 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
         IconButton(
           icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0052CC)),
           tooltip: 'Refresh',
-          onPressed: () => _seoStore.fetchMockData(),
+          onPressed: () => _seoStore.fetchContentInsights(),
         ),
         const SizedBox(width: 4.0),
       ],
@@ -141,21 +193,43 @@ class _SeoOptimizationScreenState extends State<SeoOptimizationScreen>
         OnPageSeoCheckerWidget(
           items: _seoStore.onPageSeoItems,
           isLoading: _seoStore.isLoading,
+          overallScore: _calculateOverallScore(),
         ),
         TopicClusteringWidget(
           clusters: _seoStore.topicClusters,
           isLoading: _seoStore.isLoading,
+          clusterPlan: _seoStore.clusterPlan,
+          clusterJob: _seoStore.clusterJob,
+          isGeneratingCluster: _seoStore.isGeneratingCluster,
+          onGeneratePlan: _seoStore.generateClusterPlan,
+          onGenerateArticles: _seoStore.generateClusterArticles,
         ),
         InternalLinkingWidget(
           suggestions: _seoStore.internalLinkSuggestions,
           isLoading: _seoStore.isLoading,
+          isPublishing: _seoStore.isPublishing,
+          publishSuccess: _seoStore.publishSuccess,
+          onPublish: () => _seoStore.publishContent(republish: false),
+          onRepublish: () => _seoStore.publishContent(republish: true),
         ),
         ContentStructureWidget(
           items: _seoStore.contentStructureItems,
           isLoading: _seoStore.isLoading,
+          isOptimizing: _seoStore.isOptimizing,
+          onOptimize: _seoStore.optimizeContent,
         ),
       ],
     );
+  }
+
+  double? _calculateOverallScore() {
+    final scores = _seoStore.onPageSeoItems
+        .map((e) => e.score)
+        .whereType<double>()
+        .toList();
+    if (scores.isEmpty) return null;
+    final total = scores.reduce((a, b) => a + b);
+    return total / scores.length;
   }
 }
 

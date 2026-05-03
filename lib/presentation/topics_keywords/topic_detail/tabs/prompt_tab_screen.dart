@@ -6,19 +6,29 @@ class PromptTabScreen extends StatelessWidget {
     super.key,
     required this.searchController,
     required this.prompts,
+    required this.isDeletingPrompt,
+    required this.monitoringCapacity,
+    required this.isMonitoringCapacityLoading,
+    required this.monitoringCapacityError,
     required this.onOpenFilters,
     required this.onOpenAddPrompt,
     required this.onRefreshPrompt,
     required this.onDeletePrompt,
+    required this.onRetryMonitoring,
     required this.formatCreatedDate,
   });
 
   final TextEditingController searchController;
   final List<PromptItem> prompts;
+  final bool isDeletingPrompt;
+  final MonitoringCapacity? monitoringCapacity;
+  final bool isMonitoringCapacityLoading;
+  final String? monitoringCapacityError;
   final VoidCallback onOpenFilters;
   final VoidCallback onOpenAddPrompt;
   final ValueChanged<PromptItem> onRefreshPrompt;
   final ValueChanged<PromptItem> onDeletePrompt;
+  final VoidCallback onRetryMonitoring;
   final String Function(DateTime) formatCreatedDate;
 
   @override
@@ -30,6 +40,21 @@ class PromptTabScreen extends StatelessWidget {
           onOpenFilters: onOpenFilters,
           onOpenAddPrompt: onOpenAddPrompt,
         ),
+        const SizedBox(height: 12),
+        _MonitoringCapacitySection(
+          capacity: monitoringCapacity,
+          isLoading: isMonitoringCapacityLoading,
+          errorMessage: monitoringCapacityError,
+          onRetry: onRetryMonitoring,
+        ),
+        if (isDeletingPrompt) ...[
+          const SizedBox(height: 10),
+          const LinearProgressIndicator(
+            minHeight: 3,
+            color: Color(0xFFFF6A00),
+            backgroundColor: Color(0xFFEAECF0),
+          ),
+        ],
         const SizedBox(height: 12),
         Expanded(
           child: prompts.isEmpty
@@ -120,6 +145,244 @@ class _SearchAndFilterBar extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MonitoringCapacitySection extends StatelessWidget {
+  const _MonitoringCapacitySection({
+    required this.capacity,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onRetry,
+  });
+
+  final MonitoringCapacity? capacity;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading && capacity == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE4E7EC)),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+
+    if (errorMessage != null && capacity == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE4E7EC)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Color(0xFFB42318), size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                errorMessage!,
+                style: const TextStyle(
+                  color: Color(0xFF667085),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    final data = capacity;
+    if (data == null) {
+      return const SizedBox.shrink();
+    }
+
+    final trackingPercent = data.limit > 0
+        ? (data.monitoredCount / data.limit).clamp(0, 1).toDouble()
+        : 0.0;
+    final availableCount =
+      (data.totalCount - data.exhaustedCount).clamp(0, data.totalCount);
+    final canWritePercent = data.totalCount > 0
+      ? (availableCount / data.totalCount).clamp(0, 1).toDouble()
+        : 0.0;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _CapacityCounter(
+                  title: 'Monitoring',
+                  value: '${data.monitoredCount} / ${data.limit}',
+                  valueColor: const Color(0xFFB54708),
+                ),
+              ),
+              Container(width: 1, height: 74, color: const Color(0xFFEAECF0)),
+              Expanded(
+                child: _CapacityCounter(
+                  title: 'Can write blog',
+                  value: '$availableCount / ${data.totalCount}',
+                  valueColor: const Color(0xFF067647),
+                ),
+              ),
+            ],
+          ),
+          Container(height: 1, color: const Color(0xFFEAECF0)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              children: [
+                _CapacityProgressRow(
+                  dotColor: const Color(0xFFFF6A00),
+                  label: 'Tracking',
+                  ratioLabel:
+                      '${data.monitoredCount} / ${data.limit} - ${(trackingPercent * 100).toStringAsFixed(0)}%',
+                  value: trackingPercent,
+                ),
+                const SizedBox(height: 8),
+                _CapacityProgressRow(
+                  dotColor: const Color(0xFF12B76A),
+                  label: 'Can write blog',
+                  ratioLabel:
+                      '$availableCount / ${data.totalCount} - ${(canWritePercent * 100).toStringAsFixed(0)}%',
+                  value: canWritePercent,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CapacityCounter extends StatelessWidget {
+  const _CapacityCounter({
+    required this.title,
+    required this.value,
+    required this.valueColor,
+  });
+
+  final String title;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              color: Color(0xFF344054),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 28,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CapacityProgressRow extends StatelessWidget {
+  const _CapacityProgressRow({
+    required this.dotColor,
+    required this.label,
+    required this.ratioLabel,
+    required this.value,
+  });
+
+  final Color dotColor;
+  final String label;
+  final String ratioLabel;
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          width: 90,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF475467),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 6,
+              value: value,
+              valueColor: AlwaysStoppedAnimation<Color>(dotColor),
+              backgroundColor: const Color(0xFFEAECF0),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            ratioLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Color(0xFF667085),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );

@@ -16,8 +16,8 @@ import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
 import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
-import 'package:boilerplate/presentation/prompt_library/prompt_library.dart';
 import 'package:boilerplate/presentation/brand_setup/brand_setup_screen.dart';
+import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -43,7 +43,6 @@ class Routes {
   static const String aiWriter = '/ai-writer';
   static const String autoGeneration = '/auto-generation';
   static const String integrations = '/integrations';
-  static const String promptLibrary = '/prompt-library';
   static const String brandSetup = '/brand-setup';
   // Cronjob routes
   static const String cronjobList = '/cronjob/list';
@@ -65,14 +64,13 @@ class Routes {
     analysis: (BuildContext context) => AnalyticScreen(),
     performanceMonitoring: (BuildContext context) =>
         PerformanceMonitoringScreen(),
-    seoOptimization: (BuildContext context) => SeoOptimizationScreen(),
+    seoOptimization: (BuildContext context) => const SeoOptimizationScreen(),
     topicsKeywords: (BuildContext context) => TopicsKeywordsScreen(),
     allPosts: (BuildContext context) => AllPostsScreen(),
     aiWriter: (BuildContext context) => AiWriterScreen(),
     autoGeneration: (BuildContext context) => AutoGenerationScreen(),
     templateLibrary: (BuildContext context) => TemplateLibraryScreen(),
     integrations: (BuildContext context) => IntegrationsScreen(),
-    promptLibrary: (BuildContext context) => PromptLibraryScreen(),
     brandSetup: (BuildContext context) => const BrandSetupScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
@@ -82,6 +80,17 @@ class Routes {
     // Handle cronjob routes with arguments
     if (settings.name?.startsWith('/cronjob/') ?? false) {
       return CronjobRouteGenerator.generateRoute(settings);
+    }
+
+    if (settings.name == seoOptimization) {
+      final args = settings.arguments;
+      final seoArgs = args is SeoRouteArgs
+          ? args
+          : const SeoRouteArgs(contentId: '', projectId: '');
+      return MaterialPageRoute(
+        builder: (_) => SeoOptimizationScreen(args: seoArgs),
+        settings: settings,
+      );
     }
 
     // Handle standard routes

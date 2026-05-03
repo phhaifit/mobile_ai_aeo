@@ -9,6 +9,9 @@ import 'package:boilerplate/domain/usecase/overview/get_overview_metrics_usecase
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/google_login_usecase.dart';
+import 'package:boilerplate/domain/usecase/user/signup_usecase.dart';
+import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
@@ -42,7 +45,11 @@ import 'package:boilerplate/presentation/all_posts/store/all_posts_store.dart';
 import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
 import 'package:boilerplate/presentation/seo_optimization/store/seo_store.dart';
-import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/generate_cluster_articles_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/generate_cluster_plan_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/get_content_insights_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/optimize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/seo/publish_content_usecase.dart';
 import 'package:boilerplate/presentation/performance_monitoring/store/performance_monitoring_store.dart';
 import 'package:boilerplate/domain/usecase/trend/get_weekly_report_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
@@ -67,6 +74,8 @@ class StoreModule {
         getIt<IsLoggedInUseCase>(),
         getIt<SaveLoginStatusUseCase>(),
         getIt<LoginUseCase>(),
+        getIt<GoogleLoginUseCase>(),
+        getIt<UserRepository>(),
         getIt<FormErrorStore>(),
         getIt<ErrorStore>(),
       ),
@@ -115,6 +124,7 @@ class StoreModule {
 
     getIt.registerSingleton<RegisterStore>(
       RegisterStore(
+        getIt<SignupUseCase>(),
         getIt<FormErrorStore>(),
         getIt<ErrorStore>(),
       ),
@@ -143,7 +153,11 @@ class StoreModule {
     getIt.registerSingleton<SeoStore>(
       SeoStore(
         getIt<ErrorStore>(),
-        getIt<GetSeoDataUseCase>(),
+        getIt<GetContentInsightsUseCase>(),
+        getIt<GenerateClusterPlanUseCase>(),
+        getIt<GenerateClusterArticlesUseCase>(),
+        getIt<OptimizeContentUseCase>(),
+        getIt<PublishContentUseCase>(),
       ),
     );
 
