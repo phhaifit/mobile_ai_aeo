@@ -6,12 +6,16 @@ import 'package:boilerplate/data/local/datasources/seo/seo_audit_datasource.dart
 import 'package:boilerplate/data/network/apis/analytics/analytics_api.dart';
 import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
+import 'package:boilerplate/data/network/apis/content/content_profile_api.dart';
+import 'package:boilerplate/data/network/apis/prompt/prompt_api.dart';
 import 'package:boilerplate/data/network/apis/overview/overview_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
 import 'package:boilerplate/data/repository/analytics/analytics_repository_impl.dart';
 import 'package:boilerplate/data/service/google_auth_service.dart';
 import 'package:boilerplate/data/repository/content/content_repository_impl.dart';
+import 'package:boilerplate/data/repository/content/content_profile_repository_impl.dart';
+import 'package:boilerplate/data/repository/prompt/prompt_repository_impl.dart';
 import 'package:boilerplate/data/repository/cronjob_repository_impl.dart';
 import 'package:boilerplate/data/repository/overview/overview_repository_impl.dart';
 import 'package:boilerplate/data/repository/post/post_repository_impl.dart';
@@ -21,6 +25,8 @@ import 'package:boilerplate/data/repository/user/user_repository_impl.dart';
 import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
 import 'package:boilerplate/domain/repository/analytics/analytics_repository.dart';
 import 'package:boilerplate/domain/repository/content/content_repository.dart';
+import 'package:boilerplate/domain/repository/content/content_profile_repository.dart';
+import 'package:boilerplate/domain/repository/prompt/prompt_repository.dart';
 import 'package:boilerplate/domain/repository/cronjob_repository.dart';
 import 'package:boilerplate/domain/repository/overview/overview_repository.dart';
 import 'package:boilerplate/domain/repository/post/post_repository.dart';
@@ -55,6 +61,14 @@ class RepositoryModule {
 
     getIt.registerSingleton<ContentRepository>(
       ContentRepositoryImpl(getIt<ContentApi>()),
+    );
+
+    getIt.registerSingleton<ContentProfileRepository>(
+      ContentProfileRepositoryImpl(getIt<ContentProfileApi>()),
+    );
+
+    getIt.registerSingleton<PromptRepository>(
+      PromptRepositoryImpl(getIt<PromptApi>()),
     );
 
     getIt.registerSingleton<OverviewRepository>(

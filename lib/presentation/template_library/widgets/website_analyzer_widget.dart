@@ -254,12 +254,10 @@ class WebsiteAnalysisResultCard extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to template preview
-                    final template = store.industryTemplates.firstWhere(
-                      (t) => t.name == result.recommendedTemplate,
-                      orElse: () => store.industryTemplates.first,
-                    );
-                    _showVoicePreviewModal(context, template);
+                    // Navigate to first content profile
+                    if (store.contentProfiles.isNotEmpty) {
+                      _showVoicePreviewModal(context, store.contentProfiles.first);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF2196F3),
@@ -312,18 +310,18 @@ class WebsiteAnalysisResultCard extends StatelessWidget {
     );
   }
 
-  void _showVoicePreviewModal(BuildContext context, dynamic template) {
+  void _showVoicePreviewModal(BuildContext context, dynamic profile) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => VoicePreviewModal(
-        template: template,
+        profile: profile,
         onApply: () {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${template.name} style applied!'),
+              content: Text('${profile.name} style applied!'),
               duration: Duration(seconds: 2),
             ),
           );

@@ -50,7 +50,7 @@ Future<void> _setupAccessToken() async {
   try {
     final prefs = getIt<SharedPreferenceHelper>();
     const token =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkMjA2NDM5NS01OWE4LTQ5ZTgtYmFiMi1hZmZiN2I0YzgwNTgiLCJlbWFpbCI6ImRpZW50cmFuMTgwMUBnbWFpbC5jb20iLCJpYXQiOjE3NzU0NzU4NTQsImV4cCI6MTc3ODA2Nzg1NH0.g4tcyofWQiiXA4JVoz8RsYE1kotgpZ_G7jn5s7wTQaQ';
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NmFlZjgzOC0wYTFkLTQ0YTUtYjU0ZS1kYmRiODRhNzQ2ZDciLCJlbWFpbCI6ImRpZW5kaWVuMTgwMUBleGFtcGxlLmNvbSIsImlhdCI6MTc3NjQzMTAwMiwiZXhwIjoxNzc5MDIzMDAyfQ.YZI7s339jEccKba1O1Aag-MOlAxKGG7jvYQpelZM-9o';
     await prefs.saveAuthToken(token);
     print('Access token saved successfully');
   } catch (e) {

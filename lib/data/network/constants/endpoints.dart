@@ -34,6 +34,16 @@ class Endpoints {
   static String getAnalyticsMetrics(String projectId) =>
       "/api/projects/$projectId/metrics/analytics";
 
+  // content profiles endpoints
+  static String getContentProfiles(String projectId) =>
+      "/api/projects/$projectId/content-profiles";
+
+  // prompts & content generation
+  static const String promptsByProject = "/api/prompts/by-project";
+
+  static String promptContentGenerations(String promptId) =>
+      "/api/prompts/$promptId/content-generations";
+
   // ─── Feature 9: SEO Content Optimization endpoints ───────────────────────
 
   // On-page SEO Checker & Content Structure

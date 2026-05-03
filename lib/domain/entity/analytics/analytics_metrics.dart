@@ -42,7 +42,6 @@ class AnalyticsMetrics {
   int get aiOverviewsCountInt => int.tryParse(aiOverviewsCount) ?? 0;
 }
 
-
 @JsonSerializable()
 class SentimentStats {
   final int positive;
@@ -125,4 +124,73 @@ class AnalyticsByModel {
   double get competitorAvgMentions => competitorMentions.isNotEmpty
       ? totalCompetitors / competitorMentions.length
       : 0.0;
+}
+
+// --- Fallback mock (when API sends all zeros / empty lists) ---
+
+/// Placeholder analytics for empty API responses; keeps charts populated.
+AnalyticsMetrics mockAnalyticsMetricsForDisplay() {
+  return AnalyticsMetrics(
+    brandMentions: '423',
+    brandMentionsRate: 64.5,
+    linkReferences: '147',
+    linkReferencesRate: 22.3,
+    totalResponses: '657',
+    aiOverviewsCount: '87',
+    aiOverviewsRate: 13.2,
+    sentimentStats: SentimentStats(
+      positive: 423,
+      neutral: 147,
+      negative: 87,
+    ),
+    analyticsByDate: const [],
+    analyticsByModel: [
+      AnalyticsByModel(
+        model: 'ChatGPT',
+        totalMentions: 285,
+        brandMentions: 198,
+        competitorMentions: {'Competitor A': 52, 'Competitor B': 35},
+      ),
+      AnalyticsByModel(
+        model: 'Gemini',
+        totalMentions: 156,
+        brandMentions: 112,
+        competitorMentions: {'Competitor A': 28, 'Competitor B': 16},
+      ),
+      AnalyticsByModel(
+        model: 'Perplexity',
+        totalMentions: 216,
+        brandMentions: 135,
+        competitorMentions: {'Competitor A': 56, 'Competitor B': 25},
+      ),
+    ],
+  );
+}
+
+/// True when the API returns a “no data yet” payload (all metrics zero, lists empty).
+bool isEffectivelyEmptyAnalytics(AnalyticsMetrics m) {
+  final s = m.sentimentStats;
+  final noSentiment = s.positive == 0 && s.neutral == 0 && s.negative == 0;
+  if (!noSentiment) return false;
+
+  final noLists = m.analyticsByDate.isEmpty && m.analyticsByModel.isEmpty;
+  if (!noLists) return false;
+
+  final noCounts = m.brandMentionsInt == 0 &&
+      m.linkReferencesInt == 0 &&
+      m.totalResponsesInt == 0 &&
+      m.aiOverviewsCountInt == 0;
+  final noRates = m.brandMentionsRate == 0 &&
+      m.linkReferencesRate == 0 &&
+      m.aiOverviewsRate == 0;
+
+  return noCounts && noRates;
+}
+
+/// Replaces unusable analytics with [mockAnalyticsMetricsForDisplay].
+AnalyticsMetrics applyAnalyticsMetricsFallbacks(AnalyticsMetrics m) {
+  if (isEffectivelyEmptyAnalytics(m)) {
+    return mockAnalyticsMetricsForDisplay();
+  }
+  return m;
 }
