@@ -318,8 +318,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         TextButton(
           style: TextButton.styleFrom(
@@ -367,20 +368,34 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        RoundedButtonWidget(
-          buttonText:
-              AppLocalizations.of(context).translate('login_btn_sign_in'),
-          buttonColor: _primaryOrange,
-          textColor: Colors.white,
-          onPressed: () async {
-            if (_formStore.canLogin) {
-              DeviceUtils.hideKeyboard(context);
-              _userStore.login(
-                  _userEmailController.text, _passwordController.text);
-            } else {
-              _showErrorMessage('Please enter valid corporate credentials');
-            }
-          },
+        Observer(
+          builder: (_) => RoundedButtonWidget(
+            buttonText: _userStore.isEmailLoading
+                ? 'Signing in...'
+                : AppLocalizations.of(context).translate('login_btn_sign_in'),
+            buttonColor: _primaryOrange,
+            textColor: Colors.white,
+            onPressed: _userStore.isEmailLoading
+                ? () {}
+                : () async {
+                    if (_formStore.canLogin) {
+                      DeviceUtils.hideKeyboard(context);
+                      await _userStore.login(
+                          _userEmailController.text, _passwordController.text);
+                      if (_userStore.loginError != null && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(_userStore.loginError!),
+                            backgroundColor: Colors.red,
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    } else {
+                      _showErrorMessage('Please enter valid corporate credentials');
+                    }
+                  },
+          ),
         ),
         const SizedBox(height: 16.0),
         _buildGoogleSignInButton(),
@@ -390,44 +405,83 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildGoogleSignInButton() {
     bool isDark = _themeStore.darkMode;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          _showErrorMessage('Google Sign-In - Mock Implementation');
-          // Mock Google Sign-In
-          Future.delayed(const Duration(seconds: 1), () {
-            _userStore.login('user@google.com', 'mock_password');
-          });
-        },
-        borderRadius: BorderRadius.circular(12.0),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-              width: 1.5,
+    return Observer(
+      builder: (_) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _userStore.isGoogleLoading
+              ? null
+              : () async {
+                  try {
+                    await _userStore.loginWithGoogle();
+                    if (_userStore.success && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Đăng nhập Google thành công!'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // Error is handled in store
+                  }
+                  if (_userStore.googleLoginError != null && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Đăng nhập thất bại: ${_userStore.googleLoginError}',
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                },
+          borderRadius: BorderRadius.circular(12.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(12.0),
             ),
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.g_mobiledata,
-                size: 24.0,
-                color: Colors.red.shade400,
-              ),
-              const SizedBox(width: 12.0),
-              Text(
-                'Continue with Google',
-                style: TextStyle(
-                  fontSize: 15.0,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_userStore.isGoogleLoading)
+                  SizedBox(
+                    width: 20.0,
+                    height: 20.0,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.g_mobiledata,
+                    size: 24.0,
+                    color: Colors.red.shade400,
+                  ),
+                const SizedBox(width: 12.0),
+                Flexible(
+                  child: Text(
+                    _userStore.isGoogleLoading
+                        ? 'Đang đăng nhập...'
+                        : 'Continue with Google',
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -439,9 +493,18 @@ class _LoginScreenState extends State<LoginScreen> {
       prefs.setBool(Preferences.is_logged_in, true);
     });
 
-    Future.delayed(const Duration(milliseconds: 0), () {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-          Routes.home, (Route<dynamic> route) => false);
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng nhập thành công!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        Navigator.of(context).pushNamedAndRemoveUntil(
+            Routes.dashboard, (Route<dynamic> route) => false);
+      }
     });
 
     return Container();

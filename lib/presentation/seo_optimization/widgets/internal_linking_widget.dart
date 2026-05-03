@@ -5,11 +5,19 @@ import 'package:google_fonts/google_fonts.dart';
 class InternalLinkingWidget extends StatelessWidget {
   final List<InternalLinkSuggestion> suggestions;
   final bool isLoading;
+  final bool isPublishing;
+  final bool publishSuccess;
+  final Future<void> Function() onPublish;
+  final Future<void> Function() onRepublish;
 
   const InternalLinkingWidget({
     Key? key,
     required this.suggestions,
     required this.isLoading,
+    required this.isPublishing,
+    required this.publishSuccess,
+    required this.onPublish,
+    required this.onRepublish,
   }) : super(key: key);
 
   @override
@@ -24,6 +32,19 @@ class InternalLinkingWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInfoBanner(),
+          const SizedBox(height: 16.0),
+          _buildPublishActions(),
+          if (publishSuccess) ...[
+            const SizedBox(height: 10.0),
+            Text(
+              'Publish completed. Internal linking flow was triggered.',
+              style: GoogleFonts.montserrat(
+                fontSize: 12.0,
+                color: const Color(0xFF16A34A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: 16.0),
           _buildSectionHeader(
             'Suggested Links',
@@ -51,7 +72,7 @@ class InternalLinkingWidget extends StatelessWidget {
           const SizedBox(width: 10.0),
           Expanded(
             child: Text(
-              'AI has identified internal linking opportunities based on semantic similarity between your pages.',
+              'Publish/Republish triggers backend auto-linking. Suggestions below help you review likely internal links.',
               style: GoogleFonts.montserrat(
                 fontSize: 12.0,
                 color: const Color(0xFF1D4ED8),
@@ -61,6 +82,28 @@ class InternalLinkingWidget extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPublishActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: isPublishing ? null : onPublish,
+            icon: const Icon(Icons.publish_outlined),
+            label: const Text('Publish'),
+          ),
+        ),
+        const SizedBox(width: 10.0),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: isPublishing ? null : onRepublish,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Republish'),
+          ),
+        ),
+      ],
     );
   }
 

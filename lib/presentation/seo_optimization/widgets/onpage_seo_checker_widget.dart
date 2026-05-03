@@ -6,11 +6,13 @@ import 'package:google_fonts/google_fonts.dart';
 class OnPageSeoCheckerWidget extends StatelessWidget {
   final List<SeoCheckItem> items;
   final bool isLoading;
+  final double? overallScore;
 
   const OnPageSeoCheckerWidget({
     Key? key,
     required this.items,
     required this.isLoading,
+    this.overallScore,
   }) : super(key: key);
 
   @override
@@ -28,6 +30,10 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (overallScore != null) ...[
+            _buildOverallScore(overallScore!),
+            const SizedBox(height: 12.0),
+          ],
           // Summary row
           _buildSummaryRow(passCount, warnCount, failCount),
           const SizedBox(height: 16.0),
@@ -36,6 +42,35 @@ class OnPageSeoCheckerWidget extends StatelessWidget {
           _buildSectionHeader('SEO Checklist'),
           const SizedBox(height: 12.0),
           ...items.map((item) => _buildCheckItem(item)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverallScore(double score) {
+    final int rounded = score.round();
+    final Color color =
+        rounded >= 80 ? const Color(0xFF22C55E) : const Color(0xFFF59E0B);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.query_stats, color: color),
+          const SizedBox(width: 8.0),
+          Text(
+            'Overall SEO Score: $rounded/100',
+            style: GoogleFonts.montserrat(
+              fontSize: 13.0,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

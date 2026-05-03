@@ -4,6 +4,7 @@ import 'package:boilerplate/data/local/datasource/cronjob_datasource_impl.dart';
 import 'package:boilerplate/data/local/datasources/post/post_datasource.dart';
 import 'package:boilerplate/data/local/datasources/seo/seo_audit_datasource.dart';
 import 'package:boilerplate/data/network/apis/analytics/analytics_api.dart';
+import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_profile_api.dart';
 import 'package:boilerplate/data/network/apis/prompt/prompt_api.dart';
@@ -11,6 +12,7 @@ import 'package:boilerplate/data/network/apis/overview/overview_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
 import 'package:boilerplate/data/repository/analytics/analytics_repository_impl.dart';
+import 'package:boilerplate/data/service/google_auth_service.dart';
 import 'package:boilerplate/data/repository/content/content_repository_impl.dart';
 import 'package:boilerplate/data/repository/content/content_profile_repository_impl.dart';
 import 'package:boilerplate/data/repository/prompt/prompt_repository_impl.dart';
@@ -48,6 +50,8 @@ class RepositoryModule {
 
     getIt.registerSingleton<UserRepository>(UserRepositoryImpl(
       getIt<SharedPreferenceHelper>(),
+      getIt<AuthApi>(),
+      getIt<GoogleAuthService>(),
     ));
 
     getIt.registerSingleton<PostRepository>(PostRepositoryImpl(
@@ -80,7 +84,7 @@ class RepositoryModule {
     );
 
     getIt.registerSingleton<seo_opt.SeoRepository>(
-      seo_opt.SeoRepositoryImpl(),
+      seo_opt.SeoRepositoryImpl(getIt<SeoApi>()),
     );
     // cronjob repository:------------------------------------------------------
     getIt.registerSingleton<CronjobRepository>(CronjobRepositoryImpl(

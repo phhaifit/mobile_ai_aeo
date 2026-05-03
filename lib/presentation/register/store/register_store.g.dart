@@ -65,13 +65,46 @@ mixin _$RegisterStore on _RegisterStore, Store {
     });
   }
 
+  late final _$registerErrorAtom =
+      Atom(name: '_RegisterStore.registerError', context: context);
+
+  @override
+  String? get registerError {
+    _$registerErrorAtom.reportRead();
+    return super.registerError;
+  }
+
+  @override
+  set registerError(String? value) {
+    _$registerErrorAtom.reportWrite(value, super.registerError, () {
+      super.registerError = value;
+    });
+  }
+
+  late final _$successMessageAtom =
+      Atom(name: '_RegisterStore.successMessage', context: context);
+
+  @override
+  String? get successMessage {
+    _$successMessageAtom.reportRead();
+    return super.successMessage;
+  }
+
+  @override
+  set successMessage(String? value) {
+    _$successMessageAtom.reportWrite(value, super.successMessage, () {
+      super.successMessage = value;
+    });
+  }
+
   late final _$registerAsyncAction =
       AsyncAction('_RegisterStore.register', context: context);
 
   @override
-  Future<void> register(String email, String password, String confirmPassword) {
+  Future<void> register(
+      String fullName, String email, String password, String confirmPassword) {
     return _$registerAsyncAction
-        .run(() => super.register(email, password, confirmPassword));
+        .run(() => super.register(fullName, email, password, confirmPassword));
   }
 
   late final _$_RegisterStoreActionController =
@@ -105,6 +138,8 @@ mixin _$RegisterStore on _RegisterStore, Store {
 success: ${success},
 agreedToTerms: ${agreedToTerms},
 registerFuture: ${registerFuture},
+registerError: ${registerError},
+successMessage: ${successMessage},
 isLoading: ${isLoading}
     ''';
   }

@@ -77,9 +77,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             : Center(child: _buildRightSide()),
         Observer(
           builder: (context) {
-            return _registerStore.success
-                ? navigate(context)
-                : _showErrorMessage(_errorStore.errorMessage);
+            if (_registerStore.success) {
+              return navigate(context);
+            }
+            if (_registerStore.registerError != null) {
+              return _showErrorMessage(_registerStore.registerError!);
+            }
+            return _showErrorMessage(_errorStore.errorMessage);
           },
         ),
         Observer(
@@ -345,6 +349,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
         await _registerStore.register(
+          _fullnameController.text,
           _emailController.text,
           _passwordController.text,
           _passwordController.text,
@@ -390,8 +395,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget navigate(BuildContext context) {
     Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-          Routes.home, (Route<dynamic> route) => false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_registerStore.successMessage ?? 'Đăng ký thành công! Hãy đăng nhập.'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        Navigator.of(context).pushNamedAndRemoveUntil(
+            Routes.login, (Route<dynamic> route) => false);
+      }
     });
 
     return Container();
