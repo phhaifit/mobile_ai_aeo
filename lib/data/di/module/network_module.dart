@@ -4,6 +4,7 @@ import 'package:boilerplate/core/data/network/dio/dio_client.dart';
 import 'package:boilerplate/core/data/network/dio/interceptors/auth_interceptor.dart';
 import 'package:boilerplate/core/data/network/dio/interceptors/logging_interceptor.dart';
 import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
+import 'package:boilerplate/data/network/apis/content_agent/content_agent_api.dart';
 import 'package:boilerplate/data/network/apis/analytics/analytics_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_profile_api.dart';
@@ -86,6 +87,7 @@ class NetworkModule {
     // api's:-------------------------------------------------------------------
     getIt.registerSingleton(AuthApi(getIt<DioClient>()));
     getIt.registerSingleton(PostApi(getIt<DioClient>()));
+    getIt.registerSingleton(ContentAgentApi(getIt<DioClient>()));
     getIt.registerSingleton(OverviewApi(getIt<DioClient>()));
     getIt.registerSingleton(AnalyticsApi(getIt<DioClient>()));
     getIt.registerSingleton(ContentProfileApi(getIt<DioClient>()));

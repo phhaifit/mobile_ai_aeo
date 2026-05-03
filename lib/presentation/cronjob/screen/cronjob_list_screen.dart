@@ -4,12 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/cronjob/store/cronjob_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/cronjob_execution_store.dart';
+import 'package:boilerplate/presentation/cronjob/store/content_agent_store.dart';
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 
-import 'package:boilerplate/presentation/cronjob/widget/empty_state.dart';
-import 'package:boilerplate/presentation/cronjob/widget/error_banner.dart';
+
 
 import 'package:boilerplate/utils/locale/app_localization.dart';
+import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
 
 
 /// Main screen for viewing and managing cronjobs
@@ -22,6 +23,8 @@ class CronjobListScreen extends StatefulWidget {
 
 class _CronjobListScreenState extends State<CronjobListScreen> {
   late CronjobStore _cronjobStore;
+  late ContentAgentStore _contentAgentStore;
+  String? _projectId;
   int _pageSize = 5; // Default page size
   int _currentPage = 1; // Current page number
   
@@ -38,9 +41,59 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
   void initState() {
     super.initState();
     _cronjobStore = getIt<CronjobStore>();
+    _contentAgentStore = getIt<ContentAgentStore>();
     
     // Load cronjobs on screen init
     _cronjobStore.loadCronjobs();
+    // Load real agents & executions
+    _loadAgentsAndExecutions();
+  }
+
+  Future<void> _loadAgentsAndExecutions() async {
+    try {
+      final prefs = getIt<SharedPreferenceHelper>();
+      final pid = (await prefs.currentProjectId)?.trim();
+      // ignore: avoid_print
+      print('[CronjobScreen] projectId from prefs: $pid');
+      if (pid != null && pid.isNotEmpty) {
+        _projectId = pid;
+      }
+      await _contentAgentStore.loadAgents();
+      await _loadExecutions();
+    } catch (e) {
+      // ignore: avoid_print
+      print('[CronjobScreen] _loadAgentsAndExecutions error: $e');
+    }
+  }
+
+  Future<void> _loadExecutions() async {
+    if (_projectId == null) return;
+    // Map UI filter statuses to API status values
+    final apiStatuses = _selectedStatuses.map((s) {
+      switch (s) {
+        case 'Success': return 'DONE';
+        case 'Failed': return 'FAILED';
+        default: return s.toUpperCase();
+      }
+    }).toList();
+    // Map UI agent type labels to API enum values
+    final apiAgentTypes = _selectedAgentTypes.map((a) {
+      switch (a) {
+        case 'Blog Agent': return 'BLOG_GENERATOR';
+        case 'Social Agent': return 'SOCIAL_MEDIA_GENERATOR';
+        default: return a;
+      }
+    }).toList();
+
+    await _contentAgentStore.loadExecutions(
+      _projectId!,
+      page: _currentPage,
+      limit: _pageSize,
+      statuses: apiStatuses.isNotEmpty ? apiStatuses : null,
+      agentTypes: apiAgentTypes.isNotEmpty ? apiAgentTypes : null,
+      startDate: _selectedDateRange?.start,
+      endDate: _selectedDateRange?.end,
+    );
   }
 
   @override
@@ -130,53 +183,9 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
       floatingActionButton: const SizedBox.shrink(),
       body: Observer(
         builder: (_) {
-          // Loading state
-          if (_cronjobStore.isLoading && _cronjobStore.cronjobs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: theme.primaryColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.translate('cronjob_error_loading'),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Error state
-          if (_cronjobStore.hasError) {
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  ErrorBanner(
-                    message: _cronjobStore.errorMessage ?? l10n.translate('cronjob_error_loading'),
-                    onDismiss: _cronjobStore.clearError,
-                    onRetry: _cronjobStore.loadCronjobs,
-                  ),
-                  // Show new design or empty state
-                  if (_cronjobStore.cronjobs.isEmpty)
-                    EmptyState(onCreatePressed: _handleCreate),
-                  if (_cronjobStore.cronjobs.isNotEmpty)
-                    _buildCompleteLayout(),
-                ],
-              ),
-            );
-          }
-
-          // Empty state
-          if (_cronjobStore.cronjobs.isEmpty) {
-            return EmptyState(onCreatePressed: _handleCreate);
-          }
-
-          // Success state - display list
+          // Always render the complete layout (agents & executions from contentAgentStore)
           return RefreshIndicator(
-            onRefresh: () => _cronjobStore.loadCronjobs(),
+            onRefresh: _loadAgentsAndExecutions,
             color: theme.primaryColor,
             child: _buildCompleteLayout(),
           );
@@ -243,7 +252,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                   // Info Banner
                   Observer(
                     builder: (_) {
-                      final hasActiveAgent = _cronjobStore.activeAgentType != null;
+                      final hasActiveAgent = _contentAgentStore.activeAgentCount > 0;
                       
                       if (hasActiveAgent) {
                         // Active state - show success message
@@ -381,126 +390,134 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
     );
   }
 
-  /// Build performance section matching the exact design
+  /// Build performance section using real API stats
   Widget _buildPerformanceSection() {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Observer(
+      builder: (_) {
+        final rate = _contentAgentStore.successRate;
+        final successCnt = _contentAgentStore.successCount;
+        final failCnt = _contentAgentStore.failCount;
+        final progress = rate / 100.0;
+        final rateText = '${rate.toStringAsFixed(0)}%';
+
+        return Card(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Agent Performance',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Agent Performance',
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Icon(Icons.trending_up, color: Colors.blue, size: 20),
+                  ],
                 ),
-                Icon(Icons.trending_up, color: Colors.blue, size: 20),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Circular Progress Indicator with centered text
-            Center(
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 160,
-                    height: 160,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Custom circular progress
-                        SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: CustomPaint(
-                            painter: CircleProgressPainter(
-                              progress: 0.923,
-                              strokeWidth: 6,
-                              backgroundColor: Colors.grey.shade300,
-                              valueColor: Colors.red,
-                            ),
-                          ),
-                        ),
-                        // Text in center
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 16),
+                // Circular Progress Indicator with centered text
+                Center(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        height: 160,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            Text(
-                              '92%',
-                              style: GoogleFonts.oswald(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 48,
-                                color: Colors.red,
+                            SizedBox(
+                              width: 160,
+                              height: 160,
+                              child: CustomPaint(
+                                painter: CircleProgressPainter(
+                                  progress: progress.clamp(0.0, 1.0),
+                                  strokeWidth: 6,
+                                  backgroundColor: Colors.grey.shade300,
+                                  valueColor: Colors.red,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'success',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 13,
-                                color: Colors.grey.shade600,
-                              ),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  rateText,
+                                  style: GoogleFonts.oswald(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 48,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'success',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Average success rate of all agents in the last 30 days.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Stats Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.check_circle_outline,
-                    iconColor: Colors.teal,
-                    label: 'Success',
-                    value: '24',
-                    subtitle: 'Total articles',
-                    theme: theme,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Average success rate of all agents in the last 30 days.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.cancel_outlined,
-                    iconColor: Colors.red,
-                    label: 'Failed',
-                    value: '2',
-                    subtitle: 'Total errors',
-                    theme: theme,
-                  ),
+                const SizedBox(height: 24),
+                // Stats Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.check_circle_outline,
+                        iconColor: Colors.teal,
+                        label: 'Success',
+                        value: '$successCnt',
+                        subtitle: 'Total articles',
+                        theme: theme,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.cancel_outlined,
+                        iconColor: Colors.red,
+                        label: 'Failed',
+                        value: '$failCnt',
+                        subtitle: 'Total errors',
+                        theme: theme,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -562,51 +579,121 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
     );
   }
   
-  /// Build 3 agent type cards
+  /// Build agent cards from real API data
   Widget _buildAgentCards(ThemeData theme, AppLocalizations l10n) {
-    final agentTypes = [
-      {
-        'type': 'website',
-        'title': 'Auto-post to Website',
-        'description': 'Write articles for your website (CMS integration)',
-        'icon': Icons.language_outlined,
-      },
-      {
-        'type': 'social',
-        'title': 'Social Media Generator',
-        'description': 'Write Social Media posts for your categories automatically.',
-        'icon': Icons.share_outlined,
-      },
-      {
-        'type': 'training',
-        'title': 'Blog Generator',
-        'description': 'Write SEO blog posts for your categories automatically.',
-        'icon': Icons.newspaper_outlined,
-      },
-    ];
-    
-    return Column(
-      children: agentTypes.map((agent) {
-        return _buildAgentCard(
-          agent: agent,
-          theme: theme,
-          isActive: _cronjobStore.isAgentActive(agent['type'] as String),
-          onActivate: () => _handleActivateAgent(
-            agent['type'] as String,
-            agent['title'] as String,
-          ),
+    return Observer(
+      builder: (_) {
+        if (_contentAgentStore.isLoadingAgents) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (_contentAgentStore.agentsError != null) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _contentAgentStore.agentsError!,
+                          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.red),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          _contentAgentStore.clearAgentsError();
+                          _contentAgentStore.loadAgents();
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        if (_contentAgentStore.agents.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'No agents found.',
+              style: GoogleFonts.montserrat(
+                  fontSize: 13, color: Colors.grey.shade600),
+            ),
+          );
+        }
+        return Column(
+          children: _contentAgentStore.agents.map((agentData) {
+            final agentId = agentData['id'] as String;
+            final agentType = agentData['agentType'] as String;
+            final isActive = agentData['isActive'] == true;
+            final lastRunAt = agentData['lastRunAt'] as String?;
+            final postsPerDay = (agentData['postsPerDay'] as num?)?.toInt() ?? 0;
+            final isToggling = _contentAgentStore.togglingAgentId == agentId;
+
+            final title = agentType == 'BLOG_GENERATOR'
+                ? 'Blog Generator'
+                : 'Social Media Generator';
+            final description = agentType == 'BLOG_GENERATOR'
+                ? 'Write SEO blog posts for your categories automatically.'
+                : 'Write Social Media posts for your categories automatically.';
+            final icon = agentType == 'BLOG_GENERATOR'
+                ? Icons.newspaper_outlined
+                : Icons.share_outlined;
+
+            return _buildAgentCard(
+              agentId: agentId,
+              title: title,
+              description: description,
+              icon: icon,
+              isActive: isActive,
+              lastRunAt: lastRunAt,
+              postsPerDay: postsPerDay,
+              isToggling: isToggling,
+              theme: theme,
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 
-  /// Build individual agent card
+  /// Build individual agent card using real API data
   Widget _buildAgentCard({
-    required Map<String, dynamic> agent,
-    required ThemeData theme,
+    required String agentId,
+    required String title,
+    required String description,
+    required IconData icon,
     required bool isActive,
-    required VoidCallback onActivate,
+    required String? lastRunAt,
+    required int postsPerDay,
+    required bool isToggling,
+    required ThemeData theme,
   }) {
+    String lastRunText = 'LAST RUN: NEVER RUN';
+    if (lastRunAt != null) {
+      try {
+        final dt = DateTime.parse(lastRunAt).toLocal();
+        lastRunText =
+            'LAST RUN: ${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (_) {}
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -634,7 +721,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          agent['title'] as String,
+                          title,
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
@@ -644,7 +731,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          agent['description'] as String,
+                          description,
                           style: GoogleFonts.montserrat(
                             color: Colors.grey.shade700,
                             fontSize: 12,
@@ -657,9 +744,12 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isActive ? Colors.green.withOpacity(0.15) : Colors.green.withOpacity(0.1),
+                      color: isActive
+                          ? Colors.green.withOpacity(0.15)
+                          : Colors.grey.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -667,25 +757,26 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                       style: GoogleFonts.montserrat(
                         fontWeight: FontWeight.w700,
                         fontSize: 9,
-                        color: Colors.green,
+                        color: isActive ? Colors.green : Colors.grey.shade600,
                         letterSpacing: 0.4,
                       ),
                     ),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
               Divider(color: Colors.grey.shade200, height: 1),
               const SizedBox(height: 12),
-              
+
               // Last run info
               Row(
                 children: [
-                  Icon(Icons.schedule_outlined, size: 12, color: Colors.grey.shade600),
+                  Icon(Icons.schedule_outlined,
+                      size: 12, color: Colors.grey.shade600),
                   const SizedBox(width: 6),
                   Text(
-                    'LAST RUN: NEVER RUN',
+                    lastRunText,
                     style: GoogleFonts.montserrat(
                       fontSize: 10,
                       color: Colors.grey.shade600,
@@ -695,24 +786,25 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                   ),
                 ],
               ),
-              
+
               // Show activation info if active
-              if (isActive)
-              ...[
+              if (isActive) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.green.withOpacity(0.15)),
+                    border:
+                        Border.all(color: Colors.green.withOpacity(0.15)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          const Icon(Icons.check_circle,
+                              color: Colors.green, size: 16),
                           const SizedBox(width: 8),
                           Text(
                             'Agent Activated!',
@@ -722,20 +814,11 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                               color: Colors.green,
                             ),
                           ),
-                          const Spacer(),
-                          Text(
-                            'JUST NOW',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 9,
-                              color: Colors.green.shade600,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'This agent will generate 100 posts per day',
+                        'This agent will generate $postsPerDay posts per day',
                         style: GoogleFonts.montserrat(
                           fontSize: 10,
                           color: Colors.green.shade700,
@@ -746,18 +829,22 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                   ),
                 ),
               ],
-              
+
               const SizedBox(height: 16),
-              
+
               // Action buttons
-              if (isActive)
+              if (isToggling)
+                const Center(child: CircularProgressIndicator())
+              else if (isActive)
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _handlePauseAgent(agent['type'] as String),
+                        onPressed: () =>
+                            _handlePauseAgent(agentId),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 10),
                           backgroundColor: Colors.grey.shade600,
                           foregroundColor: Colors.white,
                           elevation: 0,
@@ -765,9 +852,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                         child: const Text(
                           'Pause',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
+                              fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                       ),
                     ),
@@ -775,12 +860,14 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => _handleConfigureAgent(
-                          agent['type'].toString().toLowerCase(),
-                          agent['title'] as String,
+                          agentId,
+                          title,
                         ),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          side: BorderSide(color: Colors.grey.shade400, width: 1),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 10),
+                          side: BorderSide(
+                              color: Colors.grey.shade400, width: 1),
                         ),
                         child: Text(
                           'Configure',
@@ -799,9 +886,11 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: onActivate,
+                        onPressed: () =>
+                            _handleActivateAgent(agentId, title),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 10),
                           backgroundColor: Colors.deepOrange,
                           foregroundColor: Colors.white,
                           elevation: 0,
@@ -809,9 +898,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                         child: const Text(
                           'Activate',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
+                              fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                       ),
                     ),
@@ -819,12 +906,14 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => _handleConfigureAgent(
-                          agent['type'].toString().toLowerCase(),
-                          agent['title'] as String,
+                          agentId,
+                          title,
                         ),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          side: BorderSide(color: Colors.grey.shade400, width: 1),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 10),
+                          side: BorderSide(
+                              color: Colors.grey.shade400, width: 1),
                         ),
                         child: Text(
                           'Configure',
@@ -845,192 +934,56 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
     );
   }
   
-  /// Build execution history table with mock data
-  Widget _buildExecutionHistoryTable(ThemeData theme) {
-    // Mock execution history data
-    final mockExecutions = [
-      {
-        'time': '2:30 PM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'How to Build a Productive Morning Routine',
-        'status': 'Success',
-        'duration': '2m 34s',
-        'date': '2026-03-22',
-      },
-      {
-        'time': '1:15 PM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'Top 5 Productivity Tips for Entrepreneurs',
-        'status': 'Success',
-        'duration': '1m 12s',
-        'date': '2026-03-22',
-      },
-      {
-        'time': '12:45 PM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'Complete Guide to AI Writing Tools',
-        'status': 'Success',
-        'duration': '3m 45s',
-        'date': '2026-03-22',
-      },
-      {
-        'time': '11:30 AM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'Why Personal Branding Matters in 2026',
-        'status': 'Failed',
-        'duration': '1m 05s',
-        'date': '2026-03-21',
-      },
-      {
-        'time': '10:00 AM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'Best Practices for Content Marketing',
-        'status': 'Success',
-        'duration': '2m 18s',
-        'date': '2026-03-21',
-      },
-      {
-        'time': '9:45 AM',
-        'agent': 'Website Agent',
-        'agentType': 'Website Agent',
-        'title': 'SEO Strategies for 2026',
-        'status': 'Success',
-        'duration': '4m 15s',
-        'date': '2026-03-21',
-      },
-      {
-        'time': '8:30 AM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'The Future of Digital Marketing',
-        'status': 'Failed',
-        'duration': '1m 30s',
-        'date': '2026-03-20',
-      },
-      {
-        'time': '7:15 AM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'Growth Hacking Tactics That Actually Work',
-        'status': 'Success',
-        'duration': '2m 45s',
-        'date': '2026-03-20',
-      },
-      {
-        'time': '6:00 PM',
-        'agent': 'Website Agent',
-        'agentType': 'Website Agent',
-        'title': 'Building High-Performing Websites',
-        'status': 'Pending',
-        'duration': '0m 00s',
-        'date': '2026-03-20',
-      },
-      {
-        'time': '5:30 PM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'Content Strategy for SaaS Companies',
-        'status': 'Success',
-        'duration': '3m 22s',
-        'date': '2026-03-19',
-      },
-      {
-        'time': '4:15 PM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'Influencer Marketing Guide',
-        'status': 'Success',
-        'duration': '2m 10s',
-        'date': '2026-03-19',
-      },
-      {
-        'time': '3:00 PM',
-        'agent': 'Website Agent',
-        'agentType': 'Website Agent',
-        'title': 'User Experience Best Practices',
-        'status': 'Failed',
-        'duration': '1m 45s',
-        'date': '2026-03-19',
-      },
-      {
-        'time': '2:30 PM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'Copywriting Tips for Better Conversions',
-        'status': 'Success',
-        'duration': '2m 55s',
-        'date': '2026-03-18',
-      },
-      {
-        'time': '1:45 PM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'LinkedIn Content Strategy',
-        'status': 'Success',
-        'duration': '1m 50s',
-        'date': '2026-03-18',
-      },
-      {
-        'time': '12:30 PM',
-        'agent': 'Website Agent',
-        'agentType': 'Website Agent',
-        'title': 'Mobile-First Design Principles',
-        'status': 'Pending',
-        'duration': '0m 00s',
-        'date': '2026-03-18',
-      },
-      {
-        'time': '11:15 AM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'Email Marketing Automation Guide',
-        'status': 'Success',
-        'duration': '3m 10s',
-        'date': '2026-03-17',
-      },
-      {
-        'time': '10:30 AM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'TikTok Marketing for Brands',
-        'status': 'Failed',
-        'duration': '2m 20s',
-        'date': '2026-03-17',
-      },
-      {
-        'time': '9:15 AM',
-        'agent': 'Website Agent',
-        'agentType': 'Website Agent',
-        'title': 'Web Performance Optimization',
-        'status': 'Success',
-        'duration': '4m 05s',
-        'date': '2026-03-17',
-      },
-      {
-        'time': '8:45 AM',
-        'agent': 'Blog Agent',
-        'agentType': 'Blog Agent',
-        'title': 'Personal Finance Blog Writing',
-        'status': 'Success',
-        'duration': '2m 40s',
-        'date': '2026-03-16',
-      },
-      {
-        'time': '7:30 AM',
-        'agent': 'Social Agent',
-        'agentType': 'Social Agent',
-        'title': 'Instagram Reels Strategy Guide',
-        'status': 'Success',
-        'duration': '1m 55s',
-        'date': '2026-03-16',
-      },
-    ];
+  /// Map API execution item to display format
+  Map<String, dynamic> _mapApiExecution(Map<String, dynamic> e) {
+    final createdAt = e['createdAt'] as String?;
+    String timeStr = '';
+    String dateStr = '';
+    if (createdAt != null) {
+      try {
+        final dt = DateTime.parse(createdAt).toLocal();
+        final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+        final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+        timeStr =
+            '$hour:${dt.minute.toString().padLeft(2, '0')} $ampm';
+        dateStr =
+            '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      } catch (_) {}
+    }
+    final rawType = (e['agentType'] as String?) ?? '';
+    final agentLabel = rawType == 'BLOG_GENERATOR'
+        ? 'Blog Agent'
+        : rawType == 'SOCIAL_MEDIA_GENERATOR'
+            ? 'Social Agent'
+            : rawType;
+    final rawStatus = (e['status'] as String?) ?? '';
+    final statusLabel = rawStatus == 'DONE'
+        ? 'Success'
+        : rawStatus == 'FAILED'
+            ? 'Failed'
+            : rawStatus == 'IN_PROGRESS'
+                ? 'Running'
+                : rawStatus;
+    final durationSec = (e['durationSeconds'] as num?)?.toInt();
+    String durationStr = '—';
+    if (durationSec != null) {
+      final mins = durationSec ~/ 60;
+      final secs = durationSec % 60;
+      durationStr = '${mins}m ${secs.toString().padLeft(2, '0')}s';
+    }
+    return {
+      'time': timeStr,
+      'date': dateStr,
+      'agent': agentLabel,
+      'agentType': agentLabel,
+      'title': (e['articleTitle'] as String?) ?? '—',
+      'status': statusLabel,
+      'duration': durationStr,
+    };
+  }
 
+  /// Build execution history table with real API data
+  Widget _buildExecutionHistoryTable(ThemeData theme) {
     // PHẦN 1: Filter button - OUTSIDE CARD, FULL WIDTH
     final filterButton = Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -1124,12 +1077,16 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                       ..._selectedAgentTypes.map((agent) => _buildFilterTag('Agent: $agent', () {
                         setState(() {
                           _selectedAgentTypes.remove(agent);
+                          _currentPage = 1;
                         });
+                        _loadExecutions();
                       })),
                       ..._selectedStatuses.map((status) => _buildFilterTag('Status: $status', () {
                         setState(() {
                           _selectedStatuses.remove(status);
+                          _currentPage = 1;
                         });
+                        _loadExecutions();
                       })),
                       if (_selectedDateRange != null)
                         _buildFilterTag(
@@ -1137,7 +1094,9 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                           () {
                             setState(() {
                               _selectedDateRange = null;
+                              _currentPage = 1;
                             });
+                            _loadExecutions();
                           },
                         ),
                     ],
@@ -1151,6 +1110,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                         _selectedDateRange = null;
                         _currentPage = 1;
                       });
+                      _loadExecutions();
                     },
                     child: Text(
                       'Clear all',
@@ -1250,24 +1210,35 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                 ),
                 Divider(height: 1, color: Colors.grey.shade200),
                 
-                // Table Rows with pagination
-                if (mockExecutions.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Text(
-                      'No execution history found.',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                // Table Rows with server-side pagination
+                Observer(builder: (_) {
+                  if (_contentAgentStore.isLoadingExecutions) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (_contentAgentStore.executions.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Text(
+                        'No execution history found.',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
-                    ),
-                  )
-                else
-                  ..._getPaginatedExecutions(mockExecutions).map((entry) {
-                    final execution = entry.value;
-                    final isSuccess = execution['status'] == 'Success';
-                    return _buildExecutionRowScrollable(execution, theme, isSuccess, () => _handleExecutionRowTap(execution));
-                  }).toList(),
+                    );
+                  }
+                  return Column(
+                    children: _contentAgentStore.executions.map((raw) {
+                      final execution = _mapApiExecution(raw);
+                      final isSuccess = execution['status'] == 'Success';
+                      return _buildExecutionRowScrollable(
+                          execution, theme, isSuccess, () => _handleExecutionRowTap(execution));
+                    }).toList(),
+                  );
+                }),
               ],
             ),
           ),
@@ -1276,7 +1247,9 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
           Divider(height: 1, color: Colors.grey.shade200),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: _buildPaginationFooter(mockExecutions, theme),
+            child: Observer(builder: (_) {
+              return _buildPaginationFooter(_contentAgentStore.totalExecutions, theme);
+            }),
           ),
         ],
       ),
@@ -1390,21 +1363,14 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
   // ============================================================================
 
   /// Handle activate agent
-  Future<void> _handleActivateAgent(String agentType, String agentTitle) async {
+  Future<void> _handleActivateAgent(String agentId, String agentTitle) async {
     if (!mounted) return;
-    
-    final config = {
-      'source': 'prompt',
-      'profile': 'Professional Authority',
-    };
-    
-    _cronjobStore.activateAgent(agentType, config);
-    
+    final success = await _contentAgentStore.toggleAgent(agentId, true);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$agentTitle activated successfully'),
-          backgroundColor: Colors.green,
+          content: Text(success ? '$agentTitle activated successfully' : (_contentAgentStore.agentsError ?? 'Failed to activate agent')),
+          backgroundColor: success ? Colors.green : Colors.red,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -1412,39 +1378,279 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
   }
 
   /// Handle pause agent
-  void _handlePauseAgent(String agentType) {
-    _cronjobStore.deactivateAgent();
+  Future<void> _handlePauseAgent(String agentId) async {
+    final success = await _contentAgentStore.toggleAgent(agentId, false);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Agent paused'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(success ? 'Agent paused' : (_contentAgentStore.agentsError ?? 'Failed to pause agent')),
+          backgroundColor: success ? Colors.orange : Colors.red,
+          duration: const Duration(seconds: 2),
         ),
       );
     }
   }
   
-  /// Handle create cronjob
-  Future<void> _handleCreate() async {
-    _cronjobStore.clearError();
+  /// Handle agent configuration — show popup dialog
+  Future<void> _handleConfigureAgent(String agentId, String agentTitle) async {
     if (!mounted) return;
-    Navigator.pushNamed(context, '/cronjob/create');
-  }
 
-  /// Handle agent configuration navigation
-  Future<void> _handleConfigureAgent(String agentType, String agentTitle) async {
-    if (!mounted) return;
-    
-    // Navigate to agent configuration screen
-    Navigator.pushNamed(
-      context,
-      CronjobRoutes.agentConfigure,
-      arguments: AgentConfigureArgs(
-        agentType: agentType,
-        agentTitle: agentTitle,
+    // load profiles in background
+    _contentAgentStore.loadContentProfiles();
+
+    // find current agent data for pre-fill
+    final agentData = _contentAgentStore.agents
+        .firstWhere((a) => a['id'] == agentId, orElse: () => {});
+    final currentProfileId = agentData['contentProfileId'] as String?;
+    final currentPostsPerDay = (agentData['postsPerDay'] as num?)?.toInt() ?? 10;
+
+    String? selectedProfileId = currentProfileId;
+    final postsController =
+        TextEditingController(text: currentPostsPerDay.toString());
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+            titlePadding: const EdgeInsets.fromLTRB(24, 24, 16, 12),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Configure $agentTitle',
+                        style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Define writing style and target voice for this agent.',
+                        style: GoogleFonts.montserrat(
+                            fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  icon: const Icon(Icons.close, size: 20),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            content: Observer(
+              builder: (_) => SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Divider(height: 1),
+                    const SizedBox(height: 20),
+                    // Content Writing Profile
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Content Writing Profile',
+                            style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: Colors.black87),
+                          ),
+                          TextSpan(
+                            text: ' *',
+                            style: GoogleFonts.montserrat(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _contentAgentStore.isLoadingProfiles
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ))
+                        : Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selectedProfileId,
+                                hint: Text(
+                                  'Select writing profile...',
+                                  style: GoogleFonts.montserrat(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade500),
+                                ),
+                                items: _contentAgentStore.contentProfiles
+                                    .map((p) => DropdownMenuItem<String>(
+                                          value: p['id'] as String,
+                                          child: Text(
+                                            (p['name'] as String?) ?? '',
+                                            style: GoogleFonts.montserrat(
+                                                fontSize: 13),
+                                          ),
+                                        ))
+                                    .toList(),
+                                onChanged: (val) {
+                                  setDialogState(
+                                      () => selectedProfileId = val);
+                                },
+                              ),
+                            ),
+                          ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Choose a voice and tone profile to instruct the agent on how to write.',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 11, color: Colors.grey.shade500),
+                    ),
+                    const SizedBox(height: 20),
+                    // Posts Per Day
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Posts Per Day',
+                            style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: Colors.black87),
+                          ),
+                          TextSpan(
+                            text: ' *',
+                            style: GoogleFonts.montserrat(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: postsController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              BorderSide(color: Colors.grey.shade300),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                      ),
+                      style: GoogleFonts.montserrat(fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'How many posts this agent will generate each day (1-100)',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 11, color: Colors.grey.shade500),
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    // Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12),
+                              side: BorderSide(
+                                  color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(8)),
+                            ),
+                            child: Text('Cancel',
+                                style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final posts = int.tryParse(
+                                      postsController.text.trim()) ??
+                                  currentPostsPerDay;
+                              Navigator.pop(ctx);
+                              final success = await _contentAgentStore
+                                  .configureAgent(
+                                agentId,
+                                contentProfileId: selectedProfileId,
+                                postsPerDay: posts,
+                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(success
+                                      ? 'Configuration saved'
+                                      : (_contentAgentStore.agentsError ?? 'Failed to save')),
+                                  backgroundColor: success ? Colors.green : Colors.red,
+                                  duration:
+                                      const Duration(seconds: 2),
+                                ));
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12),
+                              backgroundColor: Colors.deepOrange
+                                  .withOpacity(0.75),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(8)),
+                            ),
+                            child: Text('Save Configuration',
+                                style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
+
+    postsController.dispose();
   }
 
   /// Handle execution history row tap
@@ -1740,6 +1946,8 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
               _tempDateUnit = tempDateUnit;
               _currentPage = 1; // Reset to first page when filtering
             });
+            // Reload executions with new filters
+            _loadExecutions();
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
@@ -1859,12 +2067,11 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
 
   /// Build pagination footer with navigation controls - UPDATED LAYOUT
   Widget _buildPaginationFooter(
-    List<Map<String, dynamic>> allExecutions,
+    int totalItems,
     ThemeData theme,
   ) {
-    final filteredExecutions = _getFilteredExecutions(allExecutions);
-    final totalPages = filteredExecutions.isEmpty ? 0 : (filteredExecutions.length / _pageSize).ceil();
-    final totalResults = filteredExecutions.length;
+    final totalPages = totalItems == 0 ? 0 : (totalItems / _pageSize).ceil();
+    final totalResults = totalItems;
 
     return Column(
       children: [
@@ -1879,6 +2086,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                       setState(() {
                         _currentPage--;
                       });
+                      _loadExecutions();
                     }
                   : null,
               child: Container(
@@ -1918,6 +2126,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
                       setState(() {
                         _currentPage++;
                       });
+                      _loadExecutions();
                     }
                   : null,
               child: Container(
@@ -2012,62 +2221,7 @@ class _CronjobListScreenState extends State<CronjobListScreen> {
       _pageSize = pageSize;
       _currentPage = 1; // Reset to first page when changing page size
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Showing $pageSize items per page'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  /// Get filtered executions based on selected filters
-  List<Map<String, dynamic>> _getFilteredExecutions(
-    List<Map<String, dynamic>> allExecutions,
-  ) {
-    return allExecutions.where((execution) {
-      // Filter by status
-      if (_selectedStatuses.isNotEmpty) {
-        if (!_selectedStatuses.contains(execution['status'])) {
-          return false;
-        }
-      }
-
-      // Filter by agent type
-      if (_selectedAgentTypes.isNotEmpty) {
-        if (!_selectedAgentTypes.contains(execution['agentType'])) {
-          return false;
-        }
-      }
-
-      // Filter by date range
-      if (_selectedDateRange != null) {
-        final executionDate = DateTime.parse(execution['date'] as String);
-        if (executionDate.isBefore(_selectedDateRange!.start) ||
-            executionDate.isAfter(_selectedDateRange!.end)) {
-          return false;
-        }
-      }
-
-      return true;
-    }).toList();
-  }
-  
-  /// Get paginated executions based on current page and page size
-  List<MapEntry<int, Map<String, dynamic>>> _getPaginatedExecutions(
-    List<Map<String, dynamic>> allExecutions,
-  ) {
-    // First apply filters
-    final filteredExecutions = _getFilteredExecutions(allExecutions);
-    
-    final startIndex = (_currentPage - 1) * _pageSize;
-    final endIndex = startIndex + _pageSize;
-    
-    final paginatedList = filteredExecutions.asMap().entries.toList().sublist(
-      startIndex,
-      endIndex > filteredExecutions.length ? filteredExecutions.length : endIndex,
-    );
-    
-    return paginatedList;
+    _loadExecutions();
   }
 }
 
