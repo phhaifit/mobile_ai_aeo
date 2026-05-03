@@ -26,6 +26,20 @@ class Endpoints {
   static String seoCrawler(String url) =>
       "/api/v1/seo/crawler?url=${Uri.encodeComponent(url)}";
 
+  // ─── Feature 6: Cronjob Automation / Content Agent endpoints ─────────────
+
+  static String contentAgents(String projectId) =>
+      '/api/projects/$projectId/content-agents';
+
+  static String contentAgentExecutions(String projectId) =>
+      '/api/projects/$projectId/content-agents/executions';
+
+  static String updateContentAgent(String agentId) =>
+      '/api/content-agents/$agentId';
+
+  static String contentProfiles(String projectId) =>
+      '/api/projects/$projectId/content-profiles';
+
   // ─── Feature 9: SEO Content Optimization endpoints ───────────────────────
 
   // On-page SEO Checker & Content Structure

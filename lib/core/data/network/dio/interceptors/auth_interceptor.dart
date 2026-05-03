@@ -20,11 +20,10 @@ class AuthInterceptor extends Interceptor {
     final String normalizedToken = token.startsWith('Bearer ')
         ? token.substring(7).trim()
         : token;
+    // ignore: avoid_print
+    print('[AuthInterceptor] persisted=${persistedToken.isNotEmpty} env=${envToken.isNotEmpty} final=${normalizedToken.isNotEmpty} url=${options.uri}');
     if (normalizedToken.isNotEmpty) {
-      options.headers.putIfAbsent(
-        'Authorization',
-        () => 'Bearer $normalizedToken',
-      );
+      options.headers['Authorization'] = 'Bearer $normalizedToken';
     }
 
     super.onRequest(options, handler);
