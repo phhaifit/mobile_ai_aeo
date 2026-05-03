@@ -41,19 +41,19 @@ mixin _$TemplateLibraryStore on _TemplateLibraryStore, Store {
     });
   }
 
-  late final _$industryTemplatesAtom =
-      Atom(name: '_TemplateLibraryStore.industryTemplates', context: context);
+  late final _$contentProfilesAtom =
+      Atom(name: '_TemplateLibraryStore.contentProfiles', context: context);
 
   @override
-  List<WritingStyleModel> get industryTemplates {
-    _$industryTemplatesAtom.reportRead();
-    return super.industryTemplates;
+  List<ContentProfile> get contentProfiles {
+    _$contentProfilesAtom.reportRead();
+    return super.contentProfiles;
   }
 
   @override
-  set industryTemplates(List<WritingStyleModel> value) {
-    _$industryTemplatesAtom.reportWrite(value, super.industryTemplates, () {
-      super.industryTemplates = value;
+  set contentProfiles(List<ContentProfile> value) {
+    _$contentProfilesAtom.reportWrite(value, super.contentProfiles, () {
+      super.contentProfiles = value;
     });
   }
 
@@ -89,19 +89,52 @@ mixin _$TemplateLibraryStore on _TemplateLibraryStore, Store {
     });
   }
 
-  late final _$selectedTemplateAtom =
-      Atom(name: '_TemplateLibraryStore.selectedTemplate', context: context);
+  late final _$selectedContentProfileAtom = Atom(
+      name: '_TemplateLibraryStore.selectedContentProfile', context: context);
 
   @override
-  WritingStyleModel? get selectedTemplate {
-    _$selectedTemplateAtom.reportRead();
-    return super.selectedTemplate;
+  ContentProfile? get selectedContentProfile {
+    _$selectedContentProfileAtom.reportRead();
+    return super.selectedContentProfile;
   }
 
   @override
-  set selectedTemplate(WritingStyleModel? value) {
-    _$selectedTemplateAtom.reportWrite(value, super.selectedTemplate, () {
-      super.selectedTemplate = value;
+  set selectedContentProfile(ContentProfile? value) {
+    _$selectedContentProfileAtom
+        .reportWrite(value, super.selectedContentProfile, () {
+      super.selectedContentProfile = value;
+    });
+  }
+
+  late final _$isSavingProfileAtom =
+      Atom(name: '_TemplateLibraryStore.isSavingProfile', context: context);
+
+  @override
+  bool get isSavingProfile {
+    _$isSavingProfileAtom.reportRead();
+    return super.isSavingProfile;
+  }
+
+  @override
+  set isSavingProfile(bool value) {
+    _$isSavingProfileAtom.reportWrite(value, super.isSavingProfile, () {
+      super.isSavingProfile = value;
+    });
+  }
+
+  late final _$isDeletingProfileAtom =
+      Atom(name: '_TemplateLibraryStore.isDeletingProfile', context: context);
+
+  @override
+  bool get isDeletingProfile {
+    _$isDeletingProfileAtom.reportRead();
+    return super.isDeletingProfile;
+  }
+
+  @override
+  set isDeletingProfile(bool value) {
+    _$isDeletingProfileAtom.reportWrite(value, super.isDeletingProfile, () {
+      super.isDeletingProfile = value;
     });
   }
 
@@ -110,9 +143,9 @@ mixin _$TemplateLibraryStore on _TemplateLibraryStore, Store {
       context: context);
 
   @override
-  Future<void> fetchIndustryTemplates() {
+  Future<void> fetchIndustryTemplates({String? projectId}) {
     return _$fetchIndustryTemplatesAsyncAction
-        .run(() => super.fetchIndustryTemplates());
+        .run(() => super.fetchIndustryTemplates(projectId: projectId));
   }
 
   late final _$generateFromWebsiteAsyncAction = AsyncAction(
@@ -125,15 +158,69 @@ mixin _$TemplateLibraryStore on _TemplateLibraryStore, Store {
         .run(() => super.generateFromWebsite(url));
   }
 
+  late final _$createContentProfileAsyncAction = AsyncAction(
+      '_TemplateLibraryStore.createContentProfile',
+      context: context);
+
+  @override
+  Future<void> createContentProfile(
+      {required String projectId,
+      required String name,
+      required String description,
+      required String voiceAndTone,
+      required String audience}) {
+    return _$createContentProfileAsyncAction.run(() => super
+        .createContentProfile(
+            projectId: projectId,
+            name: name,
+            description: description,
+            voiceAndTone: voiceAndTone,
+            audience: audience));
+  }
+
+  late final _$updateContentProfileAsyncAction = AsyncAction(
+      '_TemplateLibraryStore.updateContentProfile',
+      context: context);
+
+  @override
+  Future<void> updateContentProfile(
+      {required String projectId,
+      required String contentProfileId,
+      required String name,
+      required String description,
+      required String voiceAndTone,
+      required String audience}) {
+    return _$updateContentProfileAsyncAction.run(() => super
+        .updateContentProfile(
+            projectId: projectId,
+            contentProfileId: contentProfileId,
+            name: name,
+            description: description,
+            voiceAndTone: voiceAndTone,
+            audience: audience));
+  }
+
+  late final _$deleteContentProfileAsyncAction = AsyncAction(
+      '_TemplateLibraryStore.deleteContentProfile',
+      context: context);
+
+  @override
+  Future<void> deleteContentProfile(
+      {required String projectId, required String contentProfileId}) {
+    return _$deleteContentProfileAsyncAction.run(() => super
+        .deleteContentProfile(
+            projectId: projectId, contentProfileId: contentProfileId));
+  }
+
   late final _$_TemplateLibraryStoreActionController =
       ActionController(name: '_TemplateLibraryStore', context: context);
 
   @override
-  void selectTemplate(WritingStyleModel template) {
+  void selectContentProfile(ContentProfile profile) {
     final _$actionInfo = _$_TemplateLibraryStoreActionController.startAction(
-        name: '_TemplateLibraryStore.selectTemplate');
+        name: '_TemplateLibraryStore.selectContentProfile');
     try {
-      return super.selectTemplate(template);
+      return super.selectContentProfile(profile);
     } finally {
       _$_TemplateLibraryStoreActionController.endAction(_$actionInfo);
     }
@@ -166,10 +253,12 @@ mixin _$TemplateLibraryStore on _TemplateLibraryStore, Store {
     return '''
 isLoading: ${isLoading},
 inputUrl: ${inputUrl},
-industryTemplates: ${industryTemplates},
+contentProfiles: ${contentProfiles},
 analysisResult: ${analysisResult},
 isAnalyzing: ${isAnalyzing},
-selectedTemplate: ${selectedTemplate}
+selectedContentProfile: ${selectedContentProfile},
+isSavingProfile: ${isSavingProfile},
+isDeletingProfile: ${isDeletingProfile}
     ''';
   }
 }

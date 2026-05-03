@@ -1,9 +1,15 @@
 import 'dart:async';
 
+import 'package:boilerplate/domain/repository/analytics/analytics_repository.dart';
 import 'package:boilerplate/domain/repository/content/content_repository.dart';
+import 'package:boilerplate/domain/repository/content/content_profile_repository.dart';
+import 'package:boilerplate/domain/repository/prompt/prompt_repository.dart';
+import 'package:boilerplate/domain/repository/overview/overview_repository.dart';
 import 'package:boilerplate/domain/repository/post/post_repository.dart';
 import 'package:boilerplate/domain/repository/seo/seo_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
+import 'package:boilerplate/domain/usecase/analytics/get_analytics_metrics_usecase.dart';
+import 'package:boilerplate/domain/usecase/overview/get_overview_metrics_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
@@ -17,6 +23,12 @@ import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart'
 import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/summarize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/get_content_profiles_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/create_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/update_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/delete_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/prompt/create_content_generation_usecase.dart';
+import 'package:boilerplate/domain/usecase/prompt/get_prompts_by_project_usecase.dart';
 import 'package:boilerplate/domain/usecase/post/delete_post_usecase.dart';
 import 'package:boilerplate/domain/usecase/post/find_post_by_id_usecase.dart';
 import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
@@ -48,6 +60,16 @@ import '../../../di/service_locator.dart';
 
 class UseCaseModule {
   static Future<void> configureUseCaseModuleInjection() async {
+    // analytics:---------------------------------------------------------------
+    getIt.registerSingleton<GetAnalyticsMetricsUseCase>(
+      GetAnalyticsMetricsUseCase(getIt<AnalyticsRepository>()),
+    );
+
+    // overview:----------------------------------------------------------------
+    getIt.registerSingleton<GetOverviewMetricsUseCase>(
+      GetOverviewMetricsUseCase(getIt<OverviewRepository>()),
+    );
+
     // user:--------------------------------------------------------------------
     getIt.registerSingleton<IsLoggedInUseCase>(
       IsLoggedInUseCase(getIt<UserRepository>()),
@@ -94,6 +116,25 @@ class UseCaseModule {
     );
     getIt.registerSingleton<SummarizeContentUseCase>(
       SummarizeContentUseCase(getIt<ContentRepository>()),
+    );
+    getIt.registerSingleton<GetContentProfilesUseCase>(
+      GetContentProfilesUseCase(getIt<ContentProfileRepository>()),
+    );
+    getIt.registerSingleton<CreateContentProfileUseCase>(
+      CreateContentProfileUseCase(getIt<ContentProfileRepository>()),
+    );
+    getIt.registerSingleton<UpdateContentProfileUseCase>(
+      UpdateContentProfileUseCase(getIt<ContentProfileRepository>()),
+    );
+    getIt.registerSingleton<DeleteContentProfileUseCase>(
+      DeleteContentProfileUseCase(getIt<ContentProfileRepository>()),
+    );
+
+    getIt.registerSingleton<GetPromptsByProjectUseCase>(
+      GetPromptsByProjectUseCase(getIt<PromptRepository>()),
+    );
+    getIt.registerSingleton<CreateContentGenerationUseCase>(
+      CreateContentGenerationUseCase(getIt<PromptRepository>()),
     );
 
     // seo:--------------------------------------------------------------------

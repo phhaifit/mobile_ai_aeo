@@ -5,7 +5,11 @@ import 'package:boilerplate/core/data/network/dio/interceptors/auth_interceptor.
 import 'package:boilerplate/core/data/network/dio/interceptors/logging_interceptor.dart';
 import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/network/apis/content_agent/content_agent_api.dart';
+import 'package:boilerplate/data/network/apis/analytics/analytics_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
+import 'package:boilerplate/data/network/apis/content/content_profile_api.dart';
+import 'package:boilerplate/data/network/apis/prompt/prompt_api.dart';
+import 'package:boilerplate/data/network/apis/overview/overview_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
 import 'package:boilerplate/data/service/google_auth_service.dart';
@@ -85,6 +89,14 @@ class NetworkModule {
     getIt.registerSingleton(ContentApi(getIt<DioClient>(instanceName: 'aiDioClient')));
     getIt.registerSingleton(ContentAgentApi(getIt<DioClient>()));
     getIt.registerSingleton(SeoApi(getIt<DioClient>(instanceName: 'aiDioClient')));
+    getIt.registerSingleton(OverviewApi(getIt<DioClient>()));
+    getIt.registerSingleton(AnalyticsApi(getIt<DioClient>()));
+    getIt.registerSingleton(ContentProfileApi(getIt<DioClient>()));
+    getIt.registerSingleton(PromptApi(getIt<DioClient>()));
+    getIt.registerSingleton(
+        ContentApi(getIt<DioClient>(instanceName: 'aiDioClient')));
+    getIt.registerSingleton(
+        SeoApi(getIt<DioClient>(instanceName: 'aiDioClient')));
 
     // services:----------------------------------------------------------------
     getIt.registerSingleton(GoogleAuthService());

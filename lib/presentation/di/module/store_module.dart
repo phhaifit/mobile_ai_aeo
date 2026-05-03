@@ -4,6 +4,8 @@ import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/usecase/post/get_post_usecase.dart';
+import 'package:boilerplate/domain/usecase/analytics/get_analytics_metrics_usecase.dart';
+import 'package:boilerplate/domain/usecase/overview/get_overview_metrics_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/user/save_login_in_status_usecase.dart';
@@ -14,6 +16,12 @@ import 'package:boilerplate/domain/usecase/content/enhance_content_usecase.dart'
 import 'package:boilerplate/domain/usecase/content/humanize_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/rewrite_content_usecase.dart';
 import 'package:boilerplate/domain/usecase/content/summarize_content_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/get_content_profiles_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/create_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/update_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/content/delete_content_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/prompt/create_content_generation_usecase.dart';
+import 'package:boilerplate/domain/usecase/prompt/get_prompts_by_project_usecase.dart';
 import 'package:boilerplate/presentation/content_enhancement/store/content_enhancement_store.dart';
 import 'package:boilerplate/presentation/forgot_password/store/forgot_password_store.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
@@ -30,14 +38,18 @@ import 'package:boilerplate/domain/usecase/cronjob/create_execution_usecase.dart
 import 'package:boilerplate/data/service/mock_execution_service.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
 import 'package:boilerplate/presentation/post/store/post_store.dart';
+import 'package:boilerplate/presentation/post_detail/store/post_detail_store.dart';
+import 'package:boilerplate/data/network/apis/content_management/content_management_api.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_audit_status_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/get_crawler_events_usecase.dart';
 import 'package:boilerplate/domain/usecase/seo/run_seo_audit_usecase.dart';
 import 'package:boilerplate/presentation/technical_seo/store/technical_seo_store.dart';
 import 'package:boilerplate/presentation/register/store/register_store.dart';
+import 'package:boilerplate/presentation/analytic/store/analytic_store.dart';
 import 'package:boilerplate/presentation/overview/store/overview_store.dart';
 import 'package:boilerplate/presentation/template_library/store/template_library_store.dart';
+import 'package:boilerplate/presentation/template_library/store/content_generation_store.dart';
 import 'package:boilerplate/presentation/all_posts/store/all_posts_store.dart';
 import 'package:boilerplate/presentation/ai_writer/store/ai_writer_store.dart';
 import 'package:boilerplate/presentation/auto_generation/store/auto_generation_store.dart';
@@ -138,6 +150,14 @@ class StoreModule {
     getIt.registerSingleton<OverviewStore>(
       OverviewStore(
         getIt<ErrorStore>(),
+        getIt<GetOverviewMetricsUseCase>(),
+      ),
+    );
+
+    getIt.registerSingleton<AnalyticStore>(
+      AnalyticStore(
+        getIt<ErrorStore>(),
+        getIt<GetAnalyticsMetricsUseCase>(),
       ),
     );
 
@@ -153,10 +173,18 @@ class StoreModule {
     );
 
     getIt.registerSingleton<AllPostsStore>(
-      AllPostsStore(getIt<ErrorStore>()),
+      AllPostsStore(
+        ContentManagementApi(getIt(), getIt()),
+        getIt<ErrorStore>(),
+      ),
     );
-    getIt.registerSingleton<AiWriterStore>(
-      AiWriterStore(getIt<ErrorStore>()),
+    getIt.registerFactory<PostDetailStore>(
+      () => PostDetailStore(
+        ContentManagementApi(getIt(), getIt()),
+      ),
+    );
+    getIt.registerFactory<AiWriterStore>(
+      () => AiWriterStore(getIt<ErrorStore>()),
     );
     getIt.registerSingleton<AutoGenerationStore>(
       AutoGenerationStore(getIt<ErrorStore>()),
@@ -164,6 +192,19 @@ class StoreModule {
     getIt.registerSingleton<TemplateLibraryStore>(
       TemplateLibraryStore(
         getIt<ErrorStore>(),
+        getIt<GetContentProfilesUseCase>(),
+        getIt<CreateContentProfileUseCase>(),
+        getIt<UpdateContentProfileUseCase>(),
+        getIt<DeleteContentProfileUseCase>(),
+      ),
+    );
+
+    getIt.registerSingleton<ContentGenerationStore>(
+      ContentGenerationStore(
+        getIt<ErrorStore>(),
+        getIt<GetContentProfilesUseCase>(),
+        getIt<GetPromptsByProjectUseCase>(),
+        getIt<CreateContentGenerationUseCase>(),
       ),
     );
 
