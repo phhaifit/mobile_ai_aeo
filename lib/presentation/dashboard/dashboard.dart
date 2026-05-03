@@ -42,6 +42,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
+                title: 'Analysis',
+                description: 'Sentiment analysis and LLM insights',
+                icon: Icons.analytics,
+                color: Colors.indigo,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.analysis);
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
                 title: 'Performance Monitoring',
                 description: 'Track brand visibility trends and performance',
                 icon: Icons.auto_graph,
@@ -95,6 +106,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => AllPostsScreen()),
                   );
+                },
+              ),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'Post Detail',
+                description: 'View post detail',
+                icon: Icons.article_outlined,
+                color: Colors.deepPurpleAccent,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.postDetail);
                 },
               ),
               SizedBox(height: 20),

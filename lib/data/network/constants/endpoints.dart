@@ -4,7 +4,7 @@ class Endpoints {
   Endpoints._();
 
   // base url (default fallback, overridden by EnvironmentConfig)
-  static const String baseUrl = "http://jsonplaceholder.typicode.com";
+  static const String baseUrl = "https://api.aeo.how";
 
   // timeouts
   static const int receiveTimeout = 15000;
@@ -42,6 +42,24 @@ class Endpoints {
   static String projectContents(String projectId) =>
       '/api/projects/$projectId/contents';
 
+  // overview metrics endpoints
+  static String getOverviewMetrics(String projectId) =>
+      "/api/projects/$projectId/metrics/overview";
+
+  // analytics metrics endpoints
+  static String getAnalyticsMetrics(String projectId) =>
+      "/api/projects/$projectId/metrics/analytics";
+
+  // content profiles endpoints
+  static String getContentProfiles(String projectId) =>
+      "/api/projects/$projectId/content-profiles";
+
+  // prompts & content generation
+  static const String promptsByProject = "/api/prompts/by-project";
+
+  static String promptContentGenerations(String promptId) =>
+      "/api/prompts/$promptId/content-generations";
+
   // ─── Feature 9: SEO Content Optimization endpoints ───────────────────────
 
   // On-page SEO Checker & Content Structure
@@ -63,4 +81,3 @@ class Endpoints {
   static String clusterJobStream(String jobId) =>
       '/api/cluster/jobs/$jobId/stream';
 }
-

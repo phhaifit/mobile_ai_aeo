@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:boilerplate/domain/entity/content/content_profile.dart';
 
-/// Modal for previewing voice and style details
+/// Modal for previewing content profile details
 class VoicePreviewModal extends StatelessWidget {
-  final dynamic template;
+  final ContentProfile profile;
   final VoidCallback onApply;
 
   const VoicePreviewModal({
     Key? key,
-    required this.template,
+    required this.profile,
     required this.onApply,
   }) : super(key: key);
 
@@ -44,44 +45,30 @@ class VoicePreviewModal extends StatelessWidget {
                   ),
                   SizedBox(height: 24.0),
                   // Header
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: _parseColor(template.color),
-                          borderRadius: BorderRadius.circular(3),
+                      Text(
+                        profile.name,
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF333333),
                         ),
                       ),
-                      SizedBox(width: 12.0),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              template.name,
-                              style: TextStyle(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF333333),
-                              ),
-                            ),
-                            Text(
-                              template.industry,
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                color: Color(0xFF999999),
-                              ),
-                            ),
-                          ],
+                      SizedBox(height: 4.0),
+                      Text(
+                        profile.projectId,
+                        style: TextStyle(
+                          fontSize: 12.0,
+                          color: Color(0xFF999999),
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: 16.0),
                   Text(
-                    template.description,
+                    profile.description,
                     style: TextStyle(
                       fontSize: 13.0,
                       color: Color(0xFF666666),
@@ -89,12 +76,10 @@ class VoicePreviewModal extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 28.0),
-                  // Voice & Tone Details
-                  _buildDetailSection('Voice', template.voice),
+                  // Content Details
+                  _buildDetailSection('Voice & Tone', profile.voiceAndTone),
                   SizedBox(height: 20.0),
-                  _buildDetailSection('Tone', template.tone),
-                  SizedBox(height: 20.0),
-                  _buildDetailSection('Target Audience', template.audience),
+                  _buildDetailSection('Target Audience', profile.audience),
                   SizedBox(height: 28.0),
                   // Action Buttons
                   SizedBox(
@@ -102,7 +87,7 @@ class VoicePreviewModal extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: onApply,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _parseColor(template.color),
+                        backgroundColor: Color(0xFF2196F3),
                         padding: EdgeInsets.symmetric(vertical: 14.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
@@ -110,7 +95,7 @@ class VoicePreviewModal extends StatelessWidget {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Apply This Style',
+                        'Apply This Profile',
                         style: TextStyle(
                           fontSize: 16.0,
                           fontWeight: FontWeight.w600,
@@ -166,7 +151,9 @@ class VoicePreviewModal extends StatelessWidget {
         ),
         SizedBox(height: 8.0),
         Container(
-          padding: EdgeInsets.all(12.0),
+          width: double.infinity,
+          constraints: BoxConstraints(minHeight: 80.0),
+          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           decoration: BoxDecoration(
             color: Color(0xFFF9F9F9),
             borderRadius: BorderRadius.circular(8.0),
@@ -183,13 +170,5 @@ class VoicePreviewModal extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Color _parseColor(String colorString) {
-    try {
-      return Color(int.parse(colorString.replaceFirst('#', '0xff')));
-    } catch (e) {
-      return Color(0xFF2196F3);
-    }
   }
 }
