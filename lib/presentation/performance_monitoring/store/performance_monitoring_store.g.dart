@@ -9,135 +9,202 @@ part of 'performance_monitoring_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
-  Computed<double>? _$averageScoreComputed;
+  Computed<DateTime>? _$rangeStartComputed;
 
   @override
-  double get averageScore =>
-      (_$averageScoreComputed ??= Computed<double>(() => super.averageScore,
-              name: '_PerformanceMonitoringStore.averageScore'))
+  DateTime get rangeStart =>
+      (_$rangeStartComputed ??= Computed<DateTime>(() => super.rangeStart,
+              name: '_PerformanceMonitoringStore.rangeStart'))
           .value;
-  Computed<bool>? _$isImprovingComputed;
+  Computed<DateTime>? _$rangeEndComputed;
 
   @override
-  bool get isImproving =>
-      (_$isImprovingComputed ??= Computed<bool>(() => super.isImproving,
-              name: '_PerformanceMonitoringStore.isImproving'))
+  DateTime get rangeEnd =>
+      (_$rangeEndComputed ??= Computed<DateTime>(() => super.rangeEnd,
+              name: '_PerformanceMonitoringStore.rangeEnd'))
           .value;
-  Computed<String>? _$trendDirectionComputed;
+  Computed<String>? _$dateRangeLabelComputed;
 
   @override
-  String get trendDirection =>
-      (_$trendDirectionComputed ??= Computed<String>(() => super.trendDirection,
-              name: '_PerformanceMonitoringStore.trendDirection'))
+  String get dateRangeLabel =>
+      (_$dateRangeLabelComputed ??= Computed<String>(() => super.dateRangeLabel,
+              name: '_PerformanceMonitoringStore.dateRangeLabel'))
           .value;
-  Computed<List<double>>? _$chartValuesComputed;
+  Computed<List<ChartDataPoint>>? _$brandChartDataComputed;
 
   @override
-  List<double> get chartValues =>
-      (_$chartValuesComputed ??= Computed<List<double>>(() => super.chartValues,
-              name: '_PerformanceMonitoringStore.chartValues'))
+  List<ChartDataPoint> get brandChartData => (_$brandChartDataComputed ??=
+          Computed<List<ChartDataPoint>>(() => super.brandChartData,
+              name: '_PerformanceMonitoringStore.brandChartData'))
+      .value;
+  Computed<List<ChartDataPoint>>? _$brandMentionsChartDataComputed;
+
+  @override
+  List<ChartDataPoint> get brandMentionsChartData =>
+      (_$brandMentionsChartDataComputed ??= Computed<List<ChartDataPoint>>(
+              () => super.brandMentionsChartData,
+              name: '_PerformanceMonitoringStore.brandMentionsChartData'))
           .value;
-  Computed<List<String>>? _$chartLabelsComputed;
+  Computed<List<ChartDataPoint>>? _$linkRefsChartDataComputed;
 
   @override
-  List<String> get chartLabels =>
-      (_$chartLabelsComputed ??= Computed<List<String>>(() => super.chartLabels,
-              name: '_PerformanceMonitoringStore.chartLabels'))
+  List<ChartDataPoint> get linkRefsChartData => (_$linkRefsChartDataComputed ??=
+          Computed<List<ChartDataPoint>>(() => super.linkRefsChartData,
+              name: '_PerformanceMonitoringStore.linkRefsChartData'))
+      .value;
+  Computed<List<ChartDataPoint>>? _$responsesChartDataComputed;
+
+  @override
+  List<ChartDataPoint> get responsesChartData =>
+      (_$responsesChartDataComputed ??= Computed<List<ChartDataPoint>>(
+              () => super.responsesChartData,
+              name: '_PerformanceMonitoringStore.responsesChartData'))
           .value;
-
-  late final _$weeklyReportAtom =
-      Atom(name: '_PerformanceMonitoringStore.weeklyReport', context: context);
+  Computed<List<ContentItem>>? _$allContentItemsComputed;
 
   @override
-  WeeklyReport? get weeklyReport {
-    _$weeklyReportAtom.reportRead();
-    return super.weeklyReport;
+  List<ContentItem> get allContentItems => (_$allContentItemsComputed ??=
+          Computed<List<ContentItem>>(() => super.allContentItems,
+              name: '_PerformanceMonitoringStore.allContentItems'))
+      .value;
+  Computed<int>? _$totalContentComputed;
+
+  @override
+  int get totalContent =>
+      (_$totalContentComputed ??= Computed<int>(() => super.totalContent,
+              name: '_PerformanceMonitoringStore.totalContent'))
+          .value;
+  Computed<int>? _$publishedCountComputed;
+
+  @override
+  int get publishedCount =>
+      (_$publishedCountComputed ??= Computed<int>(() => super.publishedCount,
+              name: '_PerformanceMonitoringStore.publishedCount'))
+          .value;
+  Computed<int>? _$draftCountComputed;
+
+  @override
+  int get draftCount =>
+      (_$draftCountComputed ??= Computed<int>(() => super.draftCount,
+              name: '_PerformanceMonitoringStore.draftCount'))
+          .value;
+  Computed<List<ChartDataPoint>>? _$contentPublishTrendComputed;
+
+  @override
+  List<ChartDataPoint> get contentPublishTrend =>
+      (_$contentPublishTrendComputed ??= Computed<List<ChartDataPoint>>(
+              () => super.contentPublishTrend,
+              name: '_PerformanceMonitoringStore.contentPublishTrend'))
+          .value;
+  Computed<Map<String, int>>? _$contentByTopicComputed;
+
+  @override
+  Map<String, int> get contentByTopic => (_$contentByTopicComputed ??=
+          Computed<Map<String, int>>(() => super.contentByTopic,
+              name: '_PerformanceMonitoringStore.contentByTopic'))
+      .value;
+  Computed<Map<String, int>>? _$contentByTypeComputed;
+
+  @override
+  Map<String, int> get contentByType => (_$contentByTypeComputed ??=
+          Computed<Map<String, int>>(() => super.contentByType,
+              name: '_PerformanceMonitoringStore.contentByType'))
+      .value;
+
+  late final _$selectedRangeAtom =
+      Atom(name: '_PerformanceMonitoringStore.selectedRange', context: context);
+
+  @override
+  String get selectedRange {
+    _$selectedRangeAtom.reportRead();
+    return super.selectedRange;
   }
 
   @override
-  set weeklyReport(WeeklyReport? value) {
-    _$weeklyReportAtom.reportWrite(value, super.weeklyReport, () {
-      super.weeklyReport = value;
+  set selectedRange(String value) {
+    _$selectedRangeAtom.reportWrite(value, super.selectedRange, () {
+      super.selectedRange = value;
     });
   }
 
-  late final _$trendDataAtom =
-      Atom(name: '_PerformanceMonitoringStore.trendData', context: context);
+  late final _$customStartAtom =
+      Atom(name: '_PerformanceMonitoringStore.customStart', context: context);
 
   @override
-  List<TrendDataPoint> get trendData {
-    _$trendDataAtom.reportRead();
-    return super.trendData;
+  DateTime? get customStart {
+    _$customStartAtom.reportRead();
+    return super.customStart;
   }
 
   @override
-  set trendData(List<TrendDataPoint> value) {
-    _$trendDataAtom.reportWrite(value, super.trendData, () {
-      super.trendData = value;
+  set customStart(DateTime? value) {
+    _$customStartAtom.reportWrite(value, super.customStart, () {
+      super.customStart = value;
     });
   }
 
-  late final _$comparisonsAtom =
-      Atom(name: '_PerformanceMonitoringStore.comparisons', context: context);
+  late final _$customEndAtom =
+      Atom(name: '_PerformanceMonitoringStore.customEnd', context: context);
 
   @override
-  List<PerformanceComparison> get comparisons {
-    _$comparisonsAtom.reportRead();
-    return super.comparisons;
+  DateTime? get customEnd {
+    _$customEndAtom.reportRead();
+    return super.customEnd;
   }
 
   @override
-  set comparisons(List<PerformanceComparison> value) {
-    _$comparisonsAtom.reportWrite(value, super.comparisons, () {
-      super.comparisons = value;
+  set customEnd(DateTime? value) {
+    _$customEndAtom.reportWrite(value, super.customEnd, () {
+      super.customEnd = value;
     });
   }
 
-  late final _$suggestionsAtom =
-      Atom(name: '_PerformanceMonitoringStore.suggestions', context: context);
+  late final _$brandAnalyticsAtom = Atom(
+      name: '_PerformanceMonitoringStore.brandAnalytics', context: context);
 
   @override
-  List<ImprovementSuggestion> get suggestions {
-    _$suggestionsAtom.reportRead();
-    return super.suggestions;
+  BrandAnalytics? get brandAnalytics {
+    _$brandAnalyticsAtom.reportRead();
+    return super.brandAnalytics;
   }
 
   @override
-  set suggestions(List<ImprovementSuggestion> value) {
-    _$suggestionsAtom.reportWrite(value, super.suggestions, () {
-      super.suggestions = value;
+  set brandAnalytics(BrandAnalytics? value) {
+    _$brandAnalyticsAtom.reportWrite(value, super.brandAnalytics, () {
+      super.brandAnalytics = value;
     });
   }
 
-  late final _$selectedPeriodAtom = Atom(
-      name: '_PerformanceMonitoringStore.selectedPeriod', context: context);
+  late final _$contentDataAtom =
+      Atom(name: '_PerformanceMonitoringStore.contentData', context: context);
 
   @override
-  TrendPeriod get selectedPeriod {
-    _$selectedPeriodAtom.reportRead();
-    return super.selectedPeriod;
+  ContentPerformanceData? get contentData {
+    _$contentDataAtom.reportRead();
+    return super.contentData;
   }
 
   @override
-  set selectedPeriod(TrendPeriod value) {
-    _$selectedPeriodAtom.reportWrite(value, super.selectedPeriod, () {
-      super.selectedPeriod = value;
+  set contentData(ContentPerformanceData? value) {
+    _$contentDataAtom.reportWrite(value, super.contentData, () {
+      super.contentData = value;
     });
   }
 
-  late final _$selectedMetricAtom = Atom(
-      name: '_PerformanceMonitoringStore.selectedMetric', context: context);
+  late final _$selectedBrandMetricAtom = Atom(
+      name: '_PerformanceMonitoringStore.selectedBrandMetric',
+      context: context);
 
   @override
-  String get selectedMetric {
-    _$selectedMetricAtom.reportRead();
-    return super.selectedMetric;
+  String get selectedBrandMetric {
+    _$selectedBrandMetricAtom.reportRead();
+    return super.selectedBrandMetric;
   }
 
   @override
-  set selectedMetric(String value) {
-    _$selectedMetricAtom.reportWrite(value, super.selectedMetric, () {
-      super.selectedMetric = value;
+  set selectedBrandMetric(String value) {
+    _$selectedBrandMetricAtom.reportWrite(value, super.selectedBrandMetric, () {
+      super.selectedBrandMetric = value;
     });
   }
 
@@ -157,6 +224,54 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
     });
   }
 
+  late final _$isLoadingContentAtom = Atom(
+      name: '_PerformanceMonitoringStore.isLoadingContent', context: context);
+
+  @override
+  bool get isLoadingContent {
+    _$isLoadingContentAtom.reportRead();
+    return super.isLoadingContent;
+  }
+
+  @override
+  set isLoadingContent(bool value) {
+    _$isLoadingContentAtom.reportWrite(value, super.isLoadingContent, () {
+      super.isLoadingContent = value;
+    });
+  }
+
+  late final _$isRefreshingAtom =
+      Atom(name: '_PerformanceMonitoringStore.isRefreshing', context: context);
+
+  @override
+  bool get isRefreshing {
+    _$isRefreshingAtom.reportRead();
+    return super.isRefreshing;
+  }
+
+  @override
+  set isRefreshing(bool value) {
+    _$isRefreshingAtom.reportWrite(value, super.isRefreshing, () {
+      super.isRefreshing = value;
+    });
+  }
+
+  late final _$projectIdAtom =
+      Atom(name: '_PerformanceMonitoringStore.projectId', context: context);
+
+  @override
+  String? get projectId {
+    _$projectIdAtom.reportRead();
+    return super.projectId;
+  }
+
+  @override
+  set projectId(String? value) {
+    _$projectIdAtom.reportWrite(value, super.projectId, () {
+      super.projectId = value;
+    });
+  }
+
   late final _$loadAllDataAsyncAction =
       AsyncAction('_PerformanceMonitoringStore.loadAllData', context: context);
 
@@ -165,23 +280,32 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
     return _$loadAllDataAsyncAction.run(() => super.loadAllData());
   }
 
-  late final _$selectPeriodAsyncAction =
-      AsyncAction('_PerformanceMonitoringStore.selectPeriod', context: context);
+  late final _$refreshDataAsyncAction =
+      AsyncAction('_PerformanceMonitoringStore.refreshData', context: context);
 
   @override
-  Future<void> selectPeriod(TrendPeriod period) {
-    return _$selectPeriodAsyncAction.run(() => super.selectPeriod(period));
+  Future<void> refreshData() {
+    return _$refreshDataAsyncAction.run(() => super.refreshData());
+  }
+
+  late final _$selectRangeAsyncAction =
+      AsyncAction('_PerformanceMonitoringStore.selectRange', context: context);
+
+  @override
+  Future<void> selectRange(String range, {DateTime? start, DateTime? end}) {
+    return _$selectRangeAsyncAction
+        .run(() => super.selectRange(range, start: start, end: end));
   }
 
   late final _$_PerformanceMonitoringStoreActionController =
       ActionController(name: '_PerformanceMonitoringStore', context: context);
 
   @override
-  void selectMetric(String metric) {
+  void selectBrandMetric(String metric) {
     final _$actionInfo = _$_PerformanceMonitoringStoreActionController
-        .startAction(name: '_PerformanceMonitoringStore.selectMetric');
+        .startAction(name: '_PerformanceMonitoringStore.selectBrandMetric');
     try {
-      return super.selectMetric(metric);
+      return super.selectBrandMetric(metric);
     } finally {
       _$_PerformanceMonitoringStoreActionController.endAction(_$actionInfo);
     }
@@ -201,18 +325,30 @@ mixin _$PerformanceMonitoringStore on _PerformanceMonitoringStore, Store {
   @override
   String toString() {
     return '''
-weeklyReport: ${weeklyReport},
-trendData: ${trendData},
-comparisons: ${comparisons},
-suggestions: ${suggestions},
-selectedPeriod: ${selectedPeriod},
-selectedMetric: ${selectedMetric},
+selectedRange: ${selectedRange},
+customStart: ${customStart},
+customEnd: ${customEnd},
+brandAnalytics: ${brandAnalytics},
+contentData: ${contentData},
+selectedBrandMetric: ${selectedBrandMetric},
 isLoading: ${isLoading},
-averageScore: ${averageScore},
-isImproving: ${isImproving},
-trendDirection: ${trendDirection},
-chartValues: ${chartValues},
-chartLabels: ${chartLabels}
+isLoadingContent: ${isLoadingContent},
+isRefreshing: ${isRefreshing},
+projectId: ${projectId},
+rangeStart: ${rangeStart},
+rangeEnd: ${rangeEnd},
+dateRangeLabel: ${dateRangeLabel},
+brandChartData: ${brandChartData},
+brandMentionsChartData: ${brandMentionsChartData},
+linkRefsChartData: ${linkRefsChartData},
+responsesChartData: ${responsesChartData},
+allContentItems: ${allContentItems},
+totalContent: ${totalContent},
+publishedCount: ${publishedCount},
+draftCount: ${draftCount},
+contentPublishTrend: ${contentPublishTrend},
+contentByTopic: ${contentByTopic},
+contentByType: ${contentByType}
     ''';
   }
 }
