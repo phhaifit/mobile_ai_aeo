@@ -53,6 +53,9 @@ import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
 import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
 import 'package:boilerplate/domain/usecase/trend/get_brand_analytics_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_content_performance_usecase.dart';
+import 'package:boilerplate/domain/repository/assistant_chat/assistant_chat_repository.dart';
+import 'package:boilerplate/domain/usecase/assistant_chat/load_assistant_chat_usecase.dart';
+import 'package:boilerplate/domain/usecase/assistant_chat/send_assistant_chat_message_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -200,6 +203,14 @@ class UseCaseModule {
     );
     getIt.registerSingleton<GetContentPerformanceUseCase>(
       GetContentPerformanceUseCase(repository: getIt<TrendRepository>()),
+    );
+
+    // assistant chat
+    getIt.registerSingleton<LoadAssistantChatUseCase>(
+      LoadAssistantChatUseCase(getIt<AssistantChatRepository>()),
+    );
+    getIt.registerSingleton<SendAssistantChatMessageUseCase>(
+      SendAssistantChatMessageUseCase(getIt<AssistantChatRepository>()),
     );
   }
 }

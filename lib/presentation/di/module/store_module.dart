@@ -68,6 +68,9 @@ import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/presentation/brand_setup/store/brand_setup_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/content_agent_store.dart';
 import 'package:boilerplate/data/network/apis/content_agent/content_agent_api.dart';
+import 'package:boilerplate/domain/usecase/assistant_chat/load_assistant_chat_usecase.dart';
+import 'package:boilerplate/domain/usecase/assistant_chat/send_assistant_chat_message_usecase.dart';
+import 'package:boilerplate/presentation/assistant_chat/store/assistant_chat_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -250,6 +253,14 @@ class StoreModule {
 
     getIt.registerSingleton<ContentAgentStore>(
       ContentAgentStore(getIt<ContentAgentApi>()),
+    );
+
+    getIt.registerFactory<AssistantChatStore>(
+      () => AssistantChatStore(
+        getIt<ErrorStore>(),
+        getIt<LoadAssistantChatUseCase>(),
+        getIt<SendAssistantChatMessageUseCase>(),
+      ),
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:boilerplate/presentation/topics_keywords/topics_keywords.dart';
 import 'package:boilerplate/presentation/template_library/template_library_screen.dart';
 import 'package:boilerplate/presentation/all_posts/all_posts_screen.dart';
 import 'package:boilerplate/presentation/ai_writer/ai_writer_screen.dart';
+import 'package:boilerplate/presentation/assistant_chat/assistant_chat_screen.dart';
 import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.dart';
 import 'package:boilerplate/presentation/cronjob/routes/cronjob_routes.dart';
 import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
@@ -46,6 +47,7 @@ class Routes {
   static const String integrations = '/integrations';
   static const String brandSetup = '/brand-setup';
   static const String postDetail = '/post-detail';
+  static const String assistantChat = '/assistant-chat';
   // Cronjob routes
   static const String cronjobList = '/cronjob/list';
   static const String cronjobCreate = '/cronjob/create';
@@ -75,6 +77,7 @@ class Routes {
     integrations: (BuildContext context) => IntegrationsScreen(),
     brandSetup: (BuildContext context) => const BrandSetupScreen(),
     postDetail: (BuildContext context) => const PostDetailScreen(),
+    assistantChat: (BuildContext context) => const AssistantChatScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
 

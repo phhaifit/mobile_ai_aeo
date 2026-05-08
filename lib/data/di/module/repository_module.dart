@@ -39,6 +39,10 @@ import 'package:boilerplate/data/repository/seo_repository_impl.dart'
     as seo_opt;
 import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
 import 'package:boilerplate/data/repository/trend/trend_repository_impl.dart';
+import 'package:boilerplate/data/datasource/assistant_chat/assistant_chat_data_source.dart';
+import 'package:boilerplate/data/datasource/assistant_chat/mock_assistant_chat_data_source.dart';
+import 'package:boilerplate/data/repository/assistant_chat/assistant_chat_repository_impl.dart';
+import 'package:boilerplate/domain/repository/assistant_chat/assistant_chat_repository.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -95,6 +99,14 @@ class RepositoryModule {
     // trend repository:---------------------------------------------------------
     getIt.registerSingleton<TrendRepository>(
       TrendRepositoryImpl(getIt<PerformanceApi>()),
+    );
+
+    // assistant chat (mock data source — swap for API implementation)
+    getIt.registerSingleton<AssistantChatDataSource>(
+      MockAssistantChatDataSource(),
+    );
+    getIt.registerSingleton<AssistantChatRepository>(
+      AssistantChatRepositoryImpl(getIt<AssistantChatDataSource>()),
     );
   }
 }
