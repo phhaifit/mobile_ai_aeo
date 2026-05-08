@@ -33,10 +33,9 @@ class ServiceLocator {
     getIt.registerSingleton<EnvironmentConfig>(
       EnvironmentConfig(
         environment: environment,
-        apiBaseUrl: dotenv.env['API_BASE_URL'] ??
-            'http://jsonplaceholder.typicode.com',
-        aiApiBaseUrl: dotenv.env['AI_API_BASE_URL'] ??
-            'http://localhost:8080',
+        apiBaseUrl:
+            dotenv.env['API_BASE_URL'] ?? 'http://jsonplaceholder.typicode.com',
+        aiApiBaseUrl: dotenv.env['AI_API_BASE_URL'] ?? 'http://localhost:8000',
         sentryDsn: dotenv.env['SENTRY_DSN'] ?? '',
         analyticsEnabled: dotenv.env['ANALYTICS_ENABLED'] == 'true',
       ),

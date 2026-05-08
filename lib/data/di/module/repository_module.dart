@@ -4,6 +4,7 @@ import 'package:boilerplate/data/local/datasource/cronjob_datasource_impl.dart';
 import 'package:boilerplate/data/local/datasources/post/post_datasource.dart';
 import 'package:boilerplate/data/local/datasources/seo/seo_audit_datasource.dart';
 import 'package:boilerplate/data/network/apis/analytics/analytics_api.dart';
+import 'package:boilerplate/data/repository/analytics/analytics_repository_impl.dart';
 import 'package:boilerplate/data/network/apis/auth/auth_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_api.dart';
 import 'package:boilerplate/data/network/apis/content/content_profile_api.dart';
@@ -11,7 +12,7 @@ import 'package:boilerplate/data/network/apis/prompt/prompt_api.dart';
 import 'package:boilerplate/data/network/apis/overview/overview_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
-import 'package:boilerplate/data/repository/analytics/analytics_repository_impl.dart';
+import 'package:boilerplate/core/data/network/dio/dio_client.dart';
 import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/data/service/google_auth_service.dart';
 import 'package:boilerplate/data/repository/content/content_repository_impl.dart';
@@ -39,8 +40,7 @@ import 'package:boilerplate/data/repository/seo_repository_impl.dart'
     as seo_opt;
 import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
 import 'package:boilerplate/data/repository/trend/trend_repository_impl.dart';
-import 'package:boilerplate/data/datasource/assistant_chat/assistant_chat_data_source.dart';
-import 'package:boilerplate/data/datasource/assistant_chat/mock_assistant_chat_data_source.dart';
+import 'package:boilerplate/data/network/apis/assistant/assistant_api.dart';
 import 'package:boilerplate/data/repository/assistant_chat/assistant_chat_repository_impl.dart';
 import 'package:boilerplate/domain/repository/assistant_chat/assistant_chat_repository.dart';
 
@@ -101,12 +101,15 @@ class RepositoryModule {
       TrendRepositoryImpl(getIt<PerformanceApi>()),
     );
 
-    // assistant chat (mock data source — swap for API implementation)
-    getIt.registerSingleton<AssistantChatDataSource>(
-      MockAssistantChatDataSource(),
+    // assistant chat (FastAPI on aiApiBaseUrl + local recent index)
+    getIt.registerSingleton<AssistantApi>(
+      AssistantApi(getIt<DioClient>(instanceName: 'aiDioClient')),
     );
     getIt.registerSingleton<AssistantChatRepository>(
-      AssistantChatRepositoryImpl(getIt<AssistantChatDataSource>()),
+      AssistantChatRepositoryImpl(
+        getIt<AssistantApi>(),
+        getIt<SharedPreferenceHelper>(),
+      ),
     );
   }
 }

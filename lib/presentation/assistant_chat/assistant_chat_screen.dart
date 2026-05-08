@@ -9,6 +9,7 @@ import 'package:boilerplate/core/widgets/progress_indicator_widget.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:mobx/mobx.dart' show reaction, ReactionDisposer;
 
 class AssistantChatScreen extends StatefulWidget {
   const AssistantChatScreen({super.key});
@@ -22,19 +23,37 @@ class _AssistantChatScreenState extends State<AssistantChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final ReactionDisposer _chatErrorDisposer;
 
   @override
   void initState() {
     super.initState();
     _store = getIt<AssistantChatStore>();
+    _chatErrorDisposer = reaction(
+      (_) => _store.chatError,
+      (String? err) {
+        if (err == null || err.isEmpty) return;
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err),
+            backgroundColor: const Color(0xFFB91C1C),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        _store.clearChatError();
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _store.loadChat();
+      await _store.loadRecentSessions();
       _scrollToBottom();
     });
   }
 
   @override
   void dispose() {
+    _chatErrorDisposer();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -59,7 +78,6 @@ class _AssistantChatScreenState extends State<AssistantChatScreen> {
   }
 
   String _dateLabelForMessages() {
-    // Mock seed uses "today"; when API returns history, derive per-day groups.
     return 'TODAY';
   }
 
@@ -78,36 +96,42 @@ class _AssistantChatScreenState extends State<AssistantChatScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AssistantChatColors.pageBackground,
-      drawer: AssistantChatDrawer(
-        onNewChat: () {
-          Navigator.pop(context);
-          _textController.clear();
-          _store.refreshChat().then((_) => _scrollToBottom());
-        },
-        onRecentSessions: () {
-          Navigator.pop(context);
-          _snack('Recent sessions — connect to API when ready.');
-        },
-        onSavedPrompts: () {
-          Navigator.pop(context);
-          _snack('Saved prompts — connect to API when ready.');
-        },
-        onRecentChatTap: (title) {
-          Navigator.pop(context);
-          _snack('Open chat: $title (mock).');
-        },
-        onSettings: () {
-          Navigator.pop(context);
-          _snack('Settings — connect when ready.');
-        },
-        onProfileMenu: () {
-          Navigator.pop(context);
-          _snack('Account menu — connect when ready.');
-        },
-        onDashboard: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, Routes.dashboard);
-        },
+      drawer: Observer(
+        builder: (_) => AssistantChatDrawer(
+          recentSessions: _store.recentSessions,
+          onNewChat: () {
+            Navigator.pop(context);
+            _textController.clear();
+            _store.startNewChat().then((_) => _scrollToBottom());
+          },
+          onRecentSessions: () {
+            Navigator.pop(context);
+            _snack('Recent sessions — full history uses the list below.');
+          },
+          onSavedPrompts: () {
+            Navigator.pop(context);
+            _snack('Saved prompts — connect when backend is ready.');
+          },
+          onOpenSession: (id) {
+            Navigator.pop(context);
+            _store.openSession(id).then((_) => _scrollToBottom());
+          },
+          onDeleteSession: (id) {
+            _store.deleteSession(id);
+          },
+          onSettings: () {
+            Navigator.pop(context);
+            _snack('Settings — connect when ready.');
+          },
+          onProfileMenu: () {
+            Navigator.pop(context);
+            _snack('Account menu — connect when ready.');
+          },
+          onDashboard: () {
+            Navigator.pop(context);
+            Navigator.pushNamed(context, Routes.dashboard);
+          },
+        ),
       ),
       body: SafeArea(
         child: Column(

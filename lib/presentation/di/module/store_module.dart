@@ -68,6 +68,8 @@ import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/presentation/brand_setup/store/brand_setup_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/content_agent_store.dart';
 import 'package:boilerplate/data/network/apis/content_agent/content_agent_api.dart';
+import 'package:boilerplate/domain/usecase/assistant_chat/delete_assistant_session_usecase.dart';
+import 'package:boilerplate/domain/usecase/assistant_chat/get_assistant_recent_sessions_usecase.dart';
 import 'package:boilerplate/domain/usecase/assistant_chat/load_assistant_chat_usecase.dart';
 import 'package:boilerplate/domain/usecase/assistant_chat/send_assistant_chat_message_usecase.dart';
 import 'package:boilerplate/presentation/assistant_chat/store/assistant_chat_store.dart';
@@ -260,6 +262,8 @@ class StoreModule {
         getIt<ErrorStore>(),
         getIt<LoadAssistantChatUseCase>(),
         getIt<SendAssistantChatMessageUseCase>(),
+        getIt<GetAssistantRecentSessionsUseCase>(),
+        getIt<DeleteAssistantSessionUseCase>(),
       ),
     );
   }

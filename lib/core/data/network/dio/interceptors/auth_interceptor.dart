@@ -16,7 +16,10 @@ class AuthInterceptor extends Interceptor {
   ) async {
     final String persistedToken = (await accessToken() ?? '').trim();
     final String envToken = (dotenv.env['ACCESS_TOKEN'] ?? '').trim();
-    final String token = persistedToken.isNotEmpty ? persistedToken : envToken;
+    // Debug: .env.dev ACCESS_TOKEN overrides saved login so one JWT can be used for local API.
+    final String token = kDebugMode && envToken.isNotEmpty
+        ? envToken
+        : (persistedToken.isNotEmpty ? persistedToken : envToken);
     final String normalizedToken = token.startsWith('Bearer ')
         ? token.substring(7).trim()
         : token;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,5 +65,25 @@ class SharedPreferenceHelper {
 
   Future<void> changeLanguage(String language) {
     return _sharedPreference.setString(Preferences.current_language, language);
+  }
+
+  // Assistant recent sessions (local index; no list API):--------------------
+  Future<List<Map<String, dynamic>>> getAssistantRecentSessionsRaw() async {
+    final raw = _sharedPreference.getString(Preferences.assistant_recent_sessions);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> saveAssistantRecentSessionsRaw(String json) {
+    return _sharedPreference.setString(
+      Preferences.assistant_recent_sessions,
+      json,
+    );
   }
 }

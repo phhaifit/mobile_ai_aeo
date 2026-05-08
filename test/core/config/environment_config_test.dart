@@ -8,7 +8,7 @@ void main() {
 
       expect(config.environment, Environment.dev);
       expect(config.apiBaseUrl, 'http://jsonplaceholder.typicode.com');
-      expect(config.aiApiBaseUrl, 'http://localhost:8080');
+      expect(config.aiApiBaseUrl, 'http://localhost:8000');
       expect(config.sentryDsn, '');
       expect(config.analyticsEnabled, false);
     });
@@ -28,7 +28,7 @@ void main() {
       final configDisabled = EnvironmentConfig(
         environment: Environment.dev,
         apiBaseUrl: 'http://localhost:3000',
-        aiApiBaseUrl: 'http://localhost:8080',
+        aiApiBaseUrl: 'http://localhost:8000',
         sentryDsn: '',
       );
 
@@ -49,7 +49,7 @@ void main() {
       final config = EnvironmentConfig(
         environment: Environment.dev,
         apiBaseUrl: 'http://localhost:3000',
-        aiApiBaseUrl: 'http://localhost:8080',
+        aiApiBaseUrl: 'http://localhost:8000',
       );
 
       expect(config.isProduction, false);

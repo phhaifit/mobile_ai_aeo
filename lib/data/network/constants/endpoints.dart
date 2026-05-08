@@ -102,4 +102,10 @@ class Endpoints {
       '/api/projects/$projectId/cluster/generate-articles';
   static String clusterJobStream(String jobId) =>
       '/api/cluster/jobs/$jobId/stream';
+
+  // ─── AI Assistant (FastAPI) — base URL from EnvironmentConfig.aiApiBaseUrl
+  static const String assistantChat = '/assistant/chat';
+
+  static String assistantSession(String sessionId) =>
+      '/assistant/session/${Uri.encodeComponent(sessionId)}';
 }

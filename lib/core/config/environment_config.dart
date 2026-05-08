@@ -22,7 +22,7 @@ class EnvironmentConfig {
     return const EnvironmentConfig(
       environment: Environment.dev,
       apiBaseUrl: 'http://jsonplaceholder.typicode.com',
-      aiApiBaseUrl: 'http://localhost:8080',
+      aiApiBaseUrl: 'http://localhost:8000',
       sentryDsn: '',
       analyticsEnabled: false,
     );

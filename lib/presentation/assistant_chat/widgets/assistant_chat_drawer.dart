@@ -1,30 +1,28 @@
+import 'package:boilerplate/domain/entity/assistant_chat/assistant_session_summary.dart';
 import 'package:boilerplate/presentation/assistant_chat/widgets/assistant_chat_colors.dart';
 import 'package:flutter/material.dart';
-
-/// Mock recent threads — replace with store/API when sessions are wired.
-const List<String> _kMockRecentChatTitles = [
-  'Project Ideas',
-  'Travel Plans',
-  'React Component Structure Review',
-];
 
 /// Sidebar menu for Assistant (matches product drawer layout).
 class AssistantChatDrawer extends StatelessWidget {
   const AssistantChatDrawer({
     super.key,
+    required this.recentSessions,
     required this.onNewChat,
     required this.onRecentSessions,
     required this.onSavedPrompts,
-    required this.onRecentChatTap,
+    required this.onOpenSession,
+    required this.onDeleteSession,
     required this.onSettings,
     required this.onProfileMenu,
     required this.onDashboard,
   });
 
+  final List<AssistantSessionSummary> recentSessions;
   final VoidCallback onNewChat;
   final VoidCallback onRecentSessions;
   final VoidCallback onSavedPrompts;
-  final ValueChanged<String> onRecentChatTap;
+  final ValueChanged<String> onOpenSession;
+  final ValueChanged<String> onDeleteSession;
   final VoidCallback onSettings;
   final VoidCallback onProfileMenu;
   final VoidCallback onDashboard;
@@ -112,17 +110,32 @@ class AssistantChatDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: _kMockRecentChatTitles.length,
-                itemBuilder: (context, index) {
-                  final title = _kMockRecentChatTitles[index];
-                  return _RecentChatTile(
-                    title: title,
-                    onTap: () => onRecentChatTap(title),
-                  );
-                },
-              ),
+              child: recentSessions.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'No saved chats yet.\nSend a message to start.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AssistantChatColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: recentSessions.length,
+                      itemBuilder: (context, index) {
+                        final s = recentSessions[index];
+                        return _RecentChatTile(
+                          title: s.title,
+                          onTap: () => onOpenSession(s.id),
+                          onDelete: () => onDeleteSession(s.id),
+                        );
+                      },
+                    ),
             ),
             const Divider(height: 1, thickness: 1),
             _DrawerNavRow(
@@ -175,7 +188,8 @@ class AssistantChatDrawer extends StatelessWidget {
                     ),
                     Icon(
                       Icons.unfold_more_rounded,
-                      color: AssistantChatColors.iconMuted.withValues(alpha: 0.85),
+                      color: AssistantChatColors.iconMuted
+                          .withValues(alpha: 0.85),
                       size: 22,
                     ),
                   ],
@@ -302,38 +316,49 @@ class _RecentChatTile extends StatelessWidget {
   const _RecentChatTile({
     required this.title,
     required this.onTap,
+    required this.onDelete,
   });
 
   final String title;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 20,
-              color: AssistantChatColors.iconMuted.withValues(alpha: 0.9),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AssistantChatColors.textPrimary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 20,
+                color: AssistantChatColors.iconMuted.withValues(alpha: 0.9),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: AssistantChatColors.textPrimary,
+                  ),
                 ),
               ),
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                color: AssistantChatColors.iconMuted,
+                onPressed: onDelete,
+                tooltip: 'Delete chat',
+              ),
+            ],
+          ),
         ),
       ),
     );
