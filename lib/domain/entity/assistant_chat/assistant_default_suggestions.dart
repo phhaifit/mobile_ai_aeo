@@ -6,18 +6,17 @@ import 'package:boilerplate/domain/entity/assistant_chat/assistant_suggestion_ic
 List<AssistantChatSuggestion> defaultAssistantSuggestions() {
   return const [
     AssistantChatSuggestion(
-      id: 'sug_email',
-      title: 'Draft an Email',
+      id: 'sug_project_bh',
+      title: 'Create "Bác Hồ Kính Yêu" project',
       description:
-          'Help me write a professional follow-up email after a client meeting.',
+          'Create a project named bác hồ kính yêu',
       accent: AssistantSuggestionAccent.primaryBlue,
       icon: AssistantSuggestionIcon.compose,
     ),
     AssistantChatSuggestion(
-      id: 'sug_brainstorm',
-      title: 'Brainstorm Ideas',
-      description:
-          'Give me 5 creative marketing concepts for a new coffee launch.',
+      id: 'sug_writing_style',
+      title: 'New writing style',
+      description: 'Create a new writing style',
       accent: AssistantSuggestionAccent.slateBlue,
       icon: AssistantSuggestionIcon.lightbulb,
     ),

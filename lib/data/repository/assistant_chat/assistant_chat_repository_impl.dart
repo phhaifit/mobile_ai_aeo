@@ -110,6 +110,7 @@ class AssistantChatRepositoryImpl implements AssistantChatRepository {
     final p = m.payload;
     if (p is UserTextPayload) return p.text;
     if (p is AssistantPlainTextPayload) return p.text;
+    if (p is AssistantTypingPayload) return '';
     return '';
   }
 

@@ -2,9 +2,11 @@ import 'package:boilerplate/constants/app_theme.dart';
 import 'package:boilerplate/constants/strings.dart';
 import 'package:boilerplate/core/services/analytics_service.dart';
 import 'package:boilerplate/presentation/dashboard/dashboard.dart';
+import 'package:boilerplate/presentation/assistant_chat/widgets/assistant_chat_bubble_host.dart';
 import 'package:boilerplate/presentation/home/store/language/language_store.dart';
 import 'package:boilerplate/presentation/home/store/theme/theme_store.dart';
 import 'package:boilerplate/presentation/login/store/login_store.dart';
+import 'package:boilerplate/utils/app_navigator_key.dart';
 import 'package:boilerplate/utils/locale/app_localization.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
@@ -27,11 +29,15 @@ class MyApp extends StatelessWidget {
     return Observer(
       builder: (context) {
         return MaterialApp(
+          navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           title: Strings.appName,
           theme: _themeStore.darkMode
               ? AppThemeData.darkThemeData
               : AppThemeData.lightThemeData,
+          builder: (context, child) {
+            return AssistantChatBubbleHost(child: child);
+          },
           navigatorObservers: [
             if (_analyticsService.observer != null) _analyticsService.observer!,
           ],

@@ -149,17 +149,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,
-                title: 'AI Assistant Chat',
-                description: 'Chat UI with suggestions and history (mock data)',
-                icon: Icons.chat_bubble_outline,
-                color: Color(0xFF2563EB),
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.assistantChat);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
                 title: 'Auto Generation',
                 description: 'Automate content generation',
                 icon: Icons.autorenew,

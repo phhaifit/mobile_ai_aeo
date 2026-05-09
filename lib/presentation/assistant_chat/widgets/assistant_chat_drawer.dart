@@ -2,7 +2,49 @@ import 'package:boilerplate/domain/entity/assistant_chat/assistant_session_summa
 import 'package:boilerplate/presentation/assistant_chat/widgets/assistant_chat_colors.dart';
 import 'package:flutter/material.dart';
 
+/// Drawer is shown from the floating bubble [Scaffold] above the app [Navigator],
+/// so there is no [Overlay] for [IconButton] tooltips. Use ink targets + semantics.
+class _DrawerIconAction extends StatelessWidget {
+  const _DrawerIconAction({
+    required this.icon,
+    required this.semanticLabel,
+    required this.onPressed,
+    this.iconSize = 22,
+    this.padding = const EdgeInsets.all(8),
+  });
+
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback onPressed;
+  final double iconSize;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: Padding(
+            padding: padding,
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: AssistantChatColors.iconMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Sidebar menu for Assistant (matches product drawer layout).
+/// Use [embedAsSheet] when embedding drawer content in a sheet (no [Drawer] chrome).
 class AssistantChatDrawer extends StatelessWidget {
   const AssistantChatDrawer({
     super.key,
@@ -15,6 +57,8 @@ class AssistantChatDrawer extends StatelessWidget {
     required this.onSettings,
     required this.onProfileMenu,
     required this.onDashboard,
+    this.embedAsSheet = false,
+    this.scrollController,
   });
 
   final List<AssistantSessionSummary> recentSessions;
@@ -27,18 +71,21 @@ class AssistantChatDrawer extends StatelessWidget {
   final VoidCallback onProfileMenu;
   final VoidCallback onDashboard;
 
+  /// When true, renders as full-width [Material] instead of a [Drawer] slot.
+  final bool embedAsSheet;
+
+  /// Optional scroll controller (e.g. from [DraggableScrollableSheet]).
+  final ScrollController? scrollController;
+
   static const Color _sectionLabelColor = Color(0xFF9CA3AF);
   static const String _appVersion = 'v2.4.0';
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    final content = SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
               child: Row(
@@ -53,14 +100,10 @@ class AssistantChatDrawer extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton(
+                  _DrawerIconAction(
+                    icon: Icons.dashboard_outlined,
+                    semanticLabel: 'Dashboard',
                     onPressed: onDashboard,
-                    icon: const Icon(
-                      Icons.dashboard_outlined,
-                      color: AssistantChatColors.iconMuted,
-                      size: 22,
-                    ),
-                    tooltip: 'Dashboard',
                   ),
                 ],
               ),
@@ -125,6 +168,7 @@ class AssistantChatDrawer extends StatelessWidget {
                       ),
                     )
                   : ListView.builder(
+                      controller: scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       itemCount: recentSessions.length,
                       itemBuilder: (context, index) {
@@ -209,7 +253,19 @@ class AssistantChatDrawer extends StatelessWidget {
             ),
           ],
         ),
-      ),
+    );
+
+    if (embedAsSheet) {
+      return Material(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        child: content,
+      );
+    }
+    return Drawer(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      child: content,
     );
   }
 }
@@ -312,6 +368,37 @@ class _DrawerNavRow extends StatelessWidget {
   }
 }
 
+Future<void> _confirmDeleteSession(
+  BuildContext context,
+  VoidCallback onConfirmed,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete this chat?'),
+      content: const Text(
+        'Are you sure you want to delete this conversation? '
+        'This cannot be undone.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFB91C1C),
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true && context.mounted) onConfirmed();
+}
+
 class _RecentChatTile extends StatelessWidget {
   const _RecentChatTile({
     required this.title,
@@ -351,11 +438,12 @@ class _RecentChatTile extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                color: AssistantChatColors.iconMuted,
-                onPressed: onDelete,
-                tooltip: 'Delete chat',
+              _DrawerIconAction(
+                icon: Icons.close,
+                semanticLabel: 'Delete chat',
+                iconSize: 20,
+                padding: const EdgeInsets.all(4),
+                onPressed: () => _confirmDeleteSession(context, onDelete),
               ),
             ],
           ),

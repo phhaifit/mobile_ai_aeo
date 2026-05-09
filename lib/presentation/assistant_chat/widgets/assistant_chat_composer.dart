@@ -1,13 +1,18 @@
 import 'package:boilerplate/presentation/assistant_chat/widgets/assistant_chat_colors.dart';
+import 'package:boilerplate/utils/app_navigator_key.dart';
 import 'package:flutter/material.dart';
 
 class AssistantChatComposer extends StatelessWidget {
   const AssistantChatComposer({
     super.key,
+    this.embedded = false,
     required this.controller,
     required this.onSend,
     required this.isSending,
   });
+
+  /// When true, avoid [IconButton] tooltips (no [Overlay] above [Navigator]).
+  final bool embedded;
 
   final TextEditingController controller;
   final VoidCallback onSend;
@@ -34,17 +39,27 @@ class AssistantChatComposer extends StatelessWidget {
           ),
           child: Row(
             children: [
-              IconButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Attachments will be available with the API.'),
-                      duration: Duration(seconds: 2),
+              if (embedded)
+                Semantics(
+                  button: true,
+                  label: 'Attachments',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showAttachmentsHint(context),
+                      customBorder: const CircleBorder(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Icon(Icons.add, color: AssistantChatColors.iconMuted),
+                      ),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.add, color: AssistantChatColors.iconMuted),
-              ),
+                  ),
+                )
+              else
+                IconButton(
+                  onPressed: () => _showAttachmentsHint(context),
+                  icon: const Icon(Icons.add, color: AssistantChatColors.iconMuted),
+                ),
               Expanded(
                 child: TextField(
                   controller: controller,
@@ -72,20 +87,11 @@ class AssistantChatComposer extends StatelessWidget {
                     onTap: isSending ? null : onSend,
                     child: Padding(
                       padding: const EdgeInsets.all(10),
-                      child: isSending
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.arrow_upward_rounded,
-                              color: Colors.white,
-                              size: 22,
-                            ),
+                      child: Icon(
+                        Icons.arrow_upward_rounded,
+                        color: isSending ? Colors.white70 : Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ),
@@ -103,6 +109,16 @@ class AssistantChatComposer extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showAttachmentsHint(BuildContext context) {
+    final rootCtx = appNavigatorKey.currentContext ?? context;
+    ScaffoldMessenger.maybeOf(rootCtx)?.showSnackBar(
+      const SnackBar(
+        content: Text('Attachments will be available with the API.'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 }

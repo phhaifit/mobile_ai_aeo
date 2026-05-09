@@ -18,3 +18,9 @@ final class AssistantPlainTextPayload extends AssistantMessagePayload {
 
   const AssistantPlainTextPayload(this.text);
 }
+
+/// Placeholder while waiting for the assistant HTTP response (not sent in API history).
+@immutable
+final class AssistantTypingPayload extends AssistantMessagePayload {
+  const AssistantTypingPayload();
+}

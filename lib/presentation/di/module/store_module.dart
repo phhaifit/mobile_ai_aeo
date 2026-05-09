@@ -257,7 +257,7 @@ class StoreModule {
       ContentAgentStore(getIt<ContentAgentApi>()),
     );
 
-    getIt.registerFactory<AssistantChatStore>(
+    getIt.registerLazySingleton<AssistantChatStore>(
       () => AssistantChatStore(
         getIt<ErrorStore>(),
         getIt<LoadAssistantChatUseCase>(),

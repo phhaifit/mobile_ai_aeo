@@ -105,19 +105,19 @@ mixin _$AssistantChatStore on _AssistantChatStore, Store {
     });
   }
 
-  late final _$chatErrorAtom =
-      Atom(name: '_AssistantChatStore.chatError', context: context);
+  late final _$composerClearNonceAtom =
+      Atom(name: '_AssistantChatStore.composerClearNonce', context: context);
 
   @override
-  String? get chatError {
-    _$chatErrorAtom.reportRead();
-    return super.chatError;
+  int get composerClearNonce {
+    _$composerClearNonceAtom.reportRead();
+    return super.composerClearNonce;
   }
 
   @override
-  set chatError(String? value) {
-    _$chatErrorAtom.reportWrite(value, super.chatError, () {
-      super.chatError = value;
+  set composerClearNonce(int value) {
+    _$composerClearNonceAtom.reportWrite(value, super.composerClearNonce, () {
+      super.composerClearNonce = value;
     });
   }
 
@@ -178,20 +178,6 @@ mixin _$AssistantChatStore on _AssistantChatStore, Store {
     return _$sendMessageAsyncAction.run(() => super.sendMessage(rawText));
   }
 
-  late final _$_AssistantChatStoreActionController =
-      ActionController(name: '_AssistantChatStore', context: context);
-
-  @override
-  void clearChatError() {
-    final _$actionInfo = _$_AssistantChatStoreActionController.startAction(
-        name: '_AssistantChatStore.clearChatError');
-    try {
-      return super.clearChatError();
-    } finally {
-      _$_AssistantChatStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
   @override
   String toString() {
     return '''
@@ -201,7 +187,7 @@ isSending: ${isSending},
 suggestions: ${suggestions},
 messages: ${messages},
 recentSessions: ${recentSessions},
-chatError: ${chatError}
+composerClearNonce: ${composerClearNonce}
     ''';
   }
 }

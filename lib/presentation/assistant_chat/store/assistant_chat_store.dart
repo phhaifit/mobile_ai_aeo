@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/data/network/apis/assistant/assistant_api.dart';
 import 'package:boilerplate/domain/entity/assistant_chat/assistant_chat_message.dart';
@@ -25,6 +27,11 @@ abstract class _AssistantChatStore with Store {
     this._deleteAssistantSessionUseCase,
   );
 
+  static const String _pendingAiMessageId = 'msg_ai_pending';
+
+  static const String _sendFailureBubbleText =
+      'We could not get a reply from the server. What you see is still from saved data — please try sending again in a moment.';
+
   final ErrorStore errorStore;
   final LoadAssistantChatUseCase _loadAssistantChatUseCase;
   final SendAssistantChatMessageUseCase _sendAssistantChatMessageUseCase;
@@ -50,21 +57,25 @@ abstract class _AssistantChatStore with Store {
   @observable
   List<AssistantSessionSummary> recentSessions = [];
 
-  /// User-facing error for Snackbar (cleared on next action).
+  /// Bumped when starting a new chat or opening another session (clears composer draft).
   @observable
-  String? chatError;
+  int composerClearNonce = 0;
 
   String _newSessionId() =>
       'sess_${DateTime.now().microsecondsSinceEpoch}';
 
-  @action
-  void clearChatError() {
-    chatError = null;
-  }
-
   String _formatError(Object e) {
     if (e is AssistantApiException) return e.message;
     return e.toString();
+  }
+
+  void _log(String message, Object e, StackTrace st) {
+    developer.log(
+      message,
+      name: 'AssistantChatStore',
+      error: e,
+      stackTrace: st,
+    );
   }
 
   @action
@@ -74,10 +85,9 @@ abstract class _AssistantChatStore with Store {
         params: const AssistantNoParams(),
       );
       recentSessions = List<AssistantSessionSummary>.from(list);
-    } catch (e) {
+    } catch (e, st) {
       recentSessions = [];
-      chatError = _formatError(e);
-      errorStore.setErrorMessage(_formatError(e));
+      _log('loadRecentSessions failed', e, st);
     }
   }
 
@@ -85,7 +95,6 @@ abstract class _AssistantChatStore with Store {
   Future<void> loadChat() async {
     isLoadingBootstrap = true;
     errorStore.reset('');
-    chatError = null;
     try {
       final id = sessionId;
       final bootstrap = await _loadAssistantChatUseCase(
@@ -94,10 +103,13 @@ abstract class _AssistantChatStore with Store {
       suggestions = List<AssistantChatSuggestion>.from(bootstrap.suggestions);
       messages = List<AssistantChatMessage>.from(bootstrap.messages);
       sessionId ??= _newSessionId();
-    } catch (e) {
-      final msg = _formatError(e);
-      chatError = msg;
-      errorStore.setErrorMessage(msg);
+    } catch (e, st) {
+      _log('loadChat failed', e, st);
+      messages = [];
+      suggestions = List<AssistantChatSuggestion>.from(
+        defaultAssistantSuggestions(),
+      );
+      sessionId ??= _newSessionId();
     } finally {
       isLoadingBootstrap = false;
     }
@@ -120,17 +132,17 @@ abstract class _AssistantChatStore with Store {
     suggestions = List<AssistantChatSuggestion>.from(
       defaultAssistantSuggestions(),
     );
-    chatError = null;
     errorStore.reset('');
     await loadRecentSessions();
+    composerClearNonce++;
   }
 
   @action
   Future<void> openSession(String id) async {
     if (id.trim().isEmpty) return;
     sessionId = id.trim();
-    chatError = null;
     errorStore.reset('');
+    composerClearNonce++;
     await loadChat();
     await loadRecentSessions();
   }
@@ -147,13 +159,14 @@ abstract class _AssistantChatStore with Store {
       } else {
         await loadRecentSessions();
       }
-      chatError = null;
       errorStore.reset('');
-    } catch (e) {
-      final msg = _formatError(e);
-      chatError = msg;
-      errorStore.setErrorMessage(msg);
+    } catch (e, st) {
+      _log('deleteSession failed: ${_formatError(e)}', e, st);
     }
+  }
+
+  List<AssistantChatMessage> _withoutPending(List<AssistantChatMessage> list) {
+    return list.where((m) => m.id != _pendingAiMessageId).toList();
   }
 
   @action
@@ -172,10 +185,16 @@ abstract class _AssistantChatStore with Store {
       payload: UserTextPayload(trimmed),
     );
 
-    messages = [...messages, userMessage];
+    final typingMessage = AssistantChatMessage(
+      id: _pendingAiMessageId,
+      role: AssistantChatRole.assistant,
+      sentAt: DateTime.now(),
+      payload: const AssistantTypingPayload(),
+    );
+
+    messages = [...messages, userMessage, typingMessage];
     isSending = true;
     errorStore.reset('');
-    chatError = null;
 
     try {
       final reply = await _sendAssistantChatMessageUseCase(
@@ -185,13 +204,19 @@ abstract class _AssistantChatStore with Store {
           priorMessages: prior,
         ),
       );
-      messages = [...messages, reply];
+      final base = _withoutPending(messages);
+      messages = [...base, reply];
       await loadRecentSessions();
-    } catch (e) {
-      messages = prior;
-      final msg = _formatError(e);
-      chatError = msg;
-      errorStore.setErrorMessage(msg);
+    } catch (e, st) {
+      _log('sendMessage failed: ${_formatError(e)}', e, st);
+      final base = _withoutPending(messages);
+      final friendly = AssistantChatMessage(
+        id: 'msg_ai_err_${DateTime.now().millisecondsSinceEpoch}',
+        role: AssistantChatRole.assistant,
+        sentAt: DateTime.now(),
+        payload: const AssistantPlainTextPayload(_sendFailureBubbleText),
+      );
+      messages = [...base, friendly];
     } finally {
       isSending = false;
     }
