@@ -53,6 +53,12 @@ import 'package:boilerplate/domain/usecase/seo/get_seo_data_usecase.dart';
 import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
 import 'package:boilerplate/domain/usecase/trend/get_brand_analytics_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_content_performance_usecase.dart';
+import 'package:boilerplate/domain/repository/chat/chat-repository.dart';
+import 'package:boilerplate/domain/usecase/chat/get-chat-messages-usecase.dart';
+import 'package:boilerplate/domain/usecase/chat/send-chat-message-usecase.dart';
+import 'package:boilerplate/domain/usecase/chat/get-conversation-usecase.dart';
+import 'package:boilerplate/domain/usecase/chat/create-conversation-usecase.dart';
+import 'package:boilerplate/domain/usecase/chat/get-recent-conversations-usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -185,7 +191,8 @@ class UseCaseModule {
       GenerateClusterPlanUseCase(repository: getIt<seo_opt.SeoRepository>()),
     );
     getIt.registerSingleton<GenerateClusterArticlesUseCase>(
-      GenerateClusterArticlesUseCase(repository: getIt<seo_opt.SeoRepository>()),
+      GenerateClusterArticlesUseCase(
+          repository: getIt<seo_opt.SeoRepository>()),
     );
     getIt.registerSingleton<OptimizeContentUseCase>(
       OptimizeContentUseCase(repository: getIt<seo_opt.SeoRepository>()),
@@ -200,6 +207,23 @@ class UseCaseModule {
     );
     getIt.registerSingleton<GetContentPerformanceUseCase>(
       GetContentPerformanceUseCase(repository: getIt<TrendRepository>()),
+    );
+
+    // chat:--------------------------------------------------------------------
+    getIt.registerSingleton<GetChatMessagesUseCase>(
+      GetChatMessagesUseCase(getIt<ChatRepository>()),
+    );
+    getIt.registerSingleton<SendChatMessageUseCase>(
+      SendChatMessageUseCase(getIt<ChatRepository>()),
+    );
+    getIt.registerSingleton<GetConversationUseCase>(
+      GetConversationUseCase(getIt<ChatRepository>()),
+    );
+    getIt.registerSingleton<CreateConversationUseCase>(
+      CreateConversationUseCase(getIt<ChatRepository>()),
+    );
+    getIt.registerSingleton<GetRecentConversationsUseCase>(
+      GetRecentConversationsUseCase(getIt<ChatRepository>()),
     );
   }
 }

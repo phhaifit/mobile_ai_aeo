@@ -5,6 +5,10 @@ import 'package:boilerplate/presentation/auto_generation/auto_generation_screen.
 import 'package:boilerplate/presentation/planning_and_recommendations/planning_recommendations_screen.dart';
 import 'package:boilerplate/presentation/content_enhancement/content_enhancement_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:boilerplate/presentation/chat/store/chat_store.dart';
+import 'package:boilerplate/presentation/chat/screens/chat-bubble-screen.dart';
+import 'package:boilerplate/di/service_locator.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -12,217 +16,231 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  late ChatStore _chatStore;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatStore = getIt<ChatStore>();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Navigation'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: 20),
-              _buildTitle('Select to navigate'),
-              SizedBox(height: 40),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Overview',
-                description: 'Overview',
-                icon: Icons.dashboard,
-                color: Colors.purple,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.overview);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Analysis',
-                description: 'Sentiment analysis and LLM insights',
-                icon: Icons.analytics,
-                color: Colors.indigo,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.analysis);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Performance Monitoring',
-                description: 'Track brand visibility trends and performance',
-                icon: Icons.auto_graph,
-                color: Colors.deepOrange,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.performanceMonitoring);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'SEO Content Optimization',
-                description:
-                    'On-page SEO, topic clusters, internal links & content structure',
-                icon: Icons.manage_search_rounded,
-                color: Color(0xFF6366F1),
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.seoOptimization);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Template Library',
-                description: 'Writing Styles & Analysis',
-                icon: Icons.style,
-                color: Colors.teal,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.templateLibrary);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Login',
-                description: 'Login',
-                icon: Icons.login,
-                color: Colors.orange,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.login);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'All Posts',
-                description: 'View all posts',
-                icon: Icons.list,
-                color: Colors.blue,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => AllPostsScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Post Detail',
-                description: 'View post detail',
-                icon: Icons.article_outlined,
-                color: Colors.deepPurpleAccent,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.postDetail);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Content Enhancement',
-                description: 'Enhance, rewrite, humanize & summarize content',
-                icon: Icons.auto_fix_high,
-                color: Colors.deepPurple,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => const ContentEnhancementScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'AI Writer',
-                description: 'Generate content with AI',
-                icon: Icons.edit_note,
-                color: Colors.green,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => AiWriterScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Auto Generation',
-                description: 'Automate content generation',
-                icon: Icons.autorenew,
-                color: Colors.red,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => AutoGenerationScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Integrations',
-                description: 'Manage third-party integrations',
-                icon: Icons.link,
-                color: Colors.indigo,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.integrations);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Cronjob Automation',
-                description: 'Manage scheduled automation jobs',
-                icon: Icons.schedule,
-                color: Colors.teal,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.cronjobList);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Planning Recommendations',
-                description:
-                    'AI-powered recommendations to guide content strategy and brand optimization efforts.',
-                icon: Icons.lightbulb,
-                color: Colors.amber,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => PlanningRecommendationsScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Topics & Keywords',
-                description: 'Topics & Keywords',
-                icon: Icons.table_rows,
-                color: Colors.blue,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.topicsKeywords);
-                },
-              ),
-              SizedBox(height: 20),
-              _buildNavigationButton(
-                context,
-                title: 'Brand Setup & Config',
-                description:
-                    'Manage brand profile, knowledge base, links, rewrites, and LLM monitoring.',
-                icon: Icons.verified,
-                color: Colors.blueGrey,
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.brandSetup);
-                },
-              ),
-            ],
+    return Observer(
+      builder: (_) => Scaffold(
+        appBar: AppBar(
+          title: Text('Navigation'),
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 20),
+                _buildTitle('Select to navigate'),
+                SizedBox(height: 40),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Overview',
+                  description: 'Overview',
+                  icon: Icons.dashboard,
+                  color: Colors.purple,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.overview);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Analysis',
+                  description: 'Sentiment analysis and LLM insights',
+                  icon: Icons.analytics,
+                  color: Colors.indigo,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.analysis);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Performance Monitoring',
+                  description: 'Track brand visibility trends and performance',
+                  icon: Icons.auto_graph,
+                  color: Colors.deepOrange,
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pushNamed(Routes.performanceMonitoring);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'SEO Content Optimization',
+                  description:
+                      'On-page SEO, topic clusters, internal links & content structure',
+                  icon: Icons.manage_search_rounded,
+                  color: Color(0xFF6366F1),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.seoOptimization);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Template Library',
+                  description: 'Writing Styles & Analysis',
+                  icon: Icons.style,
+                  color: Colors.teal,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.templateLibrary);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Login',
+                  description: 'Login',
+                  icon: Icons.login,
+                  color: Colors.orange,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.login);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'All Posts',
+                  description: 'View all posts',
+                  icon: Icons.list,
+                  color: Colors.blue,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => AllPostsScreen()),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Post Detail',
+                  description: 'View post detail',
+                  icon: Icons.article_outlined,
+                  color: Colors.deepPurpleAccent,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.postDetail);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Content Enhancement',
+                  description: 'Enhance, rewrite, humanize & summarize content',
+                  icon: Icons.auto_fix_high,
+                  color: Colors.deepPurple,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const ContentEnhancementScreen()),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'AI Writer',
+                  description: 'Generate content with AI',
+                  icon: Icons.edit_note,
+                  color: Colors.green,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => AiWriterScreen()),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Auto Generation',
+                  description: 'Automate content generation',
+                  icon: Icons.autorenew,
+                  color: Colors.red,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (context) => AutoGenerationScreen()),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Integrations',
+                  description: 'Manage third-party integrations',
+                  icon: Icons.link,
+                  color: Colors.indigo,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.integrations);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Cronjob Automation',
+                  description: 'Manage scheduled automation jobs',
+                  icon: Icons.schedule,
+                  color: Colors.teal,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.cronjobList);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Planning Recommendations',
+                  description:
+                      'AI-powered recommendations to guide content strategy and brand optimization efforts.',
+                  icon: Icons.lightbulb,
+                  color: Colors.amber,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              PlanningRecommendationsScreen()),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Topics & Keywords',
+                  description: 'Topics & Keywords',
+                  icon: Icons.table_rows,
+                  color: Colors.blue,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.topicsKeywords);
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildNavigationButton(
+                  context,
+                  title: 'Brand Setup & Config',
+                  description:
+                      'Manage brand profile, knowledge base, links, rewrites, and LLM monitoring.',
+                  icon: Icons.verified,
+                  color: Colors.blueGrey,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(Routes.brandSetup);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
+        floatingActionButton: _buildAssistantFAB(context),
       ),
     );
   }
@@ -235,6 +253,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
         fontWeight: FontWeight.bold,
         color: Colors.black87,
       ),
+    );
+  }
+
+  Widget _buildAssistantFAB(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16, right: 16),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.shade500.withOpacity(0.4),
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: FloatingActionButton.extended(
+        onPressed: () {
+          _showChatBubbleModal(context);
+        },
+        backgroundColor: Colors.purple.shade500,
+        icon: Icon(Icons.smart_toy, size: 24),
+        label: Text('Assistant'),
+        elevation: 4,
+      ),
+    );
+  }
+
+  void _showChatBubbleModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Material(
+              color: Colors.white,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                  minHeight: 300,
+                ),
+                child: ChatBubbleScreen(isModal: true),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -39,6 +39,9 @@ import 'package:boilerplate/data/repository/seo_repository_impl.dart'
     as seo_opt;
 import 'package:boilerplate/domain/repository/trend/trend_repository.dart';
 import 'package:boilerplate/data/repository/trend/trend_repository_impl.dart';
+import 'package:boilerplate/domain/repository/chat/chat-repository.dart';
+import 'package:boilerplate/data/repository/chat/chat-repository-impl.dart';
+import 'package:boilerplate/data/datasource/remote/chat/chat-mock-datasource.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -95,6 +98,14 @@ class RepositoryModule {
     // trend repository:---------------------------------------------------------
     getIt.registerSingleton<TrendRepository>(
       TrendRepositoryImpl(getIt<PerformanceApi>()),
+    );
+
+    // chat repository:---------------------------------------------------------
+    getIt.registerSingleton<ChatMockDataSource>(
+      ChatMockDataSource(),
+    );
+    getIt.registerSingleton<ChatRepository>(
+      ChatRepositoryImpl(getIt<ChatMockDataSource>()),
     );
   }
 }
