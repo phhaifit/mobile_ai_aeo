@@ -1,0 +1,4 @@
+khởi tạo môi trường ảo: py -3.12 -m venv venv312
+active môi trường ảo: venv312\Scripts\activate
+tải thư viện: pip install -r requirements.txt
+chạy server: uvicorn main:app --host 0.0.0.0 --port 8000 --reload

@@ -6,6 +6,7 @@ import 'package:boilerplate/presentation/planning_and_recommendations/planning_r
 import 'package:boilerplate/presentation/content_enhancement/content_enhancement_screen.dart';
 import 'package:flutter/material.dart';
 
+
 class DashboardScreen extends StatefulWidget {
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -28,6 +29,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               _buildTitle('Select to navigate'),
               SizedBox(height: 40),
+              SizedBox(height: 20),
+              _buildNavigationButton(
+                context,
+                title: 'AI Chat Assistant',
+                description: 'Tương tác thông minh với ứng dụng qua ngôn ngữ tự nhiên',
+                icon: Icons.support_agent,
+                color: Colors.pink,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(Routes.chatAssistant);
+                },
+              ),
               SizedBox(height: 20),
               _buildNavigationButton(
                 context,

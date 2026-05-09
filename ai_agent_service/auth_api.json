@@ -1,0 +1,169 @@
+{
+  "/api/auth/signup": {
+    "post": {
+      "operationId": "AuthController_signup",
+      "parameters": [],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SignupRequestDto"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "User successfully registered",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupResponseDto"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid input data"
+        },
+        "409": {
+          "description": "User with this email already exists"
+        }
+      },
+      "summary": "Register a new user",
+      "tags": [
+        "Authentication"
+      ]
+    }
+  },
+  "/api/auth/login": {
+    "post": {
+      "operationId": "AuthController_login",
+      "parameters": [],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginRequestDto"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "User successfully authenticated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginResponseDto"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid input data"
+        },
+        "401": {
+          "description": "Invalid credentials"
+        }
+      },
+      "summary": "Authenticate user and get access token",
+      "tags": [
+        "Authentication"
+      ]
+    }
+  },
+  "/api/auth/login-google": {
+    "post": {
+      "description": "Exchange Google authorization code for access token using PKCE flow",
+      "operationId": "AuthController_loginWithGoogle",
+      "parameters": [],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GoogleLoginRequestDto"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Successfully authenticated with Google",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginResponseDto"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid input data or missing required fields"
+        },
+        "401": {
+          "description": "Invalid Google authorization code or PKCE verification failed"
+        },
+        "409": {
+          "description": "Email already registered with standard login"
+        }
+      },
+      "summary": "Login with Google OAuth2.0",
+      "tags": [
+        "Authentication"
+      ]
+    }
+  },
+  "/api/projects/{projectId}/social/accounts/oauth": {
+    "post": {
+      "operationId": "SocialController_saveOAuthAccounts",
+      "parameters": [
+        {
+          "name": "projectId",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SaveSocialAccountsDto"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Accounts saved",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SocialAccountResponseDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "JWT-auth": []
+        }
+      ],
+      "summary": "Save OAuth-connected accounts (after user selects pages)",
+      "tags": [
+        "social"
+      ]
+    }
+  }
+}

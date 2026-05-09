@@ -19,6 +19,7 @@ import 'package:boilerplate/presentation/integrations/integrations_screen.dart';
 import 'package:boilerplate/presentation/brand_setup/brand_setup_screen.dart';
 import 'package:boilerplate/presentation/post_detail/post_detail_screen.dart';
 import 'package:boilerplate/domain/entity/seo/seo_route_args.dart';
+import 'package:boilerplate/presentation/chat_assistant/chat_assistant_screen.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -52,6 +53,7 @@ class Routes {
   static const String cronjobEdit = '/cronjob/edit';
   static const String cronjobHistory = '/cronjob/history';
   static const String cronjobExecutionDetails = '/cronjob/execution/details';
+  static const String chatAssistant = '/chat-assistant';
 
   static final routes = <String, WidgetBuilder>{
     dashboard: (BuildContext context) => DashboardScreen(),
@@ -75,6 +77,7 @@ class Routes {
     integrations: (BuildContext context) => IntegrationsScreen(),
     brandSetup: (BuildContext context) => const BrandSetupScreen(),
     postDetail: (BuildContext context) => const PostDetailScreen(),
+    chatAssistant: (BuildContext context) => const ChatAssistantScreen(),
     //analytic: (BuildContext context) => AnalyticScreen(),
   };
 
