@@ -155,6 +155,43 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     }
   }
 
+  Future<void> _deleteSession(ChatSession session) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(
+            'http://192.168.1.6:8000/api/v1/chat/sessions/${session.id}'),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _pastSessions.removeWhere((s) => s.id == session.id);
+          // Nếu đang xem session bị xóa, chuyển về hội thoại mới
+          if (_sessionId == session.id) {
+            _sessionId = DateTime.now().millisecondsSinceEpoch.toString();
+            _messages.clear();
+            _messages.add(ChatMessage(
+              text:
+                  "Xin chào! Mình là AI Assistant. Mình có thể giúp gì cho bạn hôm nay?",
+              isUser: false,
+              timestamp: DateTime.now(),
+            ));
+          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xóa phiên chat')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi xóa phiên chat: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSubmitted(String text) async {
     if (text.trim().isEmpty || _isLoading) return;
 
@@ -191,6 +228,10 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                 timestamp: DateTime.now(),
               ));
         });
+        // Refresh danh sách sessions sau khi chat thành công
+        if (_authToken != null) {
+          _fetchPastSessions(_authToken!);
+        }
       } else {
         setState(() {
           _messages.insert(
@@ -309,18 +350,77 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
               itemCount: _pastSessions.length,
               itemBuilder: (context, index) {
                 final session = _pastSessions[index];
-                return ListTile(
-                  leading:
-                      const Icon(Icons.chat_bubble_outline, color: Colors.grey),
-                  title: Text(session.title,
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(
-                      "${session.date.day}/${session.date.month}/${session.date.year}"),
-                  onTap: () {
-                    // Xử lý load session cũ
-                    Navigator.pop(context);
-                    _loadSession(session);
+                return Dismissible(
+                  key: Key(session.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  confirmDismiss: (direction) async {
+                    return await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Xác nhận xóa'),
+                        content: Text('Bạn có chắc muốn xóa phiên "${session.title}"?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Hủy'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            child: const Text('Xóa'),
+                          ),
+                        ],
+                      ),
+                    );
                   },
+                  onDismissed: (direction) {
+                    _deleteSession(session);
+                  },
+                  child: ListTile(
+                    leading:
+                        const Icon(Icons.chat_bubble_outline, color: Colors.grey),
+                    title: Text(session.title,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                        "${session.date.day}/${session.date.month}/${session.date.year}"),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Xác nhận xóa'),
+                            content: Text('Bạn có chắc muốn xóa phiên "${session.title}"?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('Hủy'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(ctx).pop();
+                                  _deleteSession(session);
+                                },
+                                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                child: const Text('Xóa'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    onTap: () {
+                      // Xử lý load session cũ
+                      Navigator.pop(context);
+                      _loadSession(session);
+                    },
+                  ),
                 );
               },
             ),

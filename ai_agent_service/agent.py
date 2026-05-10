@@ -5,15 +5,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage
+from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 
 # Biến toàn cục để lưu trữ schema
 AEO_OPENAPI_SCHEMA = None
-
-# In-memory session store (thay thế MongoDB)
-_session_store = {}
 
 def fetch_openapi_schema():
     """Tải và tối ưu hóa OpenAPI Schema từ server để đưa vào System Prompt."""
@@ -88,10 +85,13 @@ def execute_api_request(method: str, path: str, access_token: str, query_params:
         return error_msg
 
 def get_session_history(session_id: str):
-    """Lấy hoặc tạo chat history in-memory cho session."""
-    if session_id not in _session_store:
-        _session_store[session_id] = ChatMessageHistory()
-    return _session_store[session_id]
+    """Lấy hoặc tạo chat history từ MongoDB cho session."""
+    return MongoDBChatMessageHistory(
+        session_id=session_id,
+        connection_string=os.getenv("MONGODB_URI", "mongodb://localhost:27017/"),
+        database_name="aeo_agent_db",
+        collection_name="chat_histories",
+    )
 
 def get_agent_executor():
     schema_context = fetch_openapi_schema()
