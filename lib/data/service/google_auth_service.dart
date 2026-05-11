@@ -1,5 +1,6 @@
-import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:pkce/pkce.dart';
 
 /// Result of Google OAuth authorization containing PKCE params.
 class GoogleAuthResult {
@@ -14,65 +15,70 @@ class GoogleAuthResult {
   });
 }
 
-/// Service that handles Google OAuth PKCE flow using flutter_appauth.
+/// Service that handles Google OAuth PKCE flow using flutter_web_auth_2.
 /// This service only handles the client-side authorization request.
 /// The actual token exchange happens on the backend.
 class GoogleAuthService {
-  final FlutterAppAuth _appAuth = const FlutterAppAuth();
-
   // Google OAuth endpoints
   static const String _authorizationEndpoint =
       'https://accounts.google.com/o/oauth2/v2/auth';
-  static const String _tokenEndpoint =
-      'https://oauth2.googleapis.com/token';
 
   /// Launch Google sign-in consent screen and return authorization code + PKCE params.
   /// Throws an exception if the user cancels or an error occurs.
   Future<GoogleAuthResult> signIn() async {
-    final String clientId =
-        dotenv.env['GOOGLE_SERVER_CLIENT_ID'] ?? '';
-    final String redirectUri =
-        dotenv.env['GOOGLE_REDIRECT_URI'] ?? '';
+    final String clientId = dotenv.env['GOOGLE_CLIENT_ID'] ?? '';
+    final String redirectUri = dotenv.env['GOOGLE_REDIRECT_URI'] ?? '';
+    final String urlScheme = dotenv.env['GOOGLE_URL_SCHEME'] ?? '';
 
-    if (clientId.isEmpty || redirectUri.isEmpty) {
+    if (clientId.isEmpty || redirectUri.isEmpty || urlScheme.isEmpty) {
       throw Exception(
-        'Missing GOOGLE_SERVER_CLIENT_ID or GOOGLE_REDIRECT_URI in .env',
+        'Missing GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI or GOOGLE_URL_SCHEME in .env',
       );
     }
 
-    // Use authorize() instead of authorizeAndExchangeCode()
-    // because we want to send the code + codeVerifier to our backend
-    // for server-side exchange.
-    final AuthorizationResponse? result = await _appAuth.authorize(
-      AuthorizationRequest(
-        clientId,
-        redirectUri,
-        serviceConfiguration: const AuthorizationServiceConfiguration(
-          authorizationEndpoint: _authorizationEndpoint,
-          tokenEndpoint: _tokenEndpoint,
-        ),
-        scopes: ['openid', 'email', 'profile'],
-        // flutter_appauth auto-generates codeVerifier and codeChallenge
-        // when using PKCE (which is the default)
-      ),
-    );
+    // Generate PKCE code verifier and code challenge
+    final pkcePair = PkcePair.generate();
 
-    if (result == null) {
-      throw Exception('Google sign-in was cancelled');
+    // Construct the authorization URL
+    final Uri authUrl = Uri.parse(_authorizationEndpoint).replace(queryParameters: {
+      'client_id': clientId,
+      'redirect_uri': redirectUri,
+      'response_type': 'code',
+      'scope': 'openid email profile',
+      'code_challenge': pkcePair.codeChallenge,
+      'code_challenge_method': 'S256',
+    });
+
+    try {
+      // Authenticate using flutter_web_auth_2
+      final resultUrl = await FlutterWebAuth2.authenticate(
+        url: authUrl.toString(),
+        callbackUrlScheme: urlScheme,
+      );
+
+      // Parse the result
+      final Uri parsedUrl = Uri.parse(resultUrl);
+      final String? authorizationCode = parsedUrl.queryParameters['code'];
+      final String? error = parsedUrl.queryParameters['error'];
+
+      if (error != null) {
+        throw Exception('Google sign-in error: $error');
+      }
+
+      if (authorizationCode == null) {
+        throw Exception('No authorization code received from Google');
+      }
+
+      return GoogleAuthResult(
+        code: authorizationCode,
+        codeVerifier: pkcePair.codeVerifier,
+        redirectUri: redirectUri,
+      );
+    } catch (e) {
+      if (e.toString().contains('CANCELED')) {
+        throw Exception('Google sign-in was cancelled');
+      }
+      rethrow;
     }
-
-    if (result.authorizationCode == null) {
-      throw Exception('No authorization code received from Google');
-    }
-
-    if (result.codeVerifier == null) {
-      throw Exception('No code verifier generated');
-    }
-
-    return GoogleAuthResult(
-      code: result.authorizationCode!,
-      codeVerifier: result.codeVerifier!,
-      redirectUri: redirectUri,
-    );
   }
 }
