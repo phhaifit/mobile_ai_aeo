@@ -25,6 +25,22 @@ mixin _$IntegrationsStore on _IntegrationsStore, Store {
     });
   }
 
+  late final _$currentProjectIdAtom =
+      Atom(name: '_IntegrationsStore.currentProjectId', context: context);
+
+  @override
+  String? get currentProjectId {
+    _$currentProjectIdAtom.reportRead();
+    return super.currentProjectId;
+  }
+
+  @override
+  set currentProjectId(String? value) {
+    _$currentProjectIdAtom.reportWrite(value, super.currentProjectId, () {
+      super.currentProjectId = value;
+    });
+  }
+
   late final _$isConnectingAtom =
       Atom(name: '_IntegrationsStore.isConnecting', context: context);
 
@@ -187,6 +203,7 @@ mixin _$IntegrationsStore on _IntegrationsStore, Store {
   String toString() {
     return '''
 isLoading: ${isLoading},
+currentProjectId: ${currentProjectId},
 isConnecting: ${isConnecting},
 isConnected: ${isConnected},
 hasError: ${hasError},

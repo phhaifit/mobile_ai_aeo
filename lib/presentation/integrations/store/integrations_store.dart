@@ -17,6 +17,9 @@ abstract class _IntegrationsStore with Store {
   bool isLoading = false;
 
   @observable
+  String? currentProjectId;
+
+  @observable
   bool isConnecting = false;
 
   @observable
@@ -62,25 +65,29 @@ abstract class _IntegrationsStore with Store {
     errorMessage = null;
 
     try {
-      final projectId = await _performanceApi.resolveProjectId();
-      if (projectId != null) {
-        final status = await _gscApi.getStatus(projectId);
-        isConnected = status['connected'] == true;
+      currentProjectId = await _performanceApi.resolveProjectId();
+      if (currentProjectId == null) {
+        hasError = true;
+        errorMessage = "No active project found. Cannot load Google Search Console integrations.";
+        return;
+      }
 
-        if (isConnected) {
-          if (status['isValid'] == false) {
-             hasError = true;
-             errorMessage = "Google token is expired or revoked. Please reconnect.";
-          } else {
-             await _fetchSites(projectId);
-             final linkedSite = await _gscApi.getLinkedSite(projectId);
-             if (linkedSite != null && linkedSite['siteUrl'] != null) {
-               final siteUrl = linkedSite['siteUrl'] as String;
-               if (gscProperties.contains(siteUrl)) {
-                 selectedGscProperty = siteUrl;
-               }
-             }
-          }
+      final status = await _gscApi.getStatus(currentProjectId!);
+      isConnected = status['connected'] == true;
+
+      if (isConnected) {
+        if (status['isValid'] == false) {
+            hasError = true;
+            errorMessage = "Google token is expired or revoked. Please reconnect.";
+        } else {
+            await _fetchSites(currentProjectId!);
+            final linkedSite = await _gscApi.getLinkedSite(currentProjectId!);
+            if (linkedSite != null && linkedSite['siteUrl'] != null) {
+              final siteUrl = linkedSite['siteUrl'] as String;
+              if (gscProperties.contains(siteUrl)) {
+                selectedGscProperty = siteUrl;
+              }
+            }
         }
       }
     } catch (e) {
@@ -116,8 +123,7 @@ abstract class _IntegrationsStore with Store {
     errorMessage = null;
 
     try {
-      final projectId = await _performanceApi.resolveProjectId();
-      if (projectId == null) {
+      if (currentProjectId == null) {
         throw Exception("Project ID not found. Cannot connect GSC.");
       }
 
@@ -127,14 +133,14 @@ abstract class _IntegrationsStore with Store {
       );
 
       await _gscApi.connectGsc({
-        'projectId': projectId,
+        'projectId': currentProjectId,
         'code': authResult.code,
         'codeVerifier': authResult.codeVerifier,
         'redirectUri': authResult.redirectUri,
       });
 
       isConnected = true;
-      await _fetchSites(projectId);
+      await _fetchSites(currentProjectId!);
 
       selectedGa4Stream = ga4Streams.first; // Mock GA4
     } catch (e) {
@@ -147,15 +153,12 @@ abstract class _IntegrationsStore with Store {
 
   @action
   Future<void> linkSelectedSite() async {
-    if (selectedGscProperty == null) return;
+    if (selectedGscProperty == null || currentProjectId == null) return;
     try {
-       final projectId = await _performanceApi.resolveProjectId();
-       if (projectId != null) {
-          await _gscApi.linkSite({
-             'projectId': projectId,
-             'siteUrl': selectedGscProperty
-          });
-       }
+       await _gscApi.linkSite({
+          'projectId': currentProjectId,
+          'siteUrl': selectedGscProperty
+       });
     } catch (e) {
        hasError = true;
        errorMessage = "Failed to link site: ${e.toString()}";
@@ -164,11 +167,9 @@ abstract class _IntegrationsStore with Store {
 
   @action
   Future<void> disconnect() async {
+    if (currentProjectId == null) return;
     try {
-      final projectId = await _performanceApi.resolveProjectId();
-      if (projectId != null) {
-         await _gscApi.disconnect(projectId);
-      }
+      await _gscApi.disconnect(currentProjectId!);
       isConnected = false;
       selectedGscProperty = null;
       selectedGa4Stream = null;
