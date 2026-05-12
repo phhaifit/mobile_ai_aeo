@@ -41,9 +41,9 @@ android {
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        // flutter_appauth: redirect scheme for Google OAuth PKCE
+        // Required by flutter_web_auth_2
         manifestPlaceholders += [
-            'appAuthRedirectScheme': 'com.googleusercontent.apps.195844443608-p6dmp9ail6prnpaqvrqhjf21lsjhm841'
+            'appAuthRedirectScheme': 'com.googleusercontent.apps.195844443608-5a11f3gfqvbs242f6vt2m8dbf2nf8vc'
         ]
     }
 
@@ -57,6 +57,14 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.browser:browser:1.9.0'
+            force 'androidx.core:core-ktx:1.13.1'
+            force 'androidx.core:core:1.13.1'
+        }
     }
     kotlinOptions {
         jvmTarget = '17'

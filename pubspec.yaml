@@ -36,7 +36,6 @@ dependencies:
   flutter_mobx: ^2.0.6+5
   flutter_spinkit: ^5.2.1
   fl_chart: ^0.69.0
-  flutter_appauth: ^7.0.1
   # G
   get_it: ^7.2.0
   google_fonts: ^8.0.2
@@ -69,6 +68,8 @@ dependencies:
   # W
   # X
   xxtea: ^2.1.0
+  flutter_web_auth_2: ^5.0.2
+  pkce: ^1.1.0+1
   # Y
   # Z
 

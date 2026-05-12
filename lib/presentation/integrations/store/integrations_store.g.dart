@@ -9,6 +9,22 @@ part of 'integrations_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$IntegrationsStore on _IntegrationsStore, Store {
+  late final _$isLoadingAtom =
+      Atom(name: '_IntegrationsStore.isLoading', context: context);
+
+  @override
+  bool get isLoading {
+    _$isLoadingAtom.reportRead();
+    return super.isLoading;
+  }
+
+  @override
+  set isLoading(bool value) {
+    _$isLoadingAtom.reportWrite(value, super.isLoading, () {
+      super.isLoading = value;
+    });
+  }
+
   late final _$isConnectingAtom =
       Atom(name: '_IntegrationsStore.isConnecting', context: context);
 
@@ -57,6 +73,38 @@ mixin _$IntegrationsStore on _IntegrationsStore, Store {
     });
   }
 
+  late final _$errorMessageAtom =
+      Atom(name: '_IntegrationsStore.errorMessage', context: context);
+
+  @override
+  String? get errorMessage {
+    _$errorMessageAtom.reportRead();
+    return super.errorMessage;
+  }
+
+  @override
+  set errorMessage(String? value) {
+    _$errorMessageAtom.reportWrite(value, super.errorMessage, () {
+      super.errorMessage = value;
+    });
+  }
+
+  late final _$gscPropertiesAtom =
+      Atom(name: '_IntegrationsStore.gscProperties', context: context);
+
+  @override
+  ObservableList<String> get gscProperties {
+    _$gscPropertiesAtom.reportRead();
+    return super.gscProperties;
+  }
+
+  @override
+  set gscProperties(ObservableList<String> value) {
+    _$gscPropertiesAtom.reportWrite(value, super.gscProperties, () {
+      super.gscProperties = value;
+    });
+  }
+
   late final _$selectedGscPropertyAtom =
       Atom(name: '_IntegrationsStore.selectedGscProperty', context: context);
 
@@ -89,6 +137,14 @@ mixin _$IntegrationsStore on _IntegrationsStore, Store {
     });
   }
 
+  late final _$initAsyncAction =
+      AsyncAction('_IntegrationsStore.init', context: context);
+
+  @override
+  Future<void> init() {
+    return _$initAsyncAction.run(() => super.init());
+  }
+
   late final _$connectGoogleAsyncAction =
       AsyncAction('_IntegrationsStore.connectGoogle', context: context);
 
@@ -97,19 +153,24 @@ mixin _$IntegrationsStore on _IntegrationsStore, Store {
     return _$connectGoogleAsyncAction.run(() => super.connectGoogle());
   }
 
-  late final _$_IntegrationsStoreActionController =
-      ActionController(name: '_IntegrationsStore', context: context);
+  late final _$linkSelectedSiteAsyncAction =
+      AsyncAction('_IntegrationsStore.linkSelectedSite', context: context);
 
   @override
-  void disconnect() {
-    final _$actionInfo = _$_IntegrationsStoreActionController.startAction(
-        name: '_IntegrationsStore.disconnect');
-    try {
-      return super.disconnect();
-    } finally {
-      _$_IntegrationsStoreActionController.endAction(_$actionInfo);
-    }
+  Future<void> linkSelectedSite() {
+    return _$linkSelectedSiteAsyncAction.run(() => super.linkSelectedSite());
   }
+
+  late final _$disconnectAsyncAction =
+      AsyncAction('_IntegrationsStore.disconnect', context: context);
+
+  @override
+  Future<void> disconnect() {
+    return _$disconnectAsyncAction.run(() => super.disconnect());
+  }
+
+  late final _$_IntegrationsStoreActionController =
+      ActionController(name: '_IntegrationsStore', context: context);
 
   @override
   void simulateError() {
@@ -125,9 +186,12 @@ mixin _$IntegrationsStore on _IntegrationsStore, Store {
   @override
   String toString() {
     return '''
+isLoading: ${isLoading},
 isConnecting: ${isConnecting},
 isConnected: ${isConnected},
 hasError: ${hasError},
+errorMessage: ${errorMessage},
+gscProperties: ${gscProperties},
 selectedGscProperty: ${selectedGscProperty},
 selectedGa4Stream: ${selectedGa4Stream}
     ''';
