@@ -78,7 +78,8 @@ class AuthApi {
       print('=== Google Login API Error ===');
       print('Status: ${e.response?.statusCode}');
       print('Response body: ${e.response?.data}');
-      print('Request data: code=${code.substring(0, 20)}..., redirectUri=$redirectUri');
+      final safeCode = code.length > 20 ? code.substring(0, 20) : code;
+      print('Request data: code=$safeCode..., codeVerifier=$codeVerifier, redirectUri=$redirectUri');
       print('=============================');
       rethrow;
     }
