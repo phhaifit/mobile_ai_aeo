@@ -62,16 +62,30 @@ class ConnectionCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Website Property',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: store.selectedGscProperty,
-                    items: store.gscProperties
-                        .map((prop) => DropdownMenuItem(value: prop, child: Text(prop)))
-                        .toList(),
-                    onChanged: (val) => store.selectedGscProperty = val,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'Website Property (GSC)',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: store.selectedGscProperty,
+                          items: store.gscProperties
+                              .map((prop) => DropdownMenuItem(value: prop, child: Text(prop)))
+                              .toList(),
+                          onChanged: (val) => store.selectedGscProperty = val,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: store.selectedGscProperty != null
+                            ? () => store.linkSelectedSite()
+                            : null,
+                        child: const Text('Link Site'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(

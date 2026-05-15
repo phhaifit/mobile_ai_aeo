@@ -19,6 +19,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   void initState() {
     super.initState();
     _store = IntegrationsStore();
+    _store.init();
   }
 
   @override
@@ -32,7 +33,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           children: [
             Observer(
               builder: (_) {
-                if (_store.hasError) {
+                if (_store.hasError && _store.errorMessage != null) {
                   return Container(
                     width: double.infinity,
                     color: Colors.red[100],
@@ -41,21 +42,27 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                       children: [
                         const Icon(Icons.warning, color: Colors.red),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Token Expired. Please reconnect your Google account.',
-                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                            _store.errorMessage!,
+                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close, color: Colors.red),
                           onPressed: () {
-                            // User can dismiss the error or attempt to reconnect
                             _store.hasError = false;
+                            _store.errorMessage = null;
                           },
                         ),
                       ],
                     ),
+                  );
+                }
+                if (_store.isLoading) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
                   );
                 }
                 return const SizedBox.shrink();

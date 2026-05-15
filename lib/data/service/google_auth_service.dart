@@ -25,7 +25,10 @@ class GoogleAuthService {
 
   /// Launch Google sign-in consent screen and return authorization code + PKCE params.
   /// Throws an exception if the user cancels or an error occurs.
-  Future<GoogleAuthResult> signIn() async {
+  Future<GoogleAuthResult> signIn({
+    List<String> scopes = const ['openid', 'email', 'profile'],
+    bool offlineAccess = false,
+  }) async {
     final String clientId = dotenv.env['GOOGLE_CLIENT_ID'] ?? '';
     final String redirectUri = dotenv.env['GOOGLE_REDIRECT_URI'] ?? '';
     final String urlScheme = dotenv.env['GOOGLE_URL_SCHEME'] ?? '';
@@ -40,14 +43,21 @@ class GoogleAuthService {
     final pkcePair = PkcePair.generate();
 
     // Construct the authorization URL
-    final Uri authUrl = Uri.parse(_authorizationEndpoint).replace(queryParameters: {
+    final queryParams = <String, dynamic>{
       'client_id': clientId,
       'redirect_uri': redirectUri,
       'response_type': 'code',
-      'scope': 'openid email profile',
+      'scope': scopes.join(' '),
       'code_challenge': pkcePair.codeChallenge,
       'code_challenge_method': 'S256',
-    });
+    };
+
+    if (offlineAccess) {
+      queryParams['access_type'] = 'offline';
+      queryParams['prompt'] = 'consent';
+    }
+
+    final Uri authUrl = Uri.parse(_authorizationEndpoint).replace(queryParameters: queryParams);
 
     try {
       // Authenticate using flutter_web_auth_2
