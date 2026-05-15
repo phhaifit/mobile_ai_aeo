@@ -22,6 +22,9 @@ class _PerformanceMonitoringScreenState
     extends State<PerformanceMonitoringScreen> {
   late final PerformanceMonitoringStore _store;
 
+  int _currentContentPage = 1;
+  static const int _itemsPerPage = 6;
+
   @override
   void initState() {
     super.initState();
@@ -243,13 +246,17 @@ class _PerformanceMonitoringScreenState
         final ba = _store.brandAnalytics;
         if (ba == null) return const SizedBox();
 
+        final screenWidth = MediaQuery.of(context).size.width;
+        final crossCount = screenWidth >= 600 ? 4 : 2;
+        final aspectRatio = screenWidth >= 600 ? 1.6 : (screenWidth < 400 ? 1.2 : 1.4);
+
         return GridView.count(
-          crossAxisCount: MediaQuery.of(context).size.width >= 600 ? 4 : 2,
+          crossAxisCount: crossCount,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.6,
+          childAspectRatio: aspectRatio,
           children: [
             SummaryCard(
               title: 'Brand Mentions',
@@ -366,7 +373,12 @@ class _PerformanceMonitoringScreenState
   Widget _buildContentList() {
     return Observer(
       builder: (_) {
-        final items = _store.allContentItems;
+        final allItems = _store.allContentItems;
+        final items = allItems.where((c) {
+          final date = c.publishedAt ?? c.createdAt;
+          return !date.isBefore(_store.rangeStart) && !date.isAfter(_store.rangeEnd);
+        }).toList();
+
         if (items.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(32),
@@ -383,6 +395,19 @@ class _PerformanceMonitoringScreenState
           );
         }
 
+        final totalPages = (items.length / _itemsPerPage).ceil();
+        // Ensure current page is valid when data changes
+        if (_currentContentPage > totalPages) {
+          _currentContentPage = totalPages > 0 ? totalPages : 1;
+        }
+
+        final startIndex = (_currentContentPage - 1) * _itemsPerPage;
+        final endIndex = startIndex + _itemsPerPage;
+        final paginatedItems = items.sublist(
+          startIndex,
+          endIndex > items.length ? items.length : endIndex,
+        );
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -397,10 +422,46 @@ class _PerformanceMonitoringScreenState
                 ),
               ),
             ),
-            ...items.map((item) => ContentItemCard(item: item)).toList(),
+            ...paginatedItems.map((item) => ContentItemCard(item: item)).toList(),
+            if (totalPages > 1) _buildPaginationControls(totalPages),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildPaginationControls(int totalPages) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: _currentContentPage > 1
+                ? () {
+                    setState(() {
+                      _currentContentPage--;
+                    });
+                  }
+                : null,
+          ),
+          Text(
+            'Page $_currentContentPage of $totalPages',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: _currentContentPage < totalPages
+                ? () {
+                    setState(() {
+                      _currentContentPage++;
+                    });
+                  }
+                : null,
+          ),
+        ],
+      ),
     );
   }
 }

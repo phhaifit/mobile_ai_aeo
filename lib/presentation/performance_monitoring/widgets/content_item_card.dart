@@ -47,15 +47,17 @@ class ContentItemCard extends StatelessWidget {
                       style: GoogleFonts.montserrat(fontSize: 13.0, fontWeight: FontWeight.w600, color: Colors.black87)),
                   const SizedBox(height: 6),
                   // Status + date
-                  Row(children: [
-                    _statusBadge(item.completionStatus),
-                    const SizedBox(width: 8),
-                    Text(dateStr, style: GoogleFonts.montserrat(fontSize: 10.0, color: const Color(0xFF888888))),
-                    if (item.promptType != null) ...[
-                      const SizedBox(width: 8),
-                      _typeBadge(item.promptType!),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _statusBadge(item.completionStatus),
+                      Text(dateStr, style: GoogleFonts.montserrat(fontSize: 10.0, color: const Color(0xFF888888))),
+                      if (item.promptType != null)
+                        _typeBadge(item.promptType!),
                     ],
-                  ]),
+                  ),
                   if (item.topicName != null) ...[
                     const SizedBox(height: 6),
                     Row(children: [
