@@ -19,22 +19,24 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
   void initState() {
     super.initState();
     _store = getIt<BrandSetupStore>();
-    _store.loadMockData();
+    _store.loadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 1100;
+    final width = MediaQuery.of(context).size.width;
+    final isWide = width > 1100;
+    final isPhone = width < 600;
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: const Text(
+        title: Text(
           'Brand Setup & Configuration',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: isPhone ? 16 : 18,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -47,8 +49,10 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
           }
           return SingleChildScrollView(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: isPhone ? 12.0 : 16.0,
+                vertical: 12.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -111,6 +115,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
 
   Widget _buildPageHeader() {
     final profile = _store.profile;
+    final isPhone = MediaQuery.of(context).size.width < 600;
     return Card(
       elevation: 0,
       color: Colors.white,
@@ -123,7 +128,10 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -134,11 +142,10 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                   child: const Icon(Icons.shield_outlined,
                       color: Color(0xFF2563EB)),
                 ),
-                const SizedBox(width: 10),
-                const Text(
+                Text(
                   'Brand Setup & Configuration',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: isPhone ? 18 : 20,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
                   ),
@@ -159,6 +166,9 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                if (_store.currentProjectName != null)
+                  _buildMetaPill('Project: ${_store.currentProjectName}'),
+                _buildMetaPill(_store.usingMockData ? 'Mock data' : 'Live API'),
                 _buildMetaPill(
                     '${_store.knowledgeBase.length} knowledge bases'),
                 _buildMetaPill('${_store.links.length} tracked links'),
@@ -176,17 +186,33 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
 
   Widget _buildBrandProfile() {
     final profile = _store.profile;
+    final isPhone = MediaQuery.of(context).size.width < 600;
     if (profile == null) return const SizedBox.shrink();
 
     return SectionCard(
       title: 'Brand profile',
       subtitle: 'Identity and verification',
       actions: [
-        _buildGhostButton('Edit profile'),
+        OutlinedButton(
+          onPressed: () => _showEditProfileDialog(),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF111827),
+            side: const BorderSide(color: Color(0xFFE5E7EB)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+          child: const Text(
+            'Edit profile',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
         _buildPrimaryButton('Verify domain'),
       ],
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.start,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -197,8 +223,8 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+          SizedBox(
+            width: isPhone ? double.infinity : 360,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -256,7 +282,21 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
       title: 'Knowledge base management',
       subtitle: 'Sources AI engines will read and how fresh they are',
       actions: [
-        _buildPrimaryButton('Add source'),
+        ElevatedButton(
+          onPressed: () => _showAddSourceDialog(),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2563EB),
+            foregroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Add source',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
       ],
       child: Column(
         children: _store.knowledgeBase.map((kb) {
@@ -362,69 +402,115 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
         children: _store.links.asMap().entries.map((entry) {
           final index = entry.key;
           final link = entry.value;
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Text(
-                    link.type,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF334155),
+          return InkWell(
+            onTap: () => _showEditLinkDialog(index),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Text(
+                      link.type,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF334155),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        link.url,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          link.url,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        link.label,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
+                        const SizedBox(height: 2),
+                        Text(
+                          link.label,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Switch.adaptive(
-                  value: link.monitored,
-                  onChanged: (value) => _store.toggleLink(index, value),
-                  activeColor: const Color(0xFF2563EB),
-                ),
-              ],
+                  Switch.adaptive(
+                    value: link.monitored,
+                    onChanged: (value) => _store.toggleLink(index, value),
+                    activeColor: const Color(0xFF2563EB),
+                  ),
+                ],
+              ),
             ),
           );
         }).toList(),
       ),
     );
+  }
+
+  Future<void> _showEditLinkDialog(int index) async {
+    final link = _store.links[index];
+    final urlController = TextEditingController(text: link.url);
+    final labelController = TextEditingController(text: link.label);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit URL'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: urlController,
+                  decoration: const InputDecoration(labelText: 'URL')),
+              TextField(
+                  controller: labelController,
+                  decoration: const InputDecoration(labelText: 'Label')),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel')),
+            ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Save')),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _store.updateUrlLink(link.id, {
+        'url': urlController.text,
+        'title': labelController.text,
+        'description': labelController.text,
+        'isActive': link.monitored,
+      });
+    }
   }
 
   Widget _buildRewriteRules() {
@@ -520,6 +606,9 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
   }
 
   Widget _buildLlmMonitoring() {
+    final width = MediaQuery.of(context).size.width;
+    final cardWidth = width > 1100 ? 320.0 : double.infinity;
+
     return SectionCard(
       title: 'LLM monitoring',
       subtitle: 'Enable/disable engines and adjust polling frequencies',
@@ -536,7 +625,8 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
               color: const Color(0xFFEEF2FF),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -546,43 +636,40 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                   ),
                   child: const Icon(Icons.schedule, color: Color(0xFF4338CA)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Global polling cadence',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF312E81),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Default for all engines unless overridden per engine.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.indigo.shade900,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 10),
+                const Text(
+                  'Global polling cadence',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF312E81),
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 4),
+                Text(
+                  'Default for all engines unless overridden per engine.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.indigo.shade900,
                   ),
-                  child: Text(
-                    '${_store.defaultPollingMinutes} min',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF312E81),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_store.defaultPollingMinutes} min',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF312E81),
+                      ),
                     ),
                   ),
                 ),
@@ -597,7 +684,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
               final index = entry.key;
               final llm = entry.value;
               return Container(
-                width: 320,
+                width: cardWidth,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -635,11 +722,12 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
                       children: [
                         Icon(Icons.timer,
                             size: 16, color: Colors.blue.shade600),
-                        const SizedBox(width: 6),
                         Text(
                           'Polling every ${llm.pollingMinutes} minutes',
                           style: const TextStyle(
@@ -722,6 +810,8 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
   }
 
   Widget _buildProjects() {
+    final width = MediaQuery.of(context).size.width;
+    final cardWidth = width > 1100 ? 320.0 : double.infinity;
     return SectionCard(
       title: 'Project management',
       subtitle: 'Organize rollout workstreams linked to AEO readiness',
@@ -733,7 +823,7 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
         runSpacing: 12,
         children: _store.projects.map((project) {
           return Container(
-            width: 320,
+            width: cardWidth,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -824,12 +914,15 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
             Icon(icon, size: 14, color: const Color(0xFF334155)),
             const SizedBox(width: 6),
           ],
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF334155),
+          Flexible(
+            child: Text(
+              text,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF334155),
+              ),
             ),
           ),
         ],
@@ -977,5 +1070,94 @@ class _BrandSetupScreenState extends State<BrandSetupScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showEditProfileDialog() async {
+    final profile = _store.profile;
+    final nameController = TextEditingController(text: profile?.name ?? '');
+    final websiteController =
+        TextEditingController(text: profile?.website ?? '');
+    final industryController =
+        TextEditingController(text: profile?.industry ?? '');
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit brand profile'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Name')),
+              TextField(
+                  controller: websiteController,
+                  decoration: const InputDecoration(labelText: 'Website')),
+              TextField(
+                  controller: industryController,
+                  decoration: const InputDecoration(labelText: 'Industry')),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _store.updateBrandProfile({
+        'brandName': nameController.text,
+        'websiteUrl': websiteController.text,
+        'industry': industryController.text,
+      });
+    }
+  }
+
+  Future<void> _showAddSourceDialog() async {
+    final titleController = TextEditingController();
+    final urlController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add knowledge source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Title')),
+              TextField(
+                  controller: urlController,
+                  decoration: const InputDecoration(labelText: 'URL')),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel')),
+            ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Add')),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _store.addKnowledgeBaseEntry({
+        'title': titleController.text,
+        'sourceUrl': urlController.text,
+      });
+    }
   }
 }

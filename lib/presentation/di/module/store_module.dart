@@ -65,6 +65,14 @@ import 'package:boilerplate/domain/usecase/trend/get_trend_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_performance_comparisons_usecase.dart';
 import 'package:boilerplate/domain/usecase/trend/get_improvement_suggestions_usecase.dart';
 import 'package:boilerplate/presentation/brand_setup/store/brand_setup_store.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/brand_profile_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/knowledge_base_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/url_link_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/url_rewrite_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/llm_monitoring_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/llm_polling_frequency_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/brand_positioning_usecase.dart';
+import 'package:boilerplate/domain/usecase/brand_setup/project_usecase.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -241,6 +249,18 @@ class StoreModule {
     getIt.registerSingleton<BrandSetupStore>(
       BrandSetupStore(
         getIt<ErrorStore>(),
+        getIt<GetProjectsUseCase>(),
+        getIt<GetBrandProfileUseCase>(),
+        getIt<GetKnowledgeBaseEntriesUseCase>(),
+        getIt<GetUrlLinksUseCase>(),
+        getIt<UpdateUrlLinkUseCase>(),
+        getIt<GetUrlRewritesUseCase>(),
+        getIt<GetLlmMonitoringConfigUseCase>(),
+        getIt<ToggleLlmMonitoringUseCase>(),
+        getIt<GetLlmPollingFrequencyUseCase>(),
+        getIt<GetBrandPositioningUseCase>(),
+        getIt<UpdateBrandProfileUseCase>(),
+        getIt<AddKnowledgeBaseEntryUseCase>(),
       ),
     );
   }

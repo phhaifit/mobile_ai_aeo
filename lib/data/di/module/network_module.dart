@@ -11,6 +11,14 @@ import 'package:boilerplate/data/network/apis/prompt/prompt_api.dart';
 import 'package:boilerplate/data/network/apis/overview/overview_api.dart';
 import 'package:boilerplate/data/network/apis/posts/post_api.dart';
 import 'package:boilerplate/data/network/apis/seo/seo_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/brand_profile_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/knowledge_base_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/url_link_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/url_rewrite_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/llm_monitoring_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/llm_polling_frequency_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/brand_positioning_api.dart';
+import 'package:boilerplate/data/network/apis/brand_setup/project_api.dart';
 import 'package:boilerplate/data/service/google_auth_service.dart';
 import 'package:boilerplate/data/network/constants/endpoints.dart';
 import 'package:boilerplate/data/network/interceptors/error_interceptor.dart';
@@ -93,6 +101,16 @@ class NetworkModule {
         ContentApi(getIt<DioClient>(instanceName: 'aiDioClient')));
     getIt.registerSingleton(
         SeoApi(getIt<DioClient>(instanceName: 'aiDioClient')));
+
+    // Brand Setup APIs:--------------------------------------------------------
+    getIt.registerSingleton(BrandProfileApi(getIt<DioClient>()));
+    getIt.registerSingleton(KnowledgeBaseApi(getIt<DioClient>()));
+    getIt.registerSingleton(UrlLinkApi(getIt<DioClient>()));
+    getIt.registerSingleton(UrlRewriteApi(getIt<DioClient>()));
+    getIt.registerSingleton(LlmMonitoringApi(getIt<DioClient>()));
+    getIt.registerSingleton(LlmPollingFrequencyApi(getIt<DioClient>()));
+    getIt.registerSingleton(BrandPositioningApi(getIt<DioClient>()));
+    getIt.registerSingleton(ProjectApi(getIt<DioClient>()));
 
     // services:----------------------------------------------------------------
     getIt.registerSingleton(GoogleAuthService());

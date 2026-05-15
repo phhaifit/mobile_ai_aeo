@@ -64,4 +64,51 @@ class Endpoints {
       '/api/projects/$projectId/cluster/generate-articles';
   static String clusterJobStream(String jobId) =>
       '/api/cluster/jobs/$jobId/stream';
+
+  // ─── Brand Setup & Configuration endpoints ─────────────────────────────
+
+  // Brand Profile endpoints
+  static String brandProfile(String projectId) =>
+      '/api/projects/$projectId/brand-profile';
+  static String updateBrandProfile(String projectId) =>
+      '/api/projects/$projectId/brand-profile';
+  static String getBrandProfile(String projectId) =>
+      '/api/projects/$projectId/brand-profile';
+
+  // Knowledge Base endpoints
+  static String knowledgeBaseEntries(String projectId) =>
+      '/api/projects/$projectId/knowledge-base';
+  static String knowledgeBaseEntry(String projectId, String entryId) =>
+      '/api/projects/$projectId/knowledge-base/$entryId';
+
+  // URL Link Management endpoints
+  static String urlLinks(String projectId) =>
+      '/api/projects/$projectId/url-links';
+  static String urlLink(String projectId, String linkId) =>
+      '/api/projects/$projectId/url-links/$linkId';
+
+  // URL Rewrite Configuration endpoints
+  static String urlRewrites(String projectId) =>
+      '/api/projects/$projectId/url-rewrites';
+  static String urlRewrite(String projectId, String rewriteId) =>
+      '/api/projects/$projectId/url-rewrites/$rewriteId';
+
+  // LLM Monitoring endpoints
+  static String llmMonitoring(String projectId) =>
+      '/api/projects/$projectId/llm-monitoring';
+  static String llmMonitoringToggle(String projectId, String llmId) =>
+      '/api/projects/$projectId/llm-monitoring/$llmId/toggle';
+  static String llmPollingFrequency(String projectId) =>
+      '/api/projects/$projectId/llm-polling-frequency';
+
+  // Brand Positioning endpoints
+  static String brandPositioning(String projectId) =>
+      '/api/projects/$projectId/brand-positioning';
+
+  // Project Management endpoints
+  static const String projects = '/api/projects';
+  static String project(String projectId) => '/api/projects/$projectId';
+  static String switchProject(String projectId) =>
+      '/api/projects/$projectId/switch';
+  static String deleteProject(String projectId) => '/api/projects/$projectId';
 }
