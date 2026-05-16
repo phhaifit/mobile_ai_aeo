@@ -144,15 +144,31 @@ abstract class _PerformanceMonitoringStore with Store {
   List<ContentItem> get allContentItems => contentData?.items ?? [];
 
   @computed
-  int get totalContent => contentData?.total ?? 0;
+  int get totalContent {
+    final filteredItems = allContentItems.where((c) {
+      final date = c.publishedAt ?? c.createdAt;
+      return !date.isBefore(rangeStart) && !date.isAfter(rangeEnd);
+    });
+    return filteredItems.length;
+  }
 
   @computed
-  int get publishedCount =>
-      allContentItems.where((c) => c.completionStatus == 'PUBLISHED').length;
+  int get publishedCount {
+    final filteredItems = allContentItems.where((c) {
+      final date = c.publishedAt ?? c.createdAt;
+      return !date.isBefore(rangeStart) && !date.isAfter(rangeEnd);
+    });
+    return filteredItems.where((c) => c.completionStatus == 'PUBLISHED').length;
+  }
 
   @computed
-  int get draftCount =>
-      allContentItems.where((c) => c.completionStatus != 'PUBLISHED').length;
+  int get draftCount {
+    final filteredItems = allContentItems.where((c) {
+      final date = c.publishedAt ?? c.createdAt;
+      return !date.isBefore(rangeStart) && !date.isAfter(rangeEnd);
+    });
+    return filteredItems.where((c) => c.completionStatus != 'PUBLISHED').length;
+  }
 
   @computed
   List<ChartDataPoint> get contentPublishTrend {
@@ -187,7 +203,11 @@ abstract class _PerformanceMonitoringStore with Store {
   @computed
   Map<String, int> get contentByTopic {
     final map = <String, int>{};
-    for (final item in allContentItems) {
+    final filteredItems = allContentItems.where((c) {
+      final date = c.publishedAt ?? c.createdAt;
+      return !date.isBefore(rangeStart) && !date.isAfter(rangeEnd);
+    });
+    for (final item in filteredItems) {
       final topic = item.topicName ?? 'Uncategorized';
       map[topic] = (map[topic] ?? 0) + 1;
     }
