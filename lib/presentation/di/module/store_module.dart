@@ -77,6 +77,7 @@ import 'package:boilerplate/domain/usecase/trend/get_content_performance_usecase
 import 'package:boilerplate/data/sharedpref/shared_preference_helper.dart';
 import 'package:boilerplate/data/network/apis/performance/performance_api.dart';
 import 'package:boilerplate/domain/usecase/brand_setup/project_usecase.dart';
+import 'package:boilerplate/presentation/brand_setup/store/brand_setup_store.dart';
 import 'package:boilerplate/presentation/cronjob/store/content_agent_store.dart';
 import 'package:boilerplate/data/network/apis/content_agent/content_agent_api.dart';
 
